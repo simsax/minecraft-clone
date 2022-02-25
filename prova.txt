@@ -1,0 +1,21 @@
+Lately I've been interested in learning how graphics programming works, so I decided to try to make a minecraft clone using openGL and C++. 
+This is my first openGL project so I apologize to the reader if there is any bad code (migliora sta frase).
+Spiegare un po', ficcare foto, alla fine sezione Credits dove inserisco links a thecherno, learnopengl, jdh e creatore delle texture. Spiegare anche che l'ho fatto
+per divertimento, far capire che io mi diverto a eventuali persone che leggeranno la mia repo).
+Renderlo compatibile con windows e linux, testandolo sia su windows che su una virtual machine. Quindi il progetto andrà fatto con cmake.
+
+Mettere istruzioni per buildare e runnare da linea di comando anche a chi non è interessato (chiedere ad esempio a qualche amico di provarlo).
+
+Inserire un minimo di sound design
+
+Usare astrazioni in modo da evitare bug enormi, tante piccole parti testabili singolarmente in caso di bug.
+
+Implementare multiplayer
+
+giocare con luci e tempo atmosferico, ciclo giorno notte, creare una versione stile silent hill
+
+Credits:
+-jdh video (for the idea)
+-thecherno opengl
+-learnopengl
+-scratchapixel
