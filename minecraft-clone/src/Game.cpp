@@ -13,7 +13,7 @@ Game::Game() :
 	m_View(glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, -3.0)))
 {
 	// wireframe
-	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	// depth testing
 	glEnable(GL_DEPTH_TEST);
@@ -44,6 +44,11 @@ Game::Game() :
 	// enable blending
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	// enable face culling (doesn't work for everything)
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+	glFrontFace(GL_CCW);
 
 	m_VAO = std::make_unique<VertexArray>();
 
@@ -181,7 +186,7 @@ Vertex* Game::CreateCube(Vertex* target, const glm::vec3& position, float textur
 	target->TexCoords = { texture_bottom[0] * texture_offset, texture_bottom[1] * texture_offset };
 	target++;
 
-	target->Position = { position[0] + size, position[1], position[2] + size };
+	target->Position = { position[0], position[1], position[2] };
 	target->TexCoords = { (texture_bottom[0] + 1) * texture_offset, texture_bottom[1] * texture_offset };
 	target++;
 
@@ -189,7 +194,7 @@ Vertex* Game::CreateCube(Vertex* target, const glm::vec3& position, float textur
 	target->TexCoords = { (texture_bottom[0] + 1) * texture_offset, (texture_bottom[1] + 1) * texture_offset };
 	target++;
 
-	target->Position = { position[0],  position[1], position[2] };
+	target->Position = { position[0] + size,  position[1], position[2] + size };
 	target->TexCoords = { texture_bottom[0] * texture_offset, (texture_bottom[1] + 1) * texture_offset };
 	target++;
 
