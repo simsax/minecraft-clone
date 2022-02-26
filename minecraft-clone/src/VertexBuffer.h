@@ -1,5 +1,4 @@
 #pragma once
-#include "GLErrorManager.h"
 #include <GL/glew.h>
 
 class VertexBuffer {

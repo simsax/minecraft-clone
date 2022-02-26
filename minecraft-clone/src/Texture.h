@@ -1,5 +1,4 @@
 #pragma once
-#include "GLErrorManager.h"
 #include <string>
 
 class Texture
