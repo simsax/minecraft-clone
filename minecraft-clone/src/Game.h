@@ -26,8 +26,9 @@ private:
 	Vertex* CreateCube(Vertex* target, const glm::vec3& position, float texture_offset, unsigned int texture_side[2], unsigned int texture_top[2], unsigned int texture_bottom[2]);
 
 	std::unique_ptr<VertexArray> m_VAO;
-	std::unique_ptr<IndexBuffer> m_IndexBuffer;
-	std::unique_ptr<VertexBuffer> m_VertexBuffer;
+	std::unique_ptr<IndexBuffer> m_IBO;
+	std::unique_ptr<VertexBuffer> m_VBO;
+	std::unique_ptr<VertexBuffer> m_InstanceVBO;
 	std::unique_ptr<Shader> m_Shader;
 	std::unique_ptr<Texture> m_Texture1;
 	glm::mat4 m_Proj, m_View;

@@ -9,7 +9,8 @@ namespace glfw {
 	cam::Camera Window::camera = glm::vec3(0.0f, 0.0f, 3.0f);
 	float Window::lastX = 960.0f;
 	float Window::lastY = 540.0f;
-	float Window::sensitivity = 0.1f;
+	float Window::mouseSensitivity = 0.1f;
+	bool Window::wireframe = false;
 
 	Window::Window(int width, int height, const std::string& name) : m_Width(width), m_Height(height), m_Name(name)
 	{
@@ -41,6 +42,7 @@ namespace glfw {
 		std::cout << glGetString(GL_VERSION) << std::endl;
 
 		glfwSetCursorPosCallback(m_Window, MouseCallback);
+		glfwSetKeyCallback(m_Window, KeyCallback);
 		glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); // capture cursor in the center and hide it
 
 #ifdef _DEBUG
@@ -106,7 +108,7 @@ namespace glfw {
 
 		camera.ProcessKeyboard(keyPressed, deltaTime);
 
-		// other type of inputs here
+		// other type of inputs in the callback
 	}
 
 }
@@ -120,12 +122,23 @@ void glfw::Window::MouseCallback(GLFWwindow* window, double xpos, double ypos)
 	}
 
 	// calculate offset between current mouse position and mouse position in the previous frame
-	float xoffset = (static_cast<float>(xpos) - lastX) * sensitivity;
-	float yoffset = (lastY - static_cast<float>(ypos)) * sensitivity; // y-coords range from bottom to top
+	float xoffset = (static_cast<float>(xpos) - lastX) * mouseSensitivity;
+	float yoffset = (lastY - static_cast<float>(ypos)) * mouseSensitivity; // y-coords range from bottom to top
 	lastX = static_cast<float>(xpos);
 	lastY = static_cast<float>(ypos);
 
 	camera.ProcessMouse(xoffset, yoffset);
+}
+
+void glfw::Window::KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+	if (key == GLFW_KEY_Z && action == GLFW_PRESS) { // toggle wireframe mode
+		wireframe = !wireframe;
+		if (wireframe)
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		else
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	}
 }
 
 void GLAPIENTRY glfw::Window::MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)

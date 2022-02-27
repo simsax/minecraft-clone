@@ -13,7 +13,7 @@ namespace cam {
 	{}
 
 	void Camera::ProcessKeyboard(const std::array<Key, static_cast<int>(cam::Key::Key_MAX) + 1>& keyPressed, float deltaTime) {
-		float cameraSpeed = 20.0f * deltaTime;
+		float cameraSpeed = 5.0f * deltaTime;
 
 		for (const auto& key : keyPressed) {
 			if (key != Key::NONE) {

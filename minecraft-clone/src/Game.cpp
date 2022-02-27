@@ -5,7 +5,7 @@
 #include "Shader.h"
 #include "glm/gtc/matrix_transform.hpp"
 #include <array>
-
+#include <iostream>
 
 // ancora da fixare il costruttore
 Game::Game() :
@@ -13,12 +13,12 @@ Game::Game() :
 	m_View(glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, -3.0)))
 {
 	// wireframe
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	//
 
 	// depth testing
 	glEnable(GL_DEPTH_TEST);
 
-	const size_t MaxQuadCount = 1000;
+	const size_t MaxQuadCount = 100;
 	const size_t MaxVertexCount = MaxQuadCount * 4;
 	const size_t MaxIndexCount = MaxQuadCount * 6;
 
@@ -52,16 +52,31 @@ Game::Game() :
 
 	m_VAO = std::make_unique<VertexArray>();
 
-	m_VertexBuffer = std::make_unique<VertexBuffer>(sizeof(Vertex) * MaxVertexCount, nullptr);
+	float texture_offset = 0.0625f; // texture_size/atlas_size
+
+	unsigned short indexCount = 0;
+
+	unsigned int texture_side[2]{ 3, 15 };
+	unsigned int texture_top[2]{ 12, 3 };
+	unsigned int texture_bottom[2]{ 2, 15 };
+	std::array<Vertex, 100> vertices;
+	Vertex* buffer = vertices.data();
+	buffer = CreateCube(buffer, glm::vec3(0.0f, 0.0f, 0.0f), texture_offset, texture_side, texture_top, texture_bottom);
+	indexCount += 36;
+
+	m_VBO = std::make_unique<VertexBuffer>();
+	//m_VBO->CreateDynamic(sizeof(Vertex) * MaxVertexCount);
+	m_VBO->CreateStatic(vertices.size() * sizeof(Vertex), vertices.data());
 
 	// this is weird and to be fixed (offsetof) - put everything in the vertexbuffer class
 	VertexBufferLayout layout;
 	layout.Push<float>(3); // position
 	layout.Push<float>(2); // texture coords
 
-	m_VAO->AddBuffer(*m_VertexBuffer, layout);
+	m_VAO->AddBuffer(*m_VBO, layout);
 
-	m_IndexBuffer = std::make_unique<IndexBuffer>(indices, sizeof(indices));
+	m_IBO = std::make_unique<IndexBuffer>(indices, sizeof(indices));
+	m_IBO->SetCount(indexCount);
 
 	m_Shader = std::make_unique<Shader>("res/shaders/Basic.shader");
 	m_Shader->Bind();
@@ -69,6 +84,25 @@ Game::Game() :
 	m_Texture1 = std::make_unique<Texture>("res/textures/terrain.png");
 	m_Texture1->Bind(0);
 	m_Shader->SetUniform1i("u_Texture", 0);
+
+	glm::vec3 translations[256];
+	int index = 0;
+	//float offset = 1.0f;
+	for (int y = -8; y < 8; y++) {
+		for (int x = -8; x < 8; x++) {
+			glm::vec3 translation;
+			translation.x = static_cast<float>(x);
+			translation.z = static_cast<float>(y);
+			translation.y = 0.0f;
+			translations[index++] = translation;
+		}
+	}
+
+	m_InstanceVBO = std::make_unique<VertexBuffer>();
+	m_InstanceVBO->CreateStatic(sizeof(glm::vec3) * 256, &translations[0]);
+	VertexBufferLayout layoutInstanced;
+	layoutInstanced.Push<float>(3);
+	m_VAO->AddInstanceBuffer(*m_InstanceVBO, layoutInstanced, 1);
 }
 
 Vertex* Game::CreateQuad(Vertex* target, const glm::vec3& position, float texture_offset, unsigned int texture[2]) {
@@ -203,15 +237,15 @@ Vertex* Game::CreateCube(Vertex* target, const glm::vec3& position, float textur
 
 void Game::OnRender(const glm::mat4& viewMatrix)
 {
-
+	/*
 	float texture_offset = 0.0625f; // texture_size/atlas_size
 
-	unsigned short indexCount = 0;
+	//unsigned short indexCount = 0;
 
 	unsigned int texture_side[2]{ 3, 15 };
 	unsigned int texture_top[2]{ 12, 3 };
 	unsigned int texture_bottom[2]{ 2, 15 };
-
+	
 	glm::vec3 cubePositions[] = {
 		glm::vec3(0.0f,  0.0f,  0.0f),
 		glm::vec3(2.0f,  5.0f, -15.0f),
@@ -225,14 +259,17 @@ void Game::OnRender(const glm::mat4& viewMatrix)
 		glm::vec3(-1.3f,  1.0f, -1.5f)
 	};
 
-	std::array<Vertex, 1000> vertices;
+
+
+	std::array<Vertex, 100> vertices;
 	Vertex* buffer = vertices.data();
+	
 	for (int i = 0; i < 10; i++) {
 		buffer = CreateCube(buffer, cubePositions[i], texture_offset, texture_side, texture_top, texture_bottom); // grass block
 		indexCount += 36;
 	}
-	m_VertexBuffer->SendData(vertices.size() * sizeof(Vertex), vertices.data());
-
+	m_VBO->SendData(vertices.size() * sizeof(Vertex), vertices.data());
+	*/
 	glClearColor(173.0f / 255.0f, 223.0f / 255.0f, 230.0f / 255.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -246,10 +283,12 @@ void Game::OnRender(const glm::mat4& viewMatrix)
 	glm::mat4 mvp = m_Proj * m_View * model;
 	m_Shader->Bind();
 	m_Shader->SetUniformMat4f("u_MVP", mvp);
-	m_IndexBuffer->SetCount(indexCount);
-	renderer.Draw(*m_VAO, *m_IndexBuffer, GL_UNSIGNED_SHORT, *m_Shader);
+	//m_IBO->SetCount(indexCount);
+	renderer.DrawInstanced(*m_VAO, *m_IBO, GL_UNSIGNED_SHORT, *m_Shader, 256);
+	//renderer.Draw(*m_VAO, *m_IBO, GL_UNSIGNED_SHORT, *m_Shader);
 };
 
+// position inside onUpdate??
 
 Game::~Game()
 {
