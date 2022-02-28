@@ -3,7 +3,7 @@
 #include "Game.h"
 
 int main() {
-	glfw::Window window(1920, 1080, "Mineclone"); // initialize window
+	glfw::Window window(1920, 1080, "Minecraft 2"); // initialize window
 
 	Game game; // initialize game
 	

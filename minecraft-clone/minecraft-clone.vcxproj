@@ -159,6 +159,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Chunk.cpp" />
     <ClCompile Include="src\Game.cpp" />
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\extern\glm\detail\glm.cpp" />
@@ -180,6 +181,7 @@
     <ClCompile Include="src\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="res\shaders\Instancing.shader" />
     <None Include="res\shaders\Basic.shader" />
     <None Include="src\extern\glm\detail\func_common.inl" />
     <None Include="src\extern\glm\detail\func_common_simd.inl" />
@@ -319,6 +321,7 @@
     <None Include="src\extern\glm\gtx\wrap.inl" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Chunk.h" />
     <ClInclude Include="src\Game.h" />
     <ClInclude Include="src\Camera.h" />
     <ClInclude Include="src\extern\glm\common.hpp" />

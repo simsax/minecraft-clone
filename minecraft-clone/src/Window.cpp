@@ -6,7 +6,7 @@
 namespace glfw {
 
 	bool Window::firstMouse = true;
-	cam::Camera Window::camera = glm::vec3(0.0f, 0.0f, 3.0f);
+	cam::Camera Window::camera = glm::vec3(0.0f, 11.0f, 3.0f);
 	float Window::lastX = 960.0f;
 	float Window::lastY = 540.0f;
 	float Window::mouseSensitivity = 0.1f;

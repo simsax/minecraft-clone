@@ -4,7 +4,7 @@
 
 class IndexBuffer {
 public:
-	IndexBuffer(const void* data, GLsizeiptr size);
+	IndexBuffer(GLsizeiptr size, const void* data);
 	~IndexBuffer();
 
 	void Bind() const;

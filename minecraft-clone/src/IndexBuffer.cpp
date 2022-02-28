@@ -3,7 +3,7 @@
 #include "IndexBuffer.h"
 #include "GL/glew.h"
 
-IndexBuffer::IndexBuffer(const void* data, GLsizeiptr size) : m_Count(0) {
+IndexBuffer::IndexBuffer(GLsizeiptr size, const void* data) : m_Count(0) {
 	glGenBuffers(1, &m_RendererID);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_RendererID);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, data, GL_STATIC_DRAW); //Here we do an operation on the currently bound GL_ELEMENT_ARRAY_BUFFER, which is our ibo. This function allocates the memory on the GPU with the size we passed, and also with the data we passed
