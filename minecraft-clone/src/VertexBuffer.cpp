@@ -1,7 +1,7 @@
 #include "VertexBuffer.h"
 
 VertexBuffer::VertexBuffer() {
-	glGenBuffers(1, &m_RendererID); //Create the VBO on the GPU. Create the buffer and returns the id (since it is void it writes the id in the variable)
+	glGenBuffers(1, &m_RendererID);
 }
 
 VertexBuffer::~VertexBuffer() {

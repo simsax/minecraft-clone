@@ -3,7 +3,6 @@
 #include <GL/glew.h>
 #include "GLFW/glfw3.h"
 #include "Game.h"
-#include "Camera.h"
 
 namespace glfw {
 
@@ -22,7 +21,6 @@ namespace glfw {
 		void ManageInput(float deltaTime);
 
 		static bool firstMouse;
-		static cam::Camera camera;
 		static float lastX;
 		static float lastY;
 		static float mouseSensitivity;

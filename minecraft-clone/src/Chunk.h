@@ -27,13 +27,14 @@ struct Vertex {
 class Chunk
 {
 public:
-	Chunk(int xLength, int yLength, int zLength);
+	Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, const glm::vec3& position);
 	~Chunk();
 
 	// contains the coordinates of each face in the texture atlas
 	static std::unordered_map<Block, std::array<unsigned int, 6>> s_TextureMap;
-	std::vector<Vertex> GetVBOData();
+	std::vector<Vertex> GetRenderData() const;
 private:
+	void CalculateVBOData();
 	void CreateUQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<unsigned int, 2>& textureCoords);
 	void CreateDQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<unsigned int, 2>& textureCoords);
 	void CreateFQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<unsigned int, 2>& textureCoords);
@@ -44,9 +45,11 @@ private:
 
 	std::vector<std::vector<std::vector<Block>>> m_Chunk;
 	static const float s_TextureOffset; // depends on the texture atlas
-	int m_XLength;
-	int m_YLength;
-	int m_ZLength;
+	unsigned int m_XLength;
+	unsigned int m_YLength;
+	unsigned int m_ZLength;
+	glm::vec3 m_Position;
+	std::vector<Vertex> m_RenderData;
 };
 
 // I need a 3d array of blocks, where I track the position of each block and a type (each block type contains different texture coords)

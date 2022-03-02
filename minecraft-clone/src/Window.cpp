@@ -6,7 +6,6 @@
 namespace glfw {
 
 	bool Window::firstMouse = true;
-	cam::Camera Window::camera = glm::vec3(0.0f, 11.0f, 3.0f);
 	float Window::lastX = 960.0f;
 	float Window::lastY = 540.0f;
 	float Window::mouseSensitivity = 0.1f;
@@ -60,7 +59,10 @@ namespace glfw {
 
 	void Window::WindowLoop(Game& game) {
 		float currentFrame = 0.0f, deltaTime = 0.0f, lastFrame = 0.0f;
-
+#ifdef _DEBUG
+		float prevTime = 0.0f, crntTime = 0.0f;
+		unsigned int nFrames = 0;
+#endif
 		while (!glfwWindowShouldClose(m_Window)) {
 			//glClearColor(0.0f, 0.0f, 0.0f, 1.0f));
 
@@ -73,12 +75,26 @@ namespace glfw {
 			currentFrame = static_cast<float>(glfwGetTime());
 			deltaTime = currentFrame - lastFrame;
 			lastFrame = currentFrame;
+
+#ifdef _DEBUG
+			crntTime = static_cast<float>(glfwGetTime());
+			nFrames++;
+			if (crntTime - prevTime >= 1.0) {
+				std::string fps = std::to_string(nFrames);
+				std::string ms = std::to_string(1000.0/nFrames);
+				std::string newTitle = "Minecraft 2 - " + fps + "FPS / " + ms + "ms" + "  -  PlayerPos: " + std::to_string(Game::camera.GetPlayerPosition().x) + "," + std::to_string(Game::camera.GetPlayerPosition().z);
+				glfwSetWindowTitle(m_Window, newTitle.c_str());
+				prevTime = crntTime;
+				nFrames = 0;
+			}
+#endif
+
 			glfwPollEvents();
 
 			ManageInput(deltaTime);
 
 			game.OnUpdate(deltaTime);
-			game.OnRender(Window::camera.GetViewMatrix());
+			game.OnRender();
 
 			glfwSwapBuffers(m_Window);
 		}
@@ -106,7 +122,7 @@ namespace glfw {
 		if (glfwGetKey(m_Window, GLFW_KEY_D) == GLFW_PRESS)
 			keyPressed[k++] = cam::Key::RIGHT;
 
-		camera.ProcessKeyboard(keyPressed, deltaTime);
+		Game::camera.ProcessKeyboard(keyPressed, deltaTime);
 
 		// other type of inputs in the callback
 	}
@@ -127,7 +143,7 @@ void glfw::Window::MouseCallback(GLFWwindow* window, double xpos, double ypos)
 	lastX = static_cast<float>(xpos);
 	lastY = static_cast<float>(ypos);
 
-	camera.ProcessMouse(xoffset, yoffset);
+	Game::camera.ProcessMouse(xoffset, yoffset);
 }
 
 void glfw::Window::KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)

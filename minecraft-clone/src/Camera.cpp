@@ -40,6 +40,11 @@ namespace cam {
 		return glm::lookAt(m_CameraPos, m_CameraPos + m_CameraFront, m_CameraUp);
 	}
 
+	glm::vec3 Camera::GetPlayerPosition() const
+	{
+		return m_CameraPos;
+	}
+
 	void Camera::ProcessMouse(float xoffset, float yoffset)
 	{
 		yaw += xoffset;

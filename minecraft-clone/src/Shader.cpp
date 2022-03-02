@@ -8,7 +8,7 @@
 
 Shader::Shader(const std::string& filepath) : m_FilePath(filepath)
 {
-	ShaderProgramSource source = ParseShader(filepath); // path relative to the project directory	
+	ShaderProgramSource source = ParseShader(filepath);	
 	m_RendererID = CreateShader(source.VertexSource, source.FragmentSource);
 }
 
@@ -19,7 +19,7 @@ Shader::~Shader()
 
 void Shader::Bind() const
 {
-	glUseProgram(m_RendererID); // bind the shader
+	glUseProgram(m_RendererID);
 }
 
 void Shader::Unbind() const
@@ -68,7 +68,7 @@ GLint Shader::GetUniformLocation(const std::string& name)
 		return m_UniformLocationCache[name];
 
 	GLint location = glGetUniformLocation(m_RendererID, name.c_str()); // retrieve the location of the uniform variable present in the shader
-	if (location == -1) // -1 means that opengl didn't find the uniform
+	if (location == -1)
 		std::cout << "Warning: uniform '" << name << "' doesn't exist!\n";
 	m_UniformLocationCache[name] = location;
 	return location;
@@ -102,10 +102,9 @@ unsigned int Shader::CompileShader(unsigned int type, const std::string& source)
 	int result;
 	glGetShaderiv(id, GL_COMPILE_STATUS, &result); // query the shader object to get the value of some parameter
 	if (result == GL_FALSE) { // our shader hasn't compiled successfully
-		// get error message
 		int length;
 		glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
-		char* message = (char*)_malloca(length * sizeof(char)); // dynamically allocate array on the stack (alloca frees when you leave a function, not when you got out of scope, so don't use in a loop)
+		char* message = (char*)_malloca(length * sizeof(char));
 		glGetShaderInfoLog(id, length, &length, message);
 		std::cout << "Failed to compile " << (type == GL_VERTEX_SHADER ? "vertex\n" : "fragment\n");
 		std::cout << message << std::endl;
