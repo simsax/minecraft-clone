@@ -49,7 +49,7 @@ Game::Game() :
 	m_Texture1->Bind(0);
 	m_Shader->SetUniform1i("u_Texture", 0);
 
-	GenerateChunks(4);
+	GenerateChunks();
 }
 
 void Game::OnRender()
@@ -69,19 +69,22 @@ void Game::OnRender()
 
 // then as I move I track the player and when needed I update the chunk hashmap, saving the old ones on the disk.
 
-void Game::GenerateChunks(unsigned int n)
+void Game::GenerateChunks()
 {
-	glm::vec3 playerPos = camera.GetPlayerPosition() * glm::vec3(1.0, 0.0, 1.0); // zero the y-coord
-	glm::vec3 north = playerPos + glm::vec3(0.0, 0.0, -16.0);
-	glm::vec3 northEast = playerPos + glm::vec3(16.0, 0.0, -16.0);
-	glm::vec3 east = playerPos + glm::vec3(16.0, 0.0, 0.0);
-	glm::vec3 southEast = playerPos + glm::vec3(16.0, 0.0, 16.0);
-	glm::vec3 south = playerPos + glm::vec3(0.0, 0.0, 16.0);
-	glm::vec3 southWest = playerPos + glm::vec3(-16.0, 0.0, 16.0);
-	glm::vec3 west = playerPos + glm::vec3(-16.0, 0.0, 0.0);
-	glm::vec3 northWest = playerPos + glm::vec3(-16.0, 0.0, -16.0);
+	glm::vec3 playerPos = camera.GetPlayerPosition();
+	int size = static_cast<int>(m_ChunkSize);
+	playerPos = glm::vec3(round(playerPos.x / size) * size, 0.0, round(playerPos.z / size) * size);
+	glm::vec3 north = playerPos + glm::vec3(0.0, 0.0, -size);
+	glm::vec3 northEast = playerPos + glm::vec3(size, 0.0, -size);
+	glm::vec3 east = playerPos + glm::vec3(size, 0.0, 0.0);
+	glm::vec3 southEast = playerPos + glm::vec3(size, 0.0, size);
+	glm::vec3 south = playerPos + glm::vec3(0.0, 0.0, size);
+	glm::vec3 southWest = playerPos + glm::vec3(-size, 0.0, size);
+	glm::vec3 west = playerPos + glm::vec3(-size, 0.0, 0.0);
+	glm::vec3 northWest = playerPos + glm::vec3(-size, 0.0, -size);
 
 	std::array<glm::vec3, 9> positions = { playerPos, north, northEast, east, southEast, south, southWest, west, northWest };
+
 
 	VertexBufferLayout layout;
 	layout.Push<float>(3); // position
@@ -93,8 +96,8 @@ void Game::GenerateChunks(unsigned int n)
 	for (auto& position : positions) {
 		std::vector<Vertex> chunkData;
 		
-		int xCoord = static_cast<int>(position.x / m_ChunkSize);
-		int zCoord = static_cast<int>(position.z / m_ChunkSize);
+		int xCoord = static_cast<int>(round(position.x / m_ChunkSize));
+		int zCoord = static_cast<int>(round(position.z / m_ChunkSize));
 
 		ChunkCoord coords = { xCoord, zCoord };
 		// check if this chunk has already been generated
@@ -146,10 +149,9 @@ void Game::OnUpdate(float deltaTime)
 	glm::vec3 playerPos = camera.GetPlayerPosition();
 
 	// should do this with based on some length probably
-	ChunkCoord currentChunk = { static_cast<int>(playerPos.x / m_ChunkSize), static_cast<int>(playerPos.z / m_ChunkSize) };
+	ChunkCoord currentChunk = { static_cast<int>(round(playerPos.x / m_ChunkSize)), static_cast<int>(round(playerPos.z / m_ChunkSize)) };
 	if (m_LastChunk != currentChunk) {
-		std::cout << "Generating new chunk\n";
-		GenerateChunks(4);
+		GenerateChunks();
 		m_LastChunk = currentChunk;
 	}
 

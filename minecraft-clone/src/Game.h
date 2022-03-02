@@ -31,7 +31,7 @@ public:
 	void OnRender();
 	static cam::Camera camera;
 private:
-	void GenerateChunks(unsigned int n);
+	void GenerateChunks();
 
 	std::unique_ptr<VertexArray> m_VAO;
 	std::unique_ptr<IndexBuffer> m_IBO;
