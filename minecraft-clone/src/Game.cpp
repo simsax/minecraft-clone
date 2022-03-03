@@ -1,10 +1,11 @@
 #include "Game.h"
 #include <GL/glew.h>
-#include "VertexBufferLayout.hpp"
+#include <math.h>
 #include "Shader.h"
 #include "glm/gtc/matrix_transform.hpp"
 #include <array>
 #include <iostream>
+#include <thread>
 
 cam::Camera Game::camera = glm::vec3(0.0f, 0.0f, 0.0f);
 
@@ -18,6 +19,10 @@ bool operator!=(const ChunkCoord& l, const ChunkCoord& r)
 	return l.x != r.x || l.y != r.y;
 }
 
+int operator-(const ChunkCoord& l, const ChunkCoord& r) {
+	return static_cast<int>(round(sqrt(pow(l.x - r.x, 2) + pow(l.y - r.y, 2))));
+}
+
 std::size_t hash_fn::operator()(const ChunkCoord& coord) const
 {
 	std::size_t h1 = std::hash<int>()(coord.x);
@@ -28,7 +33,8 @@ std::size_t hash_fn::operator()(const ChunkCoord& coord) const
 Game::Game() :
 	m_Proj(glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 300.0f)), // remember to fine tune zFar
 	m_LastChunk({0,0}),
-	m_ChunkSize(16)
+	m_ChunkSize(16),
+	m_ViewDistance(6)
 {
 	// depth testing
 	glEnable(GL_DEPTH_TEST);
@@ -49,76 +55,16 @@ Game::Game() :
 	m_Texture1->Bind(0);
 	m_Shader->SetUniform1i("u_Texture", 0);
 
-	GenerateChunks();
-}
+	m_VertexLayout.Push<float>(3); // position
+	m_VertexLayout.Push<float>(2); // texture coords
 
-void Game::OnRender()
-{
-	glClearColor(173.0f / 255.0f, 223.0f / 255.0f, 230.0f / 255.0f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	//m_Texture1->Bind(); // I need to bind texture and shaders if I use different textures or shaders in my code
-	//m_Shader->Bind();
-
-	glm::mat4 model = glm::mat4(1.0f);
-	glm::mat4 mvp = m_Proj * camera.GetViewMatrix() * model;
-	m_Shader->SetUniformMat4f("u_MVP", mvp);
-
-	m_Renderer.Draw(*m_VAO, *m_IBO, GL_UNSIGNED_INT, *m_Shader);
-}
-
-// then as I move I track the player and when needed I update the chunk hashmap, saving the old ones on the disk.
-
-void Game::GenerateChunks()
-{
-	glm::vec3 playerPos = camera.GetPlayerPosition();
-	int size = static_cast<int>(m_ChunkSize);
-	playerPos = glm::vec3(round(playerPos.x / size) * size, 0.0, round(playerPos.z / size) * size);
-	glm::vec3 north = playerPos + glm::vec3(0.0, 0.0, -size);
-	glm::vec3 northEast = playerPos + glm::vec3(size, 0.0, -size);
-	glm::vec3 east = playerPos + glm::vec3(size, 0.0, 0.0);
-	glm::vec3 southEast = playerPos + glm::vec3(size, 0.0, size);
-	glm::vec3 south = playerPos + glm::vec3(0.0, 0.0, size);
-	glm::vec3 southWest = playerPos + glm::vec3(-size, 0.0, size);
-	glm::vec3 west = playerPos + glm::vec3(-size, 0.0, 0.0);
-	glm::vec3 northWest = playerPos + glm::vec3(-size, 0.0, -size);
-
-	std::array<glm::vec3, 9> positions = { playerPos, north, northEast, east, southEast, south, southWest, west, northWest };
-
-
-	VertexBufferLayout layout;
-	layout.Push<float>(3); // position
-	layout.Push<float>(2); // texture coords
-
-	std::vector<Vertex> buffer;
-	buffer.reserve(4096);
-
-	for (auto& position : positions) {
-		std::vector<Vertex> chunkData;
-		
-		int xCoord = static_cast<int>(round(position.x / m_ChunkSize));
-		int zCoord = static_cast<int>(round(position.z / m_ChunkSize));
-
-		ChunkCoord coords = { xCoord, zCoord };
-		// check if this chunk has already been generated
-		if (m_ChunkMap.find(coords) != m_ChunkMap.end()) {
-			chunkData = m_ChunkMap.find(coords)->second.GetRenderData();
-		}
-		else { // create new chunk and cache it 
-			Chunk chunk(m_ChunkSize, m_ChunkSize, m_ChunkSize, position);
-			chunkData = chunk.GetRenderData();
-			m_ChunkMap.insert({coords, chunk});
-		}
-
-		buffer.insert(buffer.end(), std::make_move_iterator(chunkData.begin()), std::make_move_iterator(chunkData.end()));
-	}
-
-	size_t indexCount = buffer.size() / 4 * 6; // num faces * 6
+	// initialize element buffer
+	unsigned int maxIndexCount = static_cast<unsigned int>(pow(m_ChunkSize, 2) * pow(2 * m_ViewDistance + 1, 2) * 36); // each cube has 6 faces, each face has 6 indexes
 
 	std::vector<unsigned int> indices;
-	indices.reserve(indexCount);
+	indices.reserve(maxIndexCount);
 	unsigned int offset = 0;
-	for (size_t i = 0; i < indexCount; i += 6) {
+	for (size_t i = 0; i < maxIndexCount * 2; i += 6) {
 		indices.push_back(0 + offset);
 		indices.push_back(1 + offset);
 		indices.push_back(2 + offset);
@@ -130,13 +76,69 @@ void Game::GenerateChunks()
 		offset += 4;
 	}
 
+	m_IBO = std::make_unique<IndexBuffer>(indices.size() * sizeof(unsigned int), indices.data());
+
+	GenerateChunks();
+}
+
+void Game::OnRender()
+{
+	glClearColor(173.0f / 255.0f, 223.0f / 255.0f, 230.0f / 255.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	//m_Texture1->Bind(); // I need to bind texture and shaders if I use different textures or shaders in my code
+	//m_Shader->Bind();
+	 
+	glm::mat4 model = glm::mat4(1.0f);
+	glm::mat4 mvp = m_Proj * camera.GetViewMatrix() * model;
+	m_Shader->SetUniformMat4f("u_MVP", mvp);
+
+	m_Renderer.Draw(*m_VAO, *m_IBO, GL_UNSIGNED_INT, *m_Shader);
+}
+
+// then as I move I track the player and when needed I update the chunk hashmap, saving the old ones on the disk.
+
+// valuta l'utilizzo di un dynamic buffer invece di crearne ogni volta uno statico da zero
+
+// pensare a come parallelizzare la generazione dei chunk
+// find out if I can run the rendering or input on a different thread
+
+void Game::GenerateChunks()
+{
+	glm::vec3 playerPos = camera.GetPlayerPosition();
+	int size = static_cast<int>(m_ChunkSize);
+	int playerPosX = static_cast<int>(round(playerPos.x / size));
+	int playerPosZ = static_cast<int>(round(playerPos.z / size));
+
+	std::vector<Vertex> buffer;
+	buffer.reserve(16384);
+
+	for (int i = -m_ViewDistance + playerPosX; i <= m_ViewDistance + playerPosX; i++) {
+		for (int j = -m_ViewDistance + playerPosZ; j <= m_ViewDistance + playerPosZ; j++) {
+			std::vector<Vertex> chunkData;
+
+			ChunkCoord coords = { i, j };
+			// check if this chunk has already been generated
+			if (m_ChunkMap.find(coords) != m_ChunkMap.end()) {
+				chunkData = m_ChunkMap.find(coords)->second.GetRenderData();
+			}
+			else { // create new chunk and cache it 
+				Chunk chunk(m_ChunkSize, m_ChunkSize, m_ChunkSize, glm::vec3(i * size, 0.0, j * size), coords.x, coords.y);
+				chunkData = chunk.GetRenderData();
+				m_ChunkMap.insert({ coords, chunk });
+			}
+
+			buffer.insert(buffer.end(), std::make_move_iterator(chunkData.begin()), std::make_move_iterator(chunkData.end()));
+		}
+	}
+	
+	size_t indexCount = buffer.size() / 4 * 6; // num faces * 6
+
 	m_VBO = std::make_unique<VertexBuffer>();
 	//m_VBO->CreateDynamic(sizeof(Vertex) * MaxVertexCount);
 	m_VBO->CreateStatic(buffer.size() * sizeof(Vertex), buffer.data());
 	m_VAO = std::make_unique<VertexArray>();
-	m_VAO->AddBuffer(*m_VBO, layout);
-
-	m_IBO = std::make_unique<IndexBuffer>(indices.size() * sizeof(unsigned int), indices.data());
+	m_VAO->AddBuffer(*m_VBO, m_VertexLayout);
 	m_IBO->SetCount(indexCount);
 }
 
@@ -146,11 +148,13 @@ Game::~Game()
 
 void Game::OnUpdate(float deltaTime)
 {
+	// update chunks
 	glm::vec3 playerPos = camera.GetPlayerPosition();
-
 	// should do this with based on some length probably
 	ChunkCoord currentChunk = { static_cast<int>(round(playerPos.x / m_ChunkSize)), static_cast<int>(round(playerPos.z / m_ChunkSize)) };
-	if (m_LastChunk != currentChunk) {
+	if (m_LastChunk - currentChunk >= m_ViewDistance / 3) {
+		//std::thread render(&Game::GenerateChunks, this);
+		//render.detach();
 		GenerateChunks();
 		m_LastChunk = currentChunk;
 	}

@@ -3,6 +3,7 @@
 #include "Renderer.h"
 #include "VertexArray.h"
 #include "VertexBuffer.h"
+#include "VertexBufferLayout.hpp"
 #include "IndexBuffer.h"
 #include "Texture.h"
 #include "Shader.h"
@@ -38,11 +39,14 @@ private:
 	std::unique_ptr<VertexBuffer> m_VBO;
 	std::unique_ptr<Shader> m_Shader;
 	std::unique_ptr<Texture> m_Texture1;
+	
 	glm::mat4 m_Proj;
 	Renderer m_Renderer;
 	std::unordered_map<ChunkCoord, Chunk, hash_fn> m_ChunkMap;
 	ChunkCoord m_LastChunk;
 	unsigned int m_ChunkSize; // refactor later
+	VertexBufferLayout m_VertexLayout;
+	int m_ViewDistance;
 };
 
 //3d noise, terrain generation and octaves can probably be calculated in different threads

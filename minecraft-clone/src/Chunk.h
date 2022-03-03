@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <array>
 #include <vector>
+#include "Matrix.hpp"
 
 // in the future could be better to have a block class with those as types and some other properties
 enum class Block : unsigned char {
@@ -27,7 +28,7 @@ struct Vertex {
 class Chunk
 {
 public:
-	Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, const glm::vec3& position);
+	Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, const glm::vec3& position,int xCoord, int zCoord);
 	~Chunk();
 
 	// contains the coordinates of each face in the texture atlas
@@ -35,6 +36,7 @@ public:
 	std::vector<Vertex> GetRenderData() const;
 private:
 	void CalculateVBOData();
+	void SinInit(int xCoord, int zCoord);
 	void CreateUQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<unsigned int, 2>& textureCoords);
 	void CreateDQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<unsigned int, 2>& textureCoords);
 	void CreateFQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<unsigned int, 2>& textureCoords);
@@ -43,12 +45,12 @@ private:
 	void CreateLQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<unsigned int, 2>& textureCoords);
 	
 
-	std::vector<std::vector<std::vector<Block>>> m_Chunk;
 	static const float s_TextureOffset; // depends on the texture atlas
 	unsigned int m_XLength;
 	unsigned int m_YLength;
 	unsigned int m_ZLength;
 	glm::vec3 m_Position;
+	Matrix<Block> m_Chunk;
 	std::vector<Vertex> m_RenderData;
 };
 

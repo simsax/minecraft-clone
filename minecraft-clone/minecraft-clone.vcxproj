@@ -172,6 +172,7 @@
     <ClCompile Include="src\extern\imgui\imgui_widgets.cpp" />
     <ClCompile Include="src\IndexBuffer.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\Matrix.cpp" />
     <ClCompile Include="src\Renderer.cpp" />
     <ClCompile Include="src\Shader.cpp" />
     <ClCompile Include="src\extern\stb_image\stb_image.cpp" />
@@ -321,6 +322,7 @@
     <None Include="src\extern\glm\gtx\wrap.inl" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Matrix.hpp" />
     <ClInclude Include="src\Chunk.h" />
     <ClInclude Include="src\Game.h" />
     <ClInclude Include="src\Camera.h" />

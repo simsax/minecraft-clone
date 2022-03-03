@@ -1,5 +1,4 @@
 #include "Chunk.h"
-#include "glm/glm.hpp"
 
 const float Chunk::s_TextureOffset = 0.0625f; // texture_size/atlas_size
 
@@ -19,10 +18,38 @@ std::unordered_map<Block, std::array<unsigned int, 6>> Chunk::s_TextureMap =
 };
 
 // also try to flatten the array
-Chunk::Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, const glm::vec3& position) : m_XLength(xLength), m_YLength(yLength), m_ZLength(zLength), m_Position(position)
+Chunk::Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, const glm::vec3& position, int xCoord, int zCoord) : 
+	m_XLength(xLength), m_YLength(yLength), m_ZLength(zLength), m_Position(position), m_Chunk(Matrix<Block>(xLength, yLength, zLength))
 {
-	m_Chunk = std::vector<std::vector<std::vector<Block>>>(xLength, std::vector<std::vector<Block>>(yLength, std::vector<Block>(zLength, Block::STONE)));
+	
+	m_Chunk.fill(Block::STONE);
+
+	for (unsigned int i = 0; i < m_XLength; i++) {
+		for (unsigned int j = 0; j < m_ZLength; j++) {
+			m_Chunk(i,m_YLength - 1,j) = Block::EMPTY;
+		}
+	}
+	m_Chunk(0, m_YLength - 1, 0) = Block::GRASS;
+	//SinInit(xCoord, zCoord);
 	CalculateVBOData();
+}
+
+// even this can be parallelized probably
+
+void Chunk::SinInit(int xCoord, int zCoord) {
+	for (unsigned int i = 0; i < m_XLength; i++) {
+		int h = round(m_YLength + sin(i + xCoord) * 5);
+		for (unsigned int k = 0; k < m_ZLength; k++) {
+			for (unsigned int j = 0; j < m_YLength; j++) {
+				if (j < h) {
+					m_Chunk(i, j, k) = Block::STONE;
+				}
+				else {
+					m_Chunk(i, j, k) = Block::EMPTY;
+				}
+			}
+		}
+	}
 }
 
 Chunk::~Chunk()
@@ -39,28 +66,30 @@ void Chunk::CalculateVBOData() {
 	int zCoord = static_cast<int>(m_Position.z - m_ZLength / 2);
 	glm::vec3 center(xCoord, yCoord, zCoord);
 
+	// there must be a better way to write this but I have no time for now
 	for (unsigned int i = 0; i < m_XLength; i++) {
-		for (unsigned int j = 0; j < m_YLength; j++) {
-			for (unsigned int k = 0; k < m_ZLength; k++) {
-				std::array<unsigned int, 6> textureCoords = s_TextureMap[m_Chunk[i][j][k]];
-				// probably want to avoid first condition with multiple chunks
-				if (j == 0 || j > 0 && m_Chunk[i][j - 1][k] == Block::EMPTY) { // D
-					CreateDQuad(vertices, center + glm::vec3(i, j, k), { textureCoords[4], textureCoords[5] });
-				}
-				if (j == m_YLength - 1 || j < m_YLength - 1 && m_Chunk[i][j + 1][k] == Block::EMPTY) { // U	
-					CreateUQuad(vertices, center + glm::vec3(i, j, k), { textureCoords[0], textureCoords[1] });
-				}
-				if (/*k == 0 ||*/ k > 0 && m_Chunk[i][j][k - 1] == Block::EMPTY) { // B
-					CreateBQuad(vertices, center + glm::vec3(i, j, k), { textureCoords[2], textureCoords[3] });
-				}
-				if (/*k == m_ZLength - 1 ||*/ k < m_ZLength - 1 && m_Chunk[i][j][k + 1] == Block::EMPTY) { // F
-					CreateFQuad(vertices, center + glm::vec3(i, j, k), { textureCoords[2], textureCoords[3] });
-				}
-				if (/*i == 0 ||*/ i > 0 && m_Chunk[i - 1][j][k] == Block::EMPTY) { // L
-					CreateLQuad(vertices, center + glm::vec3(i, j, k), { textureCoords[2], textureCoords[3] });
-				}
-				if (/*i == m_XLength - 1 ||*/ i < m_XLength - 1 && m_Chunk[i + 1][j][k] == Block::EMPTY) { // R
-					CreateRQuad(vertices, center + glm::vec3(i, j, k), { textureCoords[2], textureCoords[3] });
+		for (unsigned int k = 0; k < m_ZLength; k++) {
+			for (unsigned int j = 0; j < m_YLength; j++) {
+				if (m_Chunk(i, j, k) != Block::EMPTY) {
+					std::array<unsigned int, 6> textureCoords = s_TextureMap[m_Chunk(i, j, k)];
+					if (j == 0 || j > 0 && m_Chunk(i, j - 1, k) == Block::EMPTY) { // D
+						CreateDQuad(vertices, center + glm::vec3(i, j, k), { textureCoords[4], textureCoords[5] });
+					}
+					if (j == m_YLength - 1 || j < m_YLength - 1 && m_Chunk(i, j + 1, k) == Block::EMPTY) { // U	
+						CreateUQuad(vertices, center + glm::vec3(i, j, k), { textureCoords[0], textureCoords[1] });
+					}
+					if (k == 0 || k > 0 && m_Chunk(i, j, k - 1) == Block::EMPTY) { // B
+						CreateBQuad(vertices, center + glm::vec3(i, j, k), { textureCoords[2], textureCoords[3] });
+					}
+					if (k == m_ZLength - 1 || k < m_ZLength - 1 && m_Chunk(i, j, k + 1) == Block::EMPTY) { // F
+						CreateFQuad(vertices, center + glm::vec3(i, j, k), { textureCoords[2], textureCoords[3] });
+					}
+					if (i == 0 || i > 0 && m_Chunk(i - 1, j, k) == Block::EMPTY) { // L
+						CreateLQuad(vertices, center + glm::vec3(i, j, k), { textureCoords[2], textureCoords[3] });
+					}
+					if (i == m_XLength - 1 || i < m_XLength - 1 && m_Chunk(i + 1, j, k) == Block::EMPTY) { // R
+						CreateRQuad(vertices, center + glm::vec3(i, j, k), { textureCoords[2], textureCoords[3] });
+					}
 				}
 			}
 		}
