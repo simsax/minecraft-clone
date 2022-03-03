@@ -54,7 +54,7 @@ private:
 	static bool CheckWestChunk(Chunk* chunk, unsigned int z, unsigned int y);
 	static bool CheckEastChunk(Chunk* chunk, unsigned int z, unsigned int y);
 
-	void SinInit(int xCoord, int zCoord);
+	void SinInit();
 	void CreateUQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<unsigned int, 2>& textureCoords);
 	void CreateDQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<unsigned int, 2>& textureCoords);
 	void CreateFQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<unsigned int, 2>& textureCoords);

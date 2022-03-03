@@ -104,7 +104,7 @@ void Game::GenerateChunks()
 			// check if this chunk hasn't already been generated
 			if (Chunk::s_ChunkMap.find(coords) == Chunk::s_ChunkMap.end()) {
 				// create new chunk and cache it 
-				Chunk chunk(m_ChunkSize, m_ChunkSize, m_ChunkSize, glm::vec3(i * size, 0.0, j * size), coords);
+				Chunk chunk(m_ChunkSize, m_ChunkSize*4, m_ChunkSize, glm::vec3(i * size, 0.0, j * size), coords);
 				Chunk::s_ChunkMap.insert({ coords, std::move(chunk) });
 			}
 			chunksToRender.push_back(&Chunk::s_ChunkMap.find(coords)->second);

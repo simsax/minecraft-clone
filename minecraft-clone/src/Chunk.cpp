@@ -46,26 +46,28 @@ Chunk::Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, c
 	m_XLength(xLength), m_YLength(yLength), m_ZLength(zLength), m_Position(position), m_Chunk(Matrix<Block>(xLength, yLength, zLength)), m_WorldCoords(worldCoords)
 {
 	
-	m_Chunk.fill(Block::STONE);
+	/*m_Chunk.fill(Block::STONE);
 	for (unsigned int i = 0; i < m_XLength; i++) {
 		for (unsigned int j = 0; j < m_ZLength; j++) {
 			m_Chunk(i,m_YLength - 1,j) = Block::EMPTY;
 		}
 	}
-	m_Chunk(0, m_YLength - 1, 0) = Block::GRASS;
-	//SinInit(xCoord, zCoord);
-	//GenerateMesh();
+	m_Chunk(0, m_YLength - 1, 0) = Block::GRASS;*/
+	SinInit();
 }
 
 // even this can be parallelized probably
 
-void Chunk::SinInit(int xCoord, int zCoord) {
+void Chunk::SinInit() {
 	for (unsigned int i = 0; i < m_XLength; i++) {
-		unsigned int h = static_cast<unsigned int>(round(m_YLength + sin(i + xCoord) * 5));
+		unsigned int h = static_cast<unsigned int>(round(m_YLength + sin(i + m_WorldCoords.x) * 5));
 		for (unsigned int k = 0; k < m_ZLength; k++) {
 			for (unsigned int j = 0; j < m_YLength; j++) {
 				if (j < h) {
-					m_Chunk(i, j, k) = Block::STONE;
+					if (j == h - 1)
+						m_Chunk(i, j, k) = Block::GRASS;
+					else
+						m_Chunk(i, j, k) = Block::STONE;
 				}
 				else {
 					m_Chunk(i, j, k) = Block::EMPTY;
@@ -174,7 +176,7 @@ void Chunk::GenerateMesh() {
 	m_RenderData = vertices;
 }
 
-// there must be a more elegant way of writing this
+
 std::vector<Vertex> Chunk::GetRenderData() const
 {
 	return m_RenderData;

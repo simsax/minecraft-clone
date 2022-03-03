@@ -6,6 +6,7 @@ public:
 	Matrix(unsigned int xSize, unsigned int ySize, unsigned int zSize);
 	~Matrix();
 	Matrix(const Matrix& other);
+	Matrix(Matrix&& other);
 	Matrix& operator=(Matrix other);
 	void fill(const T& data);
 
@@ -45,9 +46,16 @@ inline Matrix<T>::Matrix(const Matrix& other)
 {
 	this->m_xSize = other.m_xSize;
 	this->m_ySize = other.m_ySize;
-	this->m_zSize = other.m_ySize;
+	this->m_zSize = other.m_zSize;
 	this->m_Data = new T[m_xSize * m_ySize * m_zSize];
 	memcpy(this->m_Data, other.m_Data, m_xSize * m_ySize * m_zSize);
+}
+
+template<typename T>
+inline Matrix<T>::Matrix(Matrix&& other) :
+	m_xSize(0), m_ySize(0), m_zSize(0), m_Data(nullptr)
+{
+	swap(*this, other);
 }
 
 template<typename T>
