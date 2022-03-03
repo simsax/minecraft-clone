@@ -9,27 +9,6 @@
 
 cam::Camera Game::camera = glm::vec3(0.0f, 0.0f, 0.0f);
 
-bool operator==(const ChunkCoord& l, const ChunkCoord& r)
-{
-	return l.x == r.x && l.y == r.y;
-}
-
-bool operator!=(const ChunkCoord& l, const ChunkCoord& r)
-{
-	return l.x != r.x || l.y != r.y;
-}
-
-int operator-(const ChunkCoord& l, const ChunkCoord& r) {
-	return static_cast<int>(round(sqrt(pow(l.x - r.x, 2) + pow(l.y - r.y, 2))));
-}
-
-std::size_t hash_fn::operator()(const ChunkCoord& coord) const
-{
-	std::size_t h1 = std::hash<int>()(coord.x);
-	std::size_t h2 = std::hash<int>()(coord.y);
-	return h1 ^ h2;
-}
-
 Game::Game() :
 	m_Proj(glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 300.0f)), // remember to fine tune zFar
 	m_LastChunk({0,0}),
@@ -113,23 +92,32 @@ void Game::GenerateChunks()
 	std::vector<Vertex> buffer;
 	buffer.reserve(16384);
 
+	std::vector<Chunk*> chunksToRender;
+	chunksToRender.reserve(static_cast<const unsigned int>(pow(m_ViewDistance * 2 + 1, 2)));
+
+	// throw async for load and render
+
+	// load chunks
 	for (int i = -m_ViewDistance + playerPosX; i <= m_ViewDistance + playerPosX; i++) {
 		for (int j = -m_ViewDistance + playerPosZ; j <= m_ViewDistance + playerPosZ; j++) {
-			std::vector<Vertex> chunkData;
-
 			ChunkCoord coords = { i, j };
-			// check if this chunk has already been generated
-			if (m_ChunkMap.find(coords) != m_ChunkMap.end()) {
-				chunkData = m_ChunkMap.find(coords)->second.GetRenderData();
+			// check if this chunk hasn't already been generated
+			if (Chunk::s_ChunkMap.find(coords) == Chunk::s_ChunkMap.end()) {
+				// create new chunk and cache it 
+				Chunk chunk(m_ChunkSize, m_ChunkSize, m_ChunkSize, glm::vec3(i * size, 0.0, j * size), coords);
+				Chunk::s_ChunkMap.insert({ coords, std::move(chunk) });
 			}
-			else { // create new chunk and cache it 
-				Chunk chunk(m_ChunkSize, m_ChunkSize, m_ChunkSize, glm::vec3(i * size, 0.0, j * size), coords.x, coords.y);
-				chunkData = chunk.GetRenderData();
-				m_ChunkMap.insert({ coords, chunk });
-			}
+			chunksToRender.push_back(&Chunk::s_ChunkMap.find(coords)->second);
 
-			buffer.insert(buffer.end(), std::make_move_iterator(chunkData.begin()), std::make_move_iterator(chunkData.end()));
 		}
+	}
+
+	// render chunks
+	for (Chunk* chunk : chunksToRender) {
+		std::vector<Vertex> chunkData;
+		chunk->GenerateMesh();
+		chunkData = chunk->GetRenderData();
+		buffer.insert(buffer.end(), std::make_move_iterator(chunkData.begin()), std::make_move_iterator(chunkData.end()));
 	}
 	
 	size_t indexCount = buffer.size() / 4 * 6; // num faces * 6

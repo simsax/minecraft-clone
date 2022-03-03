@@ -12,17 +12,6 @@
 #include "Camera.h"
 #include "Chunk.h"
 
-struct ChunkCoord {
-	int x;
-	int y;
-};
-
-struct hash_fn {
-	std::size_t operator()(const ChunkCoord& coord) const;
-};
-
-bool operator==(const ChunkCoord& l, const ChunkCoord& r);
-
 class Game
 {
 public:
@@ -42,7 +31,6 @@ private:
 	
 	glm::mat4 m_Proj;
 	Renderer m_Renderer;
-	std::unordered_map<ChunkCoord, Chunk, hash_fn> m_ChunkMap;
 	ChunkCoord m_LastChunk;
 	unsigned int m_ChunkSize; // refactor later
 	VertexBufferLayout m_VertexLayout;
