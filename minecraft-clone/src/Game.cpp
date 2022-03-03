@@ -10,7 +10,7 @@
 cam::Camera Game::camera = glm::vec3(0.0f, 0.0f, 0.0f);
 
 Game::Game() :
-	m_Proj(glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 300.0f)), // remember to fine tune zFar
+	m_Proj(glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 300.0f)),
 	m_LastChunk({0,0}),
 	m_ChunkSize(16),
 	m_ViewDistance(6)
@@ -75,13 +75,6 @@ void Game::OnRender()
 	m_Renderer.Draw(*m_VAO, *m_IBO, GL_UNSIGNED_INT, *m_Shader);
 }
 
-// then as I move I track the player and when needed I update the chunk hashmap, saving the old ones on the disk.
-
-// valuta l'utilizzo di un dynamic buffer invece di crearne ogni volta uno statico da zero
-
-// pensare a come parallelizzare la generazione dei chunk
-// find out if I can run the rendering or input on a different thread
-
 void Game::GenerateChunks()
 {
 	glm::vec3 playerPos = camera.GetPlayerPosition();
@@ -94,8 +87,6 @@ void Game::GenerateChunks()
 
 	std::vector<Chunk*> chunksToRender;
 	chunksToRender.reserve(static_cast<const unsigned int>(pow(m_ViewDistance * 2 + 1, 2)));
-
-	// throw async for load and render
 
 	// load chunks
 	for (int i = -m_ViewDistance + playerPosX; i <= m_ViewDistance + playerPosX; i++) {
@@ -111,13 +102,13 @@ void Game::GenerateChunks()
 
 		}
 	}
-
+	
 	// render chunks
 	for (Chunk* chunk : chunksToRender) {
 		std::vector<Vertex> chunkData;
-		chunk->GenerateMesh();
+		chunk->GenerateMesh(); // BAD
 		chunkData = chunk->GetRenderData();
-		buffer.insert(buffer.end(), std::make_move_iterator(chunkData.begin()), std::make_move_iterator(chunkData.end()));
+		buffer.insert(buffer.end(), std::make_move_iterator(chunkData.begin()), std::make_move_iterator(chunkData.end())); // BAD
 	}
 	
 	size_t indexCount = buffer.size() / 4 * 6; // num faces * 6
@@ -138,7 +129,7 @@ void Game::OnUpdate(float deltaTime)
 {
 	// update chunks
 	glm::vec3 playerPos = camera.GetPlayerPosition();
-	// should do this with based on some length probably
+	
 	ChunkCoord currentChunk = { static_cast<int>(round(playerPos.x / m_ChunkSize)), static_cast<int>(round(playerPos.z / m_ChunkSize)) };
 	if (m_LastChunk - currentChunk >= m_ViewDistance / 3) {
 		//std::thread render(&Game::GenerateChunks, this);

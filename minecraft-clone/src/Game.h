@@ -36,5 +36,3 @@ private:
 	VertexBufferLayout m_VertexLayout;
 	int m_ViewDistance;
 };
-
-//3d noise, terrain generation and octaves can probably be calculated in different threads

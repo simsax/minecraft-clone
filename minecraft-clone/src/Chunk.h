@@ -5,7 +5,6 @@
 #include <vector>
 #include "Matrix.hpp"
 
-// in the future could be better to have a block class with those as types and some other properties
 enum class Block : unsigned char {
 	EMPTY,
 	GRASS,
@@ -71,7 +70,3 @@ private:
 	std::vector<Vertex> m_RenderData;
 	ChunkCoord m_WorldCoords;
 };
-
-// I need a 3d array of blocks, where I track the position of each block and a type (each block type contains different texture coords)
-
-// consider octrees

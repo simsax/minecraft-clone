@@ -56,15 +56,16 @@ Chunk::Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, c
 	SinInit();
 }
 
-// even this can be parallelized probably
-
 void Chunk::SinInit() {
+	float freq = 0.5f;
+	float ampl = 5.0f;
+
 	for (unsigned int i = 0; i < m_XLength; i++) {
-		unsigned int h = static_cast<unsigned int>(round(m_YLength + sin(i + m_WorldCoords.x) * 5));
+		unsigned int h = static_cast<unsigned int>(round(m_YLength + sin((i + m_WorldCoords.x) * freq) * ampl));
 		for (unsigned int k = 0; k < m_ZLength; k++) {
 			for (unsigned int j = 0; j < m_YLength; j++) {
 				if (j < h) {
-					if (j == h - 1)
+					if (j == h - 1 || j == m_YLength - 1)
 						m_Chunk(i, j, k) = Block::GRASS;
 					else
 						m_Chunk(i, j, k) = Block::STONE;
