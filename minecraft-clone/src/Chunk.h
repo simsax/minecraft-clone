@@ -42,7 +42,7 @@ struct Vertex {
 class Chunk
 {
 public:
-	Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, const glm::vec3& position, ChunkCoord worldCoords);
+	Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, glm::vec3 position, ChunkCoord worldCoords);
 
 	// contains the coordinates of each face in the texture atlas
 	//static std::unordered_map<Block, std::array<unsigned int, 6>> s_TextureMap;

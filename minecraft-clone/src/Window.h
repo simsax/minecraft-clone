@@ -9,7 +9,7 @@ namespace glfw {
 	class Window
 	{
 	public:
-		Window(int width, int height, const std::string& name);
+		Window(int width, int height, std::string name);
 		~Window();
 
 		void WindowLoop(Game& game);

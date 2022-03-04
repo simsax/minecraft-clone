@@ -57,8 +57,8 @@ std::unordered_map<Block, std::array<float, 24>> Chunk::s_AltTextureMap =
 };
 
 
-Chunk::Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, const glm::vec3& position, ChunkCoord worldCoords) : 
-	m_XLength(xLength), m_YLength(yLength), m_ZLength(zLength), m_Position(position), m_Chunk(Matrix<Block>(xLength, yLength, zLength)), m_WorldCoords(worldCoords)
+Chunk::Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, glm::vec3 position, ChunkCoord worldCoords) : 
+	m_XLength(xLength), m_YLength(yLength), m_ZLength(zLength), m_Position(std::move(position)), m_Chunk(Matrix<Block>(xLength, yLength, zLength)), m_WorldCoords(worldCoords)
 {
 	
 	/*m_Chunk.fill(Block::STONE);

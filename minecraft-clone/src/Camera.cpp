@@ -4,8 +4,8 @@
 
 namespace cam {
 
-	Camera::Camera(const glm::vec3& position) :
-	m_CameraPos(position),
+	Camera::Camera(glm::vec3 position) :
+	m_CameraPos(std::move(position)),
 	m_CameraFront(glm::vec3(0.0f, 0.0f, -1.0f)),
 	m_CameraUp(glm::vec3(0.0f, 1.0f, 0.0f)),
 	yaw(-90.0f), // point towards negative z-axis

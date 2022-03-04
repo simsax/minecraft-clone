@@ -11,7 +11,7 @@ namespace glfw {
 	float Window::mouseSensitivity = 0.1f;
 	bool Window::wireframe = false;
 
-	Window::Window(int width, int height, const std::string& name) : m_Width(width), m_Height(height), m_Name(name)
+	Window::Window(int width, int height, std::string name) : m_Width(width), m_Height(height), m_Name(std::move(name))
 	{
 		// initialize GLFW
 		if (!glfwInit()) {
@@ -26,7 +26,7 @@ namespace glfw {
 		glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
 #endif		
 
-		m_Window = glfwCreateWindow(width, height, name.c_str(), NULL, NULL);
+		m_Window = glfwCreateWindow(width, height, m_Name.c_str(), NULL, NULL);
 		if (!m_Window) {
 			throw std::runtime_error("Failed to open GLFW window");
 		}

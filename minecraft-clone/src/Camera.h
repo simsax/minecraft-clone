@@ -19,7 +19,7 @@ namespace cam {
 	class Camera
 	{
 	public:
-		Camera(const glm::vec3& position = glm::vec3(0.0f, 0.0f, 0.0f));
+		Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f));
 
 		void ProcessKeyboard(const std::array<Key, static_cast<int>(cam::Key::Key_MAX) + 1>& keyPressed, float deltaTime);
 		void ProcessMouse(float xoffset, float yoffset);
@@ -27,8 +27,8 @@ namespace cam {
 		glm::vec3 GetPlayerPosition() const;
 	private:
 		glm::vec3 m_CameraPos;
-		glm::vec3 m_CameraUp;
 		glm::vec3 m_CameraFront;
+		glm::vec3 m_CameraUp;
 		float yaw;
 		float pitch;
 
