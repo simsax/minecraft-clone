@@ -8,6 +8,7 @@
 #include "Texture.h"
 #include "Shader.h"
 #include <memory>
+#include <future>
 #include <glm/glm.hpp>
 #include "Camera.h"
 #include "Chunk.h"
@@ -35,4 +36,7 @@ private:
 	unsigned int m_ChunkSize; // refactor later
 	VertexBufferLayout m_VertexLayout;
 	int m_ViewDistance;
+	bool m_LoadingChunks;
+	bool m_GameStart;
+	std::future<std::vector<Vertex>> m_BufferFut;
 };

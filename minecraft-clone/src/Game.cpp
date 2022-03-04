@@ -5,7 +5,9 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include <array>
 #include <iostream>
-#include <thread>
+#include <chrono>
+
+using namespace std::chrono_literals;
 
 cam::Camera Game::camera = glm::vec3(0.0f, 0.0f, 0.0f);
 
@@ -13,7 +15,9 @@ Game::Game() :
 	m_Proj(glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 300.0f)),
 	m_LastChunk({0,0}),
 	m_ChunkSize(16),
-	m_ViewDistance(6)
+	m_ViewDistance(6),
+	m_LoadingChunks(false),
+	m_GameStart(true)
 {
 	// depth testing
 	glEnable(GL_DEPTH_TEST);
@@ -77,45 +81,60 @@ void Game::OnRender()
 
 void Game::GenerateChunks()
 {
-	glm::vec3 playerPos = camera.GetPlayerPosition();
-	int size = static_cast<int>(m_ChunkSize);
-	int playerPosX = static_cast<int>(round(playerPos.x / size));
-	int playerPosZ = static_cast<int>(round(playerPos.z / size));
+	auto meshFun = [this]() {
+		glm::vec3 playerPos = camera.GetPlayerPosition();
+		int size = static_cast<int>(m_ChunkSize);
+		int playerPosX = static_cast<int>(round(playerPos.x / size));
+		int playerPosZ = static_cast<int>(round(playerPos.z / size));
 
-	std::vector<Vertex> buffer;
-	buffer.reserve(131072); // 16*16*64*8 is the max num of vertices I can have for a mesh
+		std::vector<Vertex> buffer;
+		buffer.reserve(131072); // 16*16*64*8 is the max num of vertices I can have for a mesh
 
-	// se uso una m_ViewDistance fissa posso sostituire un array qui
-	std::vector<Chunk*> chunksToRender;
-	chunksToRender.reserve(static_cast<const unsigned int>(pow(m_ViewDistance * 2 + 1, 2)));
+		std::vector<Chunk*> chunksToRender;
+		chunksToRender.reserve(static_cast<const unsigned int>(pow(m_ViewDistance * 2 + 1, 2)));
 
-	// load chunks
-	for (int i = -m_ViewDistance + playerPosX; i <= m_ViewDistance + playerPosX; i++) {
-		for (int j = -m_ViewDistance + playerPosZ; j <= m_ViewDistance + playerPosZ; j++) {
-			ChunkCoord coords = { i, j };
-			// check if this chunk hasn't already been generated
-			if (Chunk::s_ChunkMap.find(coords) == Chunk::s_ChunkMap.end()) {
-				// create new chunk and cache it 
-				Chunk chunk(m_ChunkSize, m_ChunkSize*4, m_ChunkSize, glm::vec3(i * size, 0.0, j * size), coords);
-				Chunk::s_ChunkMap.insert({ coords, std::move(chunk) });
+		// load chunks
+		for (int i = -m_ViewDistance + playerPosX; i <= m_ViewDistance + playerPosX; i++) {
+			for (int j = -m_ViewDistance + playerPosZ; j <= m_ViewDistance + playerPosZ; j++) {
+				ChunkCoord coords = { i, j };
+				// check if this chunk hasn't already been generated
+				if (Chunk::s_ChunkMap.find(coords) == Chunk::s_ChunkMap.end()) {
+					// create new chunk and cache it
+					Chunk chunk(m_ChunkSize, m_ChunkSize * 4, m_ChunkSize, glm::vec3(i * size, 0.0, j * size), coords);
+					Chunk::s_ChunkMap.insert({ coords, std::move(chunk) });
+				}
+				chunksToRender.push_back(&Chunk::s_ChunkMap.find(coords)->second);
 			}
-			chunksToRender.push_back(&Chunk::s_ChunkMap.find(coords)->second);
 		}
-	}
-	
-	// render chunks
-	for (Chunk* chunk : chunksToRender) {
-		chunk->GenerateMesh(buffer);
-	}
-	
-	size_t indexCount = buffer.size() / 4 * 6; // num faces * 6
 
-	m_VBO = std::make_unique<VertexBuffer>();
-	//m_VBO->CreateDynamic(sizeof(Vertex) * MaxVertexCount);
-	m_VBO->CreateStatic(buffer.size() * sizeof(Vertex), buffer.data());
-	m_VAO = std::make_unique<VertexArray>();
-	m_VAO->AddBuffer(*m_VBO, m_VertexLayout);
-	m_IBO->SetCount(indexCount);
+		// render chunks
+		for (Chunk* chunk : chunksToRender) {
+			chunk->GenerateMesh(buffer);
+		}
+
+		return buffer;
+	};
+
+	if (!m_LoadingChunks) {
+		m_BufferFut = std::async(std::launch::async, meshFun);
+		m_LoadingChunks = true;
+	}
+
+	if (m_GameStart || m_BufferFut.wait_for(1ms) == std::future_status::ready) {
+		if (m_GameStart)
+			m_GameStart = false;
+		std::vector<Vertex> buffer = m_BufferFut.get();
+
+		size_t indexCount = buffer.size() / 4 * 6; // num faces * 6
+
+		m_VBO = std::make_unique<VertexBuffer>();
+		//m_VBO->CreateDynamic(sizeof(Vertex) * MaxVertexCount);
+		m_VBO->CreateStatic(buffer.size() * sizeof(Vertex), buffer.data());
+		m_VAO = std::make_unique<VertexArray>();
+		m_VAO->AddBuffer(*m_VBO, m_VertexLayout);
+		m_IBO->SetCount(indexCount);
+		m_LoadingChunks = false;
+	}
 }
 
 Game::~Game()
@@ -124,16 +143,13 @@ Game::~Game()
 
 void Game::OnUpdate(float deltaTime)
 {
-	// update chunks
 	glm::vec3 playerPos = camera.GetPlayerPosition();
-	
+
+	// update chunks
 	ChunkCoord currentChunk = { static_cast<int>(round(playerPos.x / m_ChunkSize)), static_cast<int>(round(playerPos.z / m_ChunkSize)) };
 	if (m_LastChunk - currentChunk >= m_ViewDistance / 3) {
-		//std::thread render(&Game::GenerateChunks, this);
-		//render.detach();
 		GenerateChunks();
 		m_LastChunk = currentChunk;
 	}
-
 }
 
