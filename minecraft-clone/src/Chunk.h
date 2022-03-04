@@ -33,6 +33,8 @@ bool operator!=(const ChunkCoord& l, const ChunkCoord& r);
 int operator-(const ChunkCoord& l, const ChunkCoord& r);
 
 struct Vertex {
+	Vertex(glm::vec3 position, glm::vec2 texCoords) : Position(std::move(position)), TexCoords(std::move(texCoords)) {}
+
 	glm::vec3 Position;
 	glm::vec2 TexCoords;
 };
@@ -46,8 +48,7 @@ public:
 	//static std::unordered_map<Block, std::array<unsigned int, 6>> s_TextureMap;
 	static std::unordered_map<Block, std::array<float, 24>> s_AltTextureMap;
 	static std::unordered_map<ChunkCoord, Chunk, hash_fn> s_ChunkMap;
-	std::vector<Vertex> GetRenderData() const;
-	void GenerateMesh();
+	void GenerateMesh(std::vector<Vertex>& buffer);
 private:
 	static bool CheckNorthChunk(Chunk* chunk, unsigned int x, unsigned int y);
 	static bool CheckSouthChunk(Chunk* chunk, unsigned int x, unsigned int y);
@@ -68,6 +69,5 @@ private:
 	unsigned int m_ZLength;
 	glm::vec3 m_Position;
 	Matrix<Block> m_Chunk;
-	std::vector<Vertex> m_RenderData;
 	ChunkCoord m_WorldCoords;
 };

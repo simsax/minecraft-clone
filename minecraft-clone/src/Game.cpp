@@ -83,8 +83,9 @@ void Game::GenerateChunks()
 	int playerPosZ = static_cast<int>(round(playerPos.z / size));
 
 	std::vector<Vertex> buffer;
-	buffer.reserve(16384);
+	buffer.reserve(131072); // 16*16*64*8 is the max num of vertices I can have for a mesh
 
+	// se uso una m_ViewDistance fissa posso sostituire un array qui
 	std::vector<Chunk*> chunksToRender;
 	chunksToRender.reserve(static_cast<const unsigned int>(pow(m_ViewDistance * 2 + 1, 2)));
 
@@ -99,16 +100,12 @@ void Game::GenerateChunks()
 				Chunk::s_ChunkMap.insert({ coords, std::move(chunk) });
 			}
 			chunksToRender.push_back(&Chunk::s_ChunkMap.find(coords)->second);
-
 		}
 	}
 	
 	// render chunks
 	for (Chunk* chunk : chunksToRender) {
-		std::vector<Vertex> chunkData;
-		chunk->GenerateMesh(); // BAD
-		chunkData = chunk->GetRenderData();
-		buffer.insert(buffer.end(), std::make_move_iterator(chunkData.begin()), std::make_move_iterator(chunkData.end())); // BAD
+		chunk->GenerateMesh(buffer);
 	}
 	
 	size_t indexCount = buffer.size() / 4 * 6; // num faces * 6
