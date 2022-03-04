@@ -25,7 +25,7 @@ std::size_t hash_fn::operator()(const ChunkCoord& coord) const
 	std::size_t h2 = std::hash<int>()(coord.z);
 	return h1 ^ h2;
 }
-
+/*
 // coords are top.x,top.y,side.x,side.y, bottom.x, bottom.y (for most block it's redundant, but for now it makes my life easier. I will fix it later)
 std::unordered_map<Block, std::array<unsigned int, 6>> Chunk::s_TextureMap =
 {
@@ -39,6 +39,21 @@ std::unordered_map<Block, std::array<unsigned int, 6>> Chunk::s_TextureMap =
 	{ Block::STEEL,		{ 1, 13, 1, 13, 1, 13 } },
 	{ Block::LEAVES,	{ 11, 1, 11, 1, 11, 1 } },
 	{ Block::WOOD,		{ 5, 14, 4, 14, 5, 14 } }
+};
+*/
+// values are precomputed for speed
+std::unordered_map<Block, std::array<float, 24>> Chunk::s_AltTextureMap =
+{
+	{ Block::GRASS,		{0.75, 0.1875, 0.8125, 0.1875, 0.8125, 0.25, 0.75, 0.25, 0.1875, 0.9375, 0.25, 0.9375, 0.25, 1.0, 0.1875, 1.0, 0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0 } },
+	{ Block::DIRT,		{0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0, 0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0, 0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0 } },
+	{ Block::STONE,		{0.0625, 0.9375, 0.125, 0.9375, 0.125, 1.0, 0.0625, 1.0, 0.0625, 0.9375, 0.125, 0.9375, 0.125, 1.0, 0.0625, 1.0, 0.0625, 0.9375, 0.125, 0.9375, 0.125, 1.0, 0.0625, 1.0 } },
+	{ Block::DIAMOND,		{0.125, 0.75, 0.1875, 0.75, 0.1875, 0.8125, 0.125, 0.8125, 0.125, 0.75, 0.1875, 0.75, 0.1875, 0.8125, 0.125, 0.8125, 0.125, 0.75, 0.1875, 0.75, 0.1875, 0.8125, 0.125, 0.8125 } },
+	{ Block::GOLD,	{0.0, 0.8125, 0.0625, 0.8125, 0.0625, 0.875, 0.0, 0.875, 0.0, 0.8125, 0.0625, 0.8125, 0.0625, 0.875, 0.0, 0.875, 0.0, 0.8125, 0.0625, 0.8125, 0.0625, 0.875, 0.0, 0.875 } },
+	{ Block::COAL,		{0.125, 0.8125, 0.1875, 0.8125, 0.1875, 0.875, 0.125, 0.875, 0.125, 0.8125, 0.1875, 0.8125, 0.1875, 0.875, 0.125, 0.875, 0.125, 0.8125, 0.1875, 0.8125, 0.1875, 0.875, 0.125, 0.875 } },
+	{ Block::STEEL,		{0.0625, 0.8125, 0.125, 0.8125, 0.125, 0.875, 0.0625, 0.875, 0.0625, 0.8125, 0.125, 0.8125, 0.125, 0.875, 0.0625, 0.875, 0.0625, 0.8125, 0.125, 0.8125, 0.125, 0.875, 0.0625, 0.875 } },
+	{ Block::LEAVES,		{0.6875, 0.0625, 0.75, 0.0625, 0.75, 0.125, 0.6875, 0.125, 0.6875, 0.0625, 0.75, 0.0625, 0.75, 0.125, 0.6875, 0.125, 0.6875, 0.0625, 0.75, 0.0625, 0.75, 0.125, 0.6875, 0.125 } },
+	{ Block::WOOD,	{0.3125, 0.875, 0.375, 0.875, 0.375, 0.9375, 0.3125, 0.9375, 0.25, 0.875, 0.3125, 0.875, 0.3125, 0.9375, 0.25, 0.9375, 0.3125, 0.875, 0.375, 0.875, 0.375, 0.9375, 0.3125, 0.9375 } },
+	{ Block::SNOW,		{0.125, 0.6875, 0.1875, 0.6875, 0.1875, 0.75, 0.125, 0.75, 0.25, 0.6875, 0.3125, 0.6875, 0.3125, 0.75, 0.25, 0.75, 0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0 } }
 };
 
 // also try to flatten the array
@@ -108,7 +123,7 @@ bool Chunk::CheckEastChunk(Chunk* chunk, unsigned int z, unsigned int y) {
 
 void Chunk::GenerateMesh() {
 	std::vector<Vertex> vertices;
-	vertices.reserve(4096);
+	vertices.reserve(16384);
 
 	Chunk* northChunk = nullptr;
 	Chunk* eastChunk = nullptr;
@@ -150,24 +165,24 @@ void Chunk::GenerateMesh() {
 		for (unsigned int k = 0; k < m_ZLength; k++) {
 			for (unsigned int j = 0; j < m_YLength; j++) {
 				if (m_Chunk(i, j, k) != Block::EMPTY) {
-					std::array<unsigned int, 6> textureCoords = s_TextureMap[m_Chunk(i, j, k)];
+					std::array<float, 24> textureCoords = s_AltTextureMap[m_Chunk(i, j, k)];
 					if (j == 0 || j > 0 && m_Chunk(i, j - 1, k) == Block::EMPTY) { // D
-						CreateDQuad(vertices, center + glm::vec3(i, j, k), { textureCoords[4], textureCoords[5] });
+						CreateDQuad(vertices, center + glm::vec3(i, j, k), textureCoords);
 					}
 					if (j == m_YLength - 1 || j < m_YLength - 1 && m_Chunk(i, j + 1, k) == Block::EMPTY) { // U	
-						CreateUQuad(vertices, center + glm::vec3(i, j, k), { textureCoords[0], textureCoords[1] });
+						CreateUQuad(vertices, center + glm::vec3(i, j, k), textureCoords);
 					}
 					if (!borderNorth && k == 0 && CheckNorthChunk(northChunk, i, j) || k > 0 && m_Chunk(i, j, k - 1) == Block::EMPTY) { // B
-						CreateBQuad(vertices, center + glm::vec3(i, j, k), { textureCoords[2], textureCoords[3] });
+						CreateBQuad(vertices, center + glm::vec3(i, j, k), textureCoords);
 					}
 					if (!borderSouth && k == m_ZLength - 1 && CheckSouthChunk(southChunk, i, j) || k < m_ZLength - 1 && m_Chunk(i, j, k + 1) == Block::EMPTY) { // F
-						CreateFQuad(vertices, center + glm::vec3(i, j, k), { textureCoords[2], textureCoords[3] });
+						CreateFQuad(vertices, center + glm::vec3(i, j, k), textureCoords);
 					}
 					if (!borderWest && i == 0 && CheckWestChunk(westChunk, k, j) || i > 0 && m_Chunk(i - 1, j, k) == Block::EMPTY) { // L
-						CreateLQuad(vertices, center + glm::vec3(i, j, k), { textureCoords[2], textureCoords[3] });
+						CreateLQuad(vertices, center + glm::vec3(i, j, k), textureCoords);
 					}
 					if (!borderEast && i == m_XLength - 1 && CheckEastChunk(eastChunk, k, j) || i < m_XLength - 1 && m_Chunk(i + 1, j, k) == Block::EMPTY) { // R
-						CreateRQuad(vertices, center + glm::vec3(i, j, k), { textureCoords[2], textureCoords[3] });
+						CreateRQuad(vertices, center + glm::vec3(i, j, k), textureCoords);
 					}
 				}
 			}
@@ -183,135 +198,135 @@ std::vector<Vertex> Chunk::GetRenderData() const
 	return m_RenderData;
 }
 
-void Chunk::CreateUQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<unsigned int, 2>& textureCoords) {
+void Chunk::CreateUQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<float, 24>& textureCoords) {
 	float size = 1.0f;
 
 	Vertex v;
 
 	v.Position = { position[0], position[1] + size, position[2] + size };
-	v.TexCoords = { textureCoords[0] * s_TextureOffset, textureCoords[1] * s_TextureOffset };
+	v.TexCoords = { textureCoords[0], textureCoords[1] };
 	target.push_back(v);
 
 	v.Position = { position[0] + size, position[1] + size, position[2] + size };
-	v.TexCoords = { (textureCoords[0] + 1) * s_TextureOffset, textureCoords[1] * s_TextureOffset };
+	v.TexCoords = { textureCoords[2], textureCoords[3] };
 	target.push_back(v);
 
 	v.Position = { position[0] + size,  position[1] + size, position[2] };
-	v.TexCoords = { (textureCoords[0] + 1) * s_TextureOffset, (textureCoords[1] + 1) * s_TextureOffset };
+	v.TexCoords = { textureCoords[4], textureCoords[5] };
 	target.push_back(v);
 
 	v.Position = { position[0],  position[1] + size, position[2] };
-	v.TexCoords = { textureCoords[0] * s_TextureOffset, (textureCoords[1] + 1) * s_TextureOffset };
+	v.TexCoords = { textureCoords[6], textureCoords[7] };
 	target.push_back(v);
 }
 
-void Chunk::CreateDQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<unsigned int, 2>& textureCoords) {
+void Chunk::CreateDQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<float, 24>& textureCoords) {
 	float size = 1.0f;
 
 	Vertex v;
 
 	v.Position = { position[0], position[1], position[2] + size };
-	v.TexCoords = { textureCoords[0] * s_TextureOffset, textureCoords[1] * s_TextureOffset };
+	v.TexCoords = { textureCoords[16], textureCoords[17] };
 	target.push_back(v);
 
 	v.Position = { position[0], position[1], position[2] };
-	v.TexCoords = { (textureCoords[0] + 1) * s_TextureOffset, textureCoords[1] * s_TextureOffset };
+	v.TexCoords = { textureCoords[18], textureCoords[19] };
 	target.push_back(v);
 
 	v.Position = { position[0] + size,  position[1], position[2] };
-	v.TexCoords = { (textureCoords[0] + 1) * s_TextureOffset, (textureCoords[1] + 1) * s_TextureOffset };
+	v.TexCoords = { textureCoords[20], textureCoords[21] };
 	target.push_back(v);
 
 	v.Position = { position[0] + size,  position[1], position[2] + size };
-	v.TexCoords = { textureCoords[0] * s_TextureOffset, (textureCoords[1] + 1) * s_TextureOffset };
+	v.TexCoords = { textureCoords[22], textureCoords[23] };
 	target.push_back(v);
 }
 
-void Chunk::CreateFQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<unsigned int, 2>& textureCoords) {
+void Chunk::CreateFQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<float, 24>& textureCoords) {
 	float size = 1.0f;
 
 	Vertex v;
 
 	v.Position = { position[0], position[1], position[2] + size };
-	v.TexCoords = { textureCoords[0] * s_TextureOffset, textureCoords[1] * s_TextureOffset };
+	v.TexCoords = { textureCoords[8], textureCoords[9] };
 	target.push_back(v);
 
 	v.Position = { position[0] + size, position[1], position[2] + size };
-	v.TexCoords = { (textureCoords[0] + 1) * s_TextureOffset, textureCoords[1] * s_TextureOffset };
+	v.TexCoords = { textureCoords[10], textureCoords[11] };
 	target.push_back(v);
 
 	v.Position = { position[0] + size,  position[1] + size, position[2] + size };
-	v.TexCoords = { (textureCoords[0] + 1) * s_TextureOffset, (textureCoords[1] + 1) * s_TextureOffset };
+	v.TexCoords = { textureCoords[12], textureCoords[13] };
 	target.push_back(v);
 
 	v.Position = { position[0],  position[1] + size, position[2] + size };
-	v.TexCoords = { textureCoords[0] * s_TextureOffset, (textureCoords[1] + 1) * s_TextureOffset };
+	v.TexCoords = { textureCoords[14], textureCoords[15] };
 	target.push_back(v);
 }
 
-void Chunk::CreateBQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<unsigned int, 2>& textureCoords) {
+void Chunk::CreateBQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<float, 24>& textureCoords) {
 	float size = 1.0f;
 
 	Vertex v;
 
 	v.Position = { position[0] + size, position[1], position[2] };
-	v.TexCoords = { textureCoords[0] * s_TextureOffset, textureCoords[1] * s_TextureOffset };
+	v.TexCoords = { textureCoords[8], textureCoords[9] };
 	target.push_back(v);
 
 	v.Position = { position[0], position[1], position[2] };
-	v.TexCoords = { (textureCoords[0] + 1) * s_TextureOffset, textureCoords[1] * s_TextureOffset };
+	v.TexCoords = { textureCoords[10], textureCoords[11] };
 	target.push_back(v);
 
 	v.Position = { position[0],  position[1] + size, position[2] };
-	v.TexCoords = { (textureCoords[0] + 1) * s_TextureOffset, (textureCoords[1] + 1) * s_TextureOffset };
+	v.TexCoords = { textureCoords[12], textureCoords[13] };
 	target.push_back(v);
 
 	v.Position = { position[0] + size,  position[1] + size, position[2] };
-	v.TexCoords = { textureCoords[0] * s_TextureOffset, (textureCoords[1] + 1) * s_TextureOffset };
+	v.TexCoords = { textureCoords[14], textureCoords[15] };
 	target.push_back(v);
 }
 
-void Chunk::CreateRQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<unsigned int, 2>& textureCoords) {
+void Chunk::CreateRQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<float, 24>& textureCoords) {
 	float size = 1.0f;
 
 	Vertex v;
 
 	v.Position = { position[0] + size, position[1], position[2] + size };
-	v.TexCoords = { textureCoords[0] * s_TextureOffset, textureCoords[1] * s_TextureOffset };
+	v.TexCoords = { textureCoords[8], textureCoords[9] };
 	target.push_back(v);
 
 	v.Position = { position[0] + size, position[1], position[2] };
-	v.TexCoords = { (textureCoords[0] + 1) * s_TextureOffset, textureCoords[1] * s_TextureOffset };
+	v.TexCoords = { textureCoords[10], textureCoords[11] };
 	target.push_back(v);
 
 	v.Position = { position[0] + size,  position[1] + size, position[2] };
-	v.TexCoords = { (textureCoords[0] + 1) * s_TextureOffset, (textureCoords[1] + 1) * s_TextureOffset };
+	v.TexCoords = { textureCoords[12], textureCoords[13] };
 	target.push_back(v);
 
 	v.Position = { position[0] + size,  position[1] + size, position[2] + size };
-	v.TexCoords = { textureCoords[0] * s_TextureOffset, (textureCoords[1] + 1) * s_TextureOffset };
+	v.TexCoords = { textureCoords[14], textureCoords[15] };
 	target.push_back(v);
 }
 
-void Chunk::CreateLQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<unsigned int, 2>& textureCoords) {
+void Chunk::CreateLQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<float, 24>& textureCoords) {
 	float size = 1.0f;
 
 	Vertex v;
 
 	v.Position = { position[0], position[1], position[2] };
-	v.TexCoords = { textureCoords[0] * s_TextureOffset, textureCoords[1] * s_TextureOffset };
+	v.TexCoords = { textureCoords[8], textureCoords[9] };
 	target.push_back(v);
 
 	v.Position = { position[0], position[1], position[2] + size };
-	v.TexCoords = { (textureCoords[0] + 1) * s_TextureOffset, textureCoords[1] * s_TextureOffset };
+	v.TexCoords = { textureCoords[10], textureCoords[11] };
 	target.push_back(v);
 
 	v.Position = { position[0],  position[1] + size, position[2] + size };
-	v.TexCoords = { (textureCoords[0] + 1) * s_TextureOffset, (textureCoords[1] + 1) * s_TextureOffset };
+	v.TexCoords = { textureCoords[12], textureCoords[13] };
 	target.push_back(v);
 
 	v.Position = { position[0],  position[1] + size, position[2] };
-	v.TexCoords = { textureCoords[0] * s_TextureOffset, (textureCoords[1] + 1) * s_TextureOffset };
+	v.TexCoords = { textureCoords[14], textureCoords[15] };
 	target.push_back(v);
 }
 

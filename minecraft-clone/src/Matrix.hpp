@@ -30,7 +30,7 @@ template<typename T>
 inline Matrix<T>::Matrix(unsigned int xSize, unsigned int ySize, unsigned int zSize) :
 	m_xSize(xSize), m_ySize(ySize), m_zSize(zSize)
 {
-	if (xSize <= 0 || ySize <= 0 || zSize <= 0)
+	if (xSize == 0 || ySize == 0 || zSize == 0)
 		throw std::logic_error("Size must be higher than 0.");
 	m_Data = new T[xSize * ySize * zSize];
 }
@@ -75,15 +75,15 @@ inline void Matrix<T>::fill(const T& data)
 template<typename T>
 inline T& Matrix<T>::operator()(unsigned int i, unsigned int j, unsigned int k)
 {
-	if (i < 0 || i >= m_xSize || j < 0 || j >= m_ySize || k < 0 || k >= m_zSize)
-		throw std::logic_error("Maitrx index out of bounds.");
-	return m_Data[i * m_ySize * m_zSize + j * m_zSize + k];
+	if (i >= m_xSize || j >= m_ySize || k >= m_zSize)
+		throw std::logic_error("Matrix index out of bounds.");
+	return m_Data[(i * m_zSize + k) * m_ySize + j];
 }
 
 template<typename T>
 inline T Matrix<T>::operator()(unsigned int i, unsigned int j, unsigned int k) const
 {
-	if (i < 0 || i >= m_xSize || j < 0 || j >= m_ySize || k < 0 || k >= m_zSize)
-		throw std::logic_error("Maitrx index out of bounds.");
-	return m_Data[i * m_ySize * m_zSize + j * m_zSize + k];
+	if (i >= m_xSize || j >= m_ySize || k >= m_zSize)
+		throw std::logic_error("Matrix index out of bounds.");
+	return m_Data[(i * m_zSize + k) * m_ySize + j];
 }
