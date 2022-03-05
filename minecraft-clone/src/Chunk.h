@@ -56,6 +56,7 @@ private:
 	static bool CheckEastChunk(Chunk* chunk, unsigned int z, unsigned int y);
 
 	void SinInit();
+	void NoiseInit();
 	void CreateUQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<float, 24>& textureCoords);
 	void CreateDQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<float, 24>& textureCoords);
 	void CreateFQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<float, 24>& textureCoords);

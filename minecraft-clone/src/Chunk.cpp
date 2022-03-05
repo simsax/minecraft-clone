@@ -1,5 +1,6 @@
 #include "Chunk.h"
-#include <memory>
+#include <iostream>
+#include <glm/gtc/noise.hpp>
 
 const float Chunk::s_TextureOffset = 0.0625f; // texture_size/atlas_size
 
@@ -60,27 +61,60 @@ std::unordered_map<Block, std::array<float, 24>> Chunk::s_AltTextureMap =
 Chunk::Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, glm::vec3 position, ChunkCoord worldCoords) : 
 	m_XLength(xLength), m_YLength(yLength), m_ZLength(zLength), m_Position(std::move(position)), m_Chunk(Matrix<Block>(xLength, yLength, zLength)), m_WorldCoords(worldCoords)
 {
-	
-	/*m_Chunk.fill(Block::STONE);
+	//SinInit();
+	NoiseInit();
+}
+
+// can be optimized
+static float noise(int x, int y) {
+	float freq = 0.1f;
+	float ampl = 50.0f;
+
+	float xf = x / 40.0f;
+	float yf = y / 40.0f;
+
+	float sum = 0.0f;
+	for (int oct = 0; oct < 6; oct++) {
+		glm::vec2 p(xf * freq, yf * freq);
+		float val = glm::perlin(p) * ampl;
+		sum += val;
+		freq *= 2;
+		ampl /= 2;
+	}
+
+	return 100 + sum;
+}
+
+void Chunk::NoiseInit() {
 	for (unsigned int i = 0; i < m_XLength; i++) {
-		for (unsigned int j = 0; j < m_ZLength; j++) {
-			m_Chunk(i,m_YLength - 1,j) = Block::EMPTY;
+		for (unsigned int k = 0; k < m_ZLength; k++) {
+			unsigned int w = static_cast<unsigned int>(noise(static_cast<int>(i + m_Position.x), static_cast<int>(k + m_Position.z)));
+			for (unsigned int j = 0; j < m_YLength; j++) {
+				if (j < w) {
+					if (j == w - 1 || j == m_YLength - 1)
+						m_Chunk(i, j, k) = Block::GRASS;
+					else
+						m_Chunk(i, j, k) = Block::STONE;
+				}
+				else {
+					m_Chunk(i, j, k) = Block::EMPTY;
+				}
+			}
 		}
 	}
-	m_Chunk(0, m_YLength - 1, 0) = Block::GRASS;*/
-	SinInit();
 }
 
 void Chunk::SinInit() {
-	float freq = 0.5f;
-	float ampl = 5.0f;
+	float freq = 0.2f;
+	float ampl = 10.0f;
 
 	for (unsigned int i = 0; i < m_XLength; i++) {
-		unsigned int h = static_cast<unsigned int>(round(m_YLength + sin((i + m_WorldCoords.x) * freq) * ampl));
+		unsigned int h = static_cast<unsigned int>(round(100 + sin((i + m_Position.x) * freq) * ampl));
 		for (unsigned int k = 0; k < m_ZLength; k++) {
+			unsigned int w = h + static_cast<unsigned int>(round(100 + sin((k + m_Position.z) * freq) * ampl));
 			for (unsigned int j = 0; j < m_YLength; j++) {
-				if (j < h) {
-					if (j == h - 1 || j == m_YLength - 1)
+				if (j < w) {
+					if (j == w - 1 || j == m_YLength - 1)
 						m_Chunk(i, j, k) = Block::GRASS;
 					else
 						m_Chunk(i, j, k) = Block::STONE;
@@ -153,7 +187,8 @@ void Chunk::GenerateMesh(std::vector<Vertex>& buffer) {
 
 	// I want to render it relative to the center of m_Position
 	int xCoord = static_cast<int>(m_Position.x - m_XLength / 2);
-	int yCoord = static_cast<int>(m_Position.y - m_YLength - 1);
+	//int yCoord = static_cast<int>(m_Position.y - m_YLength - 1);
+	int yCoord = -150;
 	int zCoord = static_cast<int>(m_Position.z - m_ZLength / 2);
 	glm::vec3 center(xCoord, yCoord, zCoord);
 
