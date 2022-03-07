@@ -115,15 +115,16 @@ void Game::GenerateChunks()
 
 		return buffer;
 	};
-
+	
 	if (!m_LoadingChunks) {
-		m_BufferFut = std::async(std::launch::async, meshFun);
+		m_BufferFut = std::async(meshFun);
 		m_LoadingChunks = true;
 	}
 
 	if (m_GameStart || m_BufferFut.wait_for(2ms) == std::future_status::ready) {
 		if (m_GameStart)
 			m_GameStart = false;
+
 		std::vector<Vertex> buffer = m_BufferFut.get();
 
 		size_t indexCount = buffer.size() / 4 * 6; // num faces * 6
@@ -148,7 +149,7 @@ void Game::OnUpdate(float deltaTime)
 
 	// update chunks
 	ChunkCoord currentChunk = { static_cast<int>(round(playerPos.x / m_ChunkSize)), static_cast<int>(round(playerPos.z / m_ChunkSize)) };
-	if (m_LastChunk - currentChunk >= m_ViewDistance / 3) {
+	if (m_LastChunk - currentChunk >= m_ViewDistance / 4) {
 		GenerateChunks();
 		m_LastChunk = currentChunk;
 	}

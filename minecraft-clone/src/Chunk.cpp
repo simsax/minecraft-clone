@@ -57,9 +57,9 @@ const std::unordered_map<Block, std::array<float, 24>> Chunk::s_AltTextureMap =
 	{ Block::SNOW,		{0.125, 0.6875, 0.1875, 0.6875, 0.1875, 0.75, 0.125, 0.75, 0.25, 0.6875, 0.3125, 0.6875, 0.3125, 0.75, 0.25, 0.75, 0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0 } }
 };
 
-
+// the chunk has a border so that I know what faces to cull between chunks (I only generate the mesh of the part inside the border)
 Chunk::Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, glm::vec3 position, ChunkCoord worldCoords) : 
-	m_XLength(xLength), m_YLength(yLength), m_ZLength(zLength), m_Position(std::move(position)), m_Chunk(Matrix<Block>(xLength, yLength, zLength)), m_WorldCoords(worldCoords)
+	m_XLength(xLength+2), m_YLength(yLength+2), m_ZLength(zLength+2), m_Position(std::move(position)), m_Chunk(Matrix<Block>(m_XLength, m_YLength, m_ZLength)), m_WorldCoords(worldCoords)
 {
 	//SinInit();
 	NoiseInit();
@@ -127,65 +127,8 @@ void Chunk::SinInit() {
 	}
 }
 
-bool Chunk::CheckNorthChunk(Chunk* chunk, unsigned int x, unsigned int y) {
-	if (chunk->m_Chunk(x, y, chunk->m_ZLength - 1) == Block::EMPTY)
-		return true;
-	else
-		return false;
-}
-
-bool Chunk::CheckSouthChunk(Chunk* chunk, unsigned int x, unsigned int y) {
-	if (chunk->m_Chunk(x, y, 0) == Block::EMPTY)
-		return true;
-	else
-		return false;
-}
-
-bool Chunk::CheckWestChunk(Chunk* chunk, unsigned int z, unsigned int y) {
-	if (chunk->m_Chunk(chunk->m_XLength - 1, y, z) == Block::EMPTY)
-		return true;
-	else
-		return false;
-}
-
-bool Chunk::CheckEastChunk(Chunk* chunk, unsigned int z, unsigned int y) {
-	if (chunk->m_Chunk(0, y, z) == Block::EMPTY)
-		return true;
-	else
-		return false;
-}
-
 void Chunk::GenerateMesh() {
-	Chunk* northChunk = nullptr;
-	Chunk* eastChunk = nullptr;
-	Chunk* southChunk = nullptr;
-	Chunk* westChunk = nullptr;
-
-
-	bool borderNorth = false;
-	bool borderEast = false;
-	bool borderSouth = false;
-	bool borderWest = false;
-
 	m_Mesh.reserve(4096);
-
-	// if I find it I am not in the borders
-	if (Chunk::s_ChunkMap.find({ m_WorldCoords.x, m_WorldCoords.z - 1 }) != Chunk::s_ChunkMap.end())
-		northChunk = &Chunk::s_ChunkMap.find({ m_WorldCoords.x, m_WorldCoords.z - 1 })->second;
-	else
-		borderNorth = true;
-	if (Chunk::s_ChunkMap.find({ m_WorldCoords.x + 1, m_WorldCoords.z }) != Chunk::s_ChunkMap.end())
-		eastChunk = &Chunk::s_ChunkMap.find({ m_WorldCoords.x + 1, m_WorldCoords.z })->second;
-	else
-		borderEast = true;
-	if (Chunk::s_ChunkMap.find({ m_WorldCoords.x, m_WorldCoords.z + 1 }) != Chunk::s_ChunkMap.end())
-		southChunk = &Chunk::s_ChunkMap.find({ m_WorldCoords.x, m_WorldCoords.z + 1 })->second;
-	else
-		borderSouth = true;
-	if (Chunk::s_ChunkMap.find({ m_WorldCoords.x - 1, m_WorldCoords.z }) != Chunk::s_ChunkMap.end())
-		westChunk = &Chunk::s_ChunkMap.find({ m_WorldCoords.x - 1, m_WorldCoords.z })->second;
-	else
-		borderWest = true;
 
 	// I want to render it relative to the center of m_Position
 	int xCoord = static_cast<int>(m_Position.x - m_XLength / 2);
@@ -194,35 +137,33 @@ void Chunk::GenerateMesh() {
 	int zCoord = static_cast<int>(m_Position.z - m_ZLength / 2);
 	glm::vec3 center(xCoord, yCoord, zCoord);
 
-	for (unsigned int i = 0; i < m_XLength; i++) {
-		for (unsigned int k = 0; k < m_ZLength; k++) {
-			for (unsigned int j = 0; j < m_YLength; j++) {
+	for (unsigned int i = 1; i < m_XLength - 1; i++) {
+		for (unsigned int k = 1; k < m_ZLength - 1; k++) {
+			for (unsigned int j = 1; j < m_YLength - 1; j++) {
 				if (m_Chunk(i, j, k) != Block::EMPTY) {
 					std::array<float, 24> textureCoords = s_AltTextureMap.at(m_Chunk(i, j, k));
-					if (j == 0 || j > 0 && m_Chunk(i, j - 1, k) == Block::EMPTY) { // D
+					if (j > 0 && m_Chunk(i, j - 1, k) == Block::EMPTY) { // D
 						CreateDQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
 					}
-					if (j == m_YLength - 1 || j < m_YLength - 1 && m_Chunk(i, j + 1, k) == Block::EMPTY) { // U	
+					if (j < m_YLength - 1 && m_Chunk(i, j + 1, k) == Block::EMPTY) { // U	
 						CreateUQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
 					}
-					if (!borderNorth && k == 0 && CheckNorthChunk(northChunk, i, j) || k > 0 && m_Chunk(i, j, k - 1) == Block::EMPTY) { // B
+					if (k > 0 && m_Chunk(i, j, k - 1) == Block::EMPTY) { // B
 						CreateBQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
 					}
-					if (!borderSouth && k == m_ZLength - 1 && CheckSouthChunk(southChunk, i, j) || k < m_ZLength - 1 && m_Chunk(i, j, k + 1) == Block::EMPTY) { // F
+					if (k < m_ZLength - 1 && m_Chunk(i, j, k + 1) == Block::EMPTY) { // F
 						CreateFQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
 					}
-					if (!borderWest && i == 0 && CheckWestChunk(westChunk, k, j) || i > 0 && m_Chunk(i - 1, j, k) == Block::EMPTY) { // L
+					if (i > 0 && m_Chunk(i - 1, j, k) == Block::EMPTY) { // L
 						CreateLQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
 					}
-					if (!borderEast && i == m_XLength - 1 && CheckEastChunk(eastChunk, k, j) || i < m_XLength - 1 && m_Chunk(i + 1, j, k) == Block::EMPTY) { // R
+					if (i < m_XLength - 1 && m_Chunk(i + 1, j, k) == Block::EMPTY) { // R
 						CreateRQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
 					}
 				}
 			}
 		}
 	}
-
-	std::cout << m_Mesh.size() << std::endl;
 }
 
 std::vector<Vertex> Chunk::GetMesh()
