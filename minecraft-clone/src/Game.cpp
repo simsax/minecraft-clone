@@ -88,7 +88,7 @@ void Game::GenerateChunks()
 		int playerPosZ = static_cast<int>(round(playerPos.z / size));
 
 		std::vector<Vertex> buffer;
-		buffer.reserve(131072); // 16*16*64*8 is the max num of vertices I can have for a mesh
+		buffer.reserve(692224); // 16*16*8*169*2 is the max num of vertices I can see for a mesh
 
 		std::vector<Chunk*> chunksToRender;
 		chunksToRender.reserve(static_cast<const unsigned int>(pow(m_ViewDistance * 2 + 1, 2)));
@@ -109,7 +109,8 @@ void Game::GenerateChunks()
 
 		// render chunks
 		for (Chunk* chunk : chunksToRender) {
-			chunk->GenerateMesh(buffer);
+			std::vector<Vertex> mesh = chunk->GetMesh();
+			buffer.insert(buffer.end(), std::make_move_iterator(mesh.begin()), std::make_move_iterator(mesh.end()));
 		}
 
 		return buffer;

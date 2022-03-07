@@ -28,7 +28,7 @@ std::size_t hash_fn::operator()(const ChunkCoord& coord) const
 }
 /*
 // coords are top.x,top.y,side.x,side.y, bottom.x, bottom.y (for most block it's redundant, but for now it makes my life easier. I will fix it later)
-std::unordered_map<Block, std::array<unsigned int, 6>> Chunk::s_TextureMap =
+const std::unordered_map<Block, std::array<unsigned int, 6>> Chunk::s_TextureMap =
 {
 	{ Block::GRASS,		{ 12, 3, 3, 15, 2, 15 } },
 	{ Block::DIRT,		{ 2, 15, 2, 15, 2, 15 } },
@@ -43,7 +43,7 @@ std::unordered_map<Block, std::array<unsigned int, 6>> Chunk::s_TextureMap =
 };
 */
 // values are precomputed for speed
-std::unordered_map<Block, std::array<float, 24>> Chunk::s_AltTextureMap =
+const std::unordered_map<Block, std::array<float, 24>> Chunk::s_AltTextureMap =
 {
 	{ Block::GRASS,		{0.75, 0.1875, 0.8125, 0.1875, 0.8125, 0.25, 0.75, 0.25, 0.1875, 0.9375, 0.25, 0.9375, 0.25, 1.0, 0.1875, 1.0, 0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0 } },
 	{ Block::DIRT,		{0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0, 0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0, 0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0 } },
@@ -155,7 +155,7 @@ bool Chunk::CheckEastChunk(Chunk* chunk, unsigned int z, unsigned int y) {
 		return false;
 }
 
-void Chunk::GenerateMesh(std::vector<Vertex>& buffer) {
+void Chunk::GenerateMesh() {
 	Chunk* northChunk = nullptr;
 	Chunk* eastChunk = nullptr;
 	Chunk* southChunk = nullptr;
@@ -166,6 +166,8 @@ void Chunk::GenerateMesh(std::vector<Vertex>& buffer) {
 	bool borderEast = false;
 	bool borderSouth = false;
 	bool borderWest = false;
+
+	m_Mesh.reserve(4096);
 
 	// if I find it I am not in the borders
 	if (Chunk::s_ChunkMap.find({ m_WorldCoords.x, m_WorldCoords.z - 1 }) != Chunk::s_ChunkMap.end())
@@ -192,34 +194,42 @@ void Chunk::GenerateMesh(std::vector<Vertex>& buffer) {
 	int zCoord = static_cast<int>(m_Position.z - m_ZLength / 2);
 	glm::vec3 center(xCoord, yCoord, zCoord);
 
-	// there must be a better way to write this but I have no time for now
 	for (unsigned int i = 0; i < m_XLength; i++) {
 		for (unsigned int k = 0; k < m_ZLength; k++) {
 			for (unsigned int j = 0; j < m_YLength; j++) {
 				if (m_Chunk(i, j, k) != Block::EMPTY) {
-					std::array<float, 24> textureCoords = s_AltTextureMap[m_Chunk(i, j, k)];
+					std::array<float, 24> textureCoords = s_AltTextureMap.at(m_Chunk(i, j, k));
 					if (j == 0 || j > 0 && m_Chunk(i, j - 1, k) == Block::EMPTY) { // D
-						CreateDQuad(buffer, center + glm::vec3(i, j, k), textureCoords);
+						CreateDQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
 					}
 					if (j == m_YLength - 1 || j < m_YLength - 1 && m_Chunk(i, j + 1, k) == Block::EMPTY) { // U	
-						CreateUQuad(buffer, center + glm::vec3(i, j, k), textureCoords);
+						CreateUQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
 					}
 					if (!borderNorth && k == 0 && CheckNorthChunk(northChunk, i, j) || k > 0 && m_Chunk(i, j, k - 1) == Block::EMPTY) { // B
-						CreateBQuad(buffer, center + glm::vec3(i, j, k), textureCoords);
+						CreateBQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
 					}
 					if (!borderSouth && k == m_ZLength - 1 && CheckSouthChunk(southChunk, i, j) || k < m_ZLength - 1 && m_Chunk(i, j, k + 1) == Block::EMPTY) { // F
-						CreateFQuad(buffer, center + glm::vec3(i, j, k), textureCoords);
+						CreateFQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
 					}
 					if (!borderWest && i == 0 && CheckWestChunk(westChunk, k, j) || i > 0 && m_Chunk(i - 1, j, k) == Block::EMPTY) { // L
-						CreateLQuad(buffer, center + glm::vec3(i, j, k), textureCoords);
+						CreateLQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
 					}
 					if (!borderEast && i == m_XLength - 1 && CheckEastChunk(eastChunk, k, j) || i < m_XLength - 1 && m_Chunk(i + 1, j, k) == Block::EMPTY) { // R
-						CreateRQuad(buffer, center + glm::vec3(i, j, k), textureCoords);
+						CreateRQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
 					}
 				}
 			}
 		}
 	}
+
+	std::cout << m_Mesh.size() << std::endl;
+}
+
+std::vector<Vertex> Chunk::GetMesh()
+{
+	if (m_Mesh.empty())
+		GenerateMesh();
+	return m_Mesh;
 }
 
 

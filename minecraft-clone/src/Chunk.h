@@ -45,16 +45,17 @@ public:
 	Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, glm::vec3 position, ChunkCoord worldCoords);
 
 	// contains the coordinates of each face in the texture atlas
-	//static std::unordered_map<Block, std::array<unsigned int, 6>> s_TextureMap;
-	static std::unordered_map<Block, std::array<float, 24>> s_AltTextureMap;
+	//static const std::unordered_map<Block, std::array<unsigned int, 6>> s_TextureMap;
+	static const std::unordered_map<Block, std::array<float, 24>> s_AltTextureMap;
 	static std::unordered_map<ChunkCoord, Chunk, hash_fn> s_ChunkMap;
-	void GenerateMesh(std::vector<Vertex>& buffer);
+	std::vector<Vertex> GetMesh();
 private:
 	static bool CheckNorthChunk(Chunk* chunk, unsigned int x, unsigned int y);
 	static bool CheckSouthChunk(Chunk* chunk, unsigned int x, unsigned int y);
 	static bool CheckWestChunk(Chunk* chunk, unsigned int z, unsigned int y);
 	static bool CheckEastChunk(Chunk* chunk, unsigned int z, unsigned int y);
 
+	void GenerateMesh();
 	void SinInit();
 	void NoiseInit();
 	void CreateUQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<float, 24>& textureCoords);
@@ -71,4 +72,5 @@ private:
 	glm::vec3 m_Position;
 	Matrix<Block> m_Chunk;
 	ChunkCoord m_WorldCoords;
+	std::vector<Vertex> m_Mesh;
 };
