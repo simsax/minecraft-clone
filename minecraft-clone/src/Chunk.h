@@ -16,7 +16,9 @@ enum class Block : unsigned char {
 	COAL,
 	STEEL,
 	LEAVES,
-	WOOD
+	WOOD,
+	WATER,
+	SAND
 };
 
 struct ChunkCoord {
@@ -42,22 +44,14 @@ struct Vertex {
 class Chunk
 {
 public:
-	Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, glm::vec3 position, ChunkCoord worldCoords);
-
-	// contains the coordinates of each face in the texture atlas
-	//static const std::unordered_map<Block, std::array<unsigned int, 6>> s_TextureMap;
-	static const std::unordered_map<Block, std::array<float, 24>> s_AltTextureMap;
+	Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, glm::vec3 position, ChunkCoord worldCoords, unsigned int seed);
+	static const std::unordered_map<Block, std::array<float, 24>> s_TextureMap;
 	static std::unordered_map<ChunkCoord, Chunk, hash_fn> s_ChunkMap;
 	std::vector<Vertex> GetMesh();
 private:
-	static bool CheckNorthChunk(Chunk* chunk, unsigned int x, unsigned int y);
-	static bool CheckSouthChunk(Chunk* chunk, unsigned int x, unsigned int y);
-	static bool CheckWestChunk(Chunk* chunk, unsigned int z, unsigned int y);
-	static bool CheckEastChunk(Chunk* chunk, unsigned int z, unsigned int y);
-
 	void GenerateMesh();
 	void SinInit();
-	void NoiseInit();
+	void NoiseInit(unsigned int seed);
 	void CreateUQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<float, 24>& textureCoords);
 	void CreateDQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<float, 24>& textureCoords);
 	void CreateFQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<float, 24>& textureCoords);

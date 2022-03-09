@@ -6,13 +6,14 @@
 #include <array>
 #include <iostream>
 #include <chrono>
+#include "time.h"
 
 using namespace std::chrono_literals;
 
 cam::Camera Game::camera = glm::vec3(0.0f, 0.0f, 0.0f);
 
 Game::Game() :
-	m_Proj(glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 300.0f)),
+	m_Proj(glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 500.0f)),
 	m_LastChunk({0,0}),
 	m_ChunkSize(16),
 	m_ViewDistance(6),
@@ -60,6 +61,8 @@ Game::Game() :
 	}
 
 	m_IBO = std::make_unique<IndexBuffer>(indices.size() * sizeof(unsigned int), indices.data());
+	
+	m_Seed = static_cast<unsigned int>(time(NULL));
 
 	GenerateChunks();
 }
@@ -100,7 +103,7 @@ void Game::GenerateChunks()
 				// check if this chunk hasn't already been generated
 				if (Chunk::s_ChunkMap.find(coords) == Chunk::s_ChunkMap.end()) {
 					// create new chunk and cache it
-					Chunk chunk(m_ChunkSize, m_ChunkSize * 16, m_ChunkSize, glm::vec3(i * size, 0.0, j * size), coords);
+					Chunk chunk(m_ChunkSize, m_ChunkSize * 16, m_ChunkSize, glm::vec3(i * size, 0.0, j * size), coords, m_Seed);
 					Chunk::s_ChunkMap.insert({ coords, std::move(chunk) });
 				}
 				chunksToRender.push_back(&Chunk::s_ChunkMap.find(coords)->second);

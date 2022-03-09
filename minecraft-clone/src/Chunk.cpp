@@ -1,6 +1,7 @@
 #include "Chunk.h"
 #include <iostream>
 #include <glm/gtc/noise.hpp>
+#include <stdlib.h>
 
 const float Chunk::s_TextureOffset = 0.0625f; // texture_size/atlas_size
 
@@ -26,24 +27,9 @@ std::size_t hash_fn::operator()(const ChunkCoord& coord) const
 	std::size_t h2 = std::hash<int>()(coord.z);
 	return h1 ^ h2;
 }
-/*
-// coords are top.x,top.y,side.x,side.y, bottom.x, bottom.y (for most block it's redundant, but for now it makes my life easier. I will fix it later)
-const std::unordered_map<Block, std::array<unsigned int, 6>> Chunk::s_TextureMap =
-{
-	{ Block::GRASS,		{ 12, 3, 3, 15, 2, 15 } },
-	{ Block::DIRT,		{ 2, 15, 2, 15, 2, 15 } },
-	{ Block::STONE,		{ 1, 15, 1, 15, 1, 15 } },
-	{ Block::SNOW,		{ 2, 11, 4, 11, 2, 15 } },
-	{ Block::DIAMOND,	{ 2, 12, 2, 12, 2, 12 } },
-	{ Block::GOLD,		{ 0, 13, 0, 13, 0, 13 } },
-	{ Block::COAL,		{ 2, 13, 2, 13, 2, 13 } },
-	{ Block::STEEL,		{ 1, 13, 1, 13, 1, 13 } },
-	{ Block::LEAVES,	{ 11, 1, 11, 1, 11, 1 } },
-	{ Block::WOOD,		{ 5, 14, 4, 14, 5, 14 } }
-};
-*/
+
 // values are precomputed for speed
-const std::unordered_map<Block, std::array<float, 24>> Chunk::s_AltTextureMap =
+const std::unordered_map<Block, std::array<float, 24>> Chunk::s_TextureMap =
 {
 	{ Block::GRASS,		{0.75, 0.1875, 0.8125, 0.1875, 0.8125, 0.25, 0.75, 0.25, 0.1875, 0.9375, 0.25, 0.9375, 0.25, 1.0, 0.1875, 1.0, 0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0 } },
 	{ Block::DIRT,		{0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0, 0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0, 0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0 } },
@@ -54,50 +40,94 @@ const std::unordered_map<Block, std::array<float, 24>> Chunk::s_AltTextureMap =
 	{ Block::STEEL,		{0.0625, 0.8125, 0.125, 0.8125, 0.125, 0.875, 0.0625, 0.875, 0.0625, 0.8125, 0.125, 0.8125, 0.125, 0.875, 0.0625, 0.875, 0.0625, 0.8125, 0.125, 0.8125, 0.125, 0.875, 0.0625, 0.875 } },
 	{ Block::LEAVES,		{0.6875, 0.0625, 0.75, 0.0625, 0.75, 0.125, 0.6875, 0.125, 0.6875, 0.0625, 0.75, 0.0625, 0.75, 0.125, 0.6875, 0.125, 0.6875, 0.0625, 0.75, 0.0625, 0.75, 0.125, 0.6875, 0.125 } },
 	{ Block::WOOD,	{0.3125, 0.875, 0.375, 0.875, 0.375, 0.9375, 0.3125, 0.9375, 0.25, 0.875, 0.3125, 0.875, 0.3125, 0.9375, 0.25, 0.9375, 0.3125, 0.875, 0.375, 0.875, 0.375, 0.9375, 0.3125, 0.9375 } },
-	{ Block::SNOW,		{0.125, 0.6875, 0.1875, 0.6875, 0.1875, 0.75, 0.125, 0.75, 0.25, 0.6875, 0.3125, 0.6875, 0.3125, 0.75, 0.25, 0.75, 0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0 } }
+	{ Block::SNOW,		{0.125, 0.6875, 0.1875, 0.6875, 0.1875, 0.75, 0.125, 0.75, 0.25, 0.6875, 0.3125, 0.6875, 0.3125, 0.75, 0.25, 0.75, 0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0 } },
+	{ Block::WATER,		{0.9375, 0.125, 1.0, 0.125, 1.0, 0.1875, 0.9375, 0.1875, 0.9375, 0.125, 1.0, 0.125, 1.0, 0.1875, 0.9375, 0.1875, 0.9375, 0.125, 1.0, 0.125, 1.0, 0.1875, 0.9375, 0.1875 } },
+	{ Block::SAND,		{0.125, 0.875, 0.1875, 0.875, 0.1875, 0.9375, 0.125, 0.9375, 0.125, 0.875, 0.1875, 0.875, 0.1875, 0.9375, 0.125, 0.9375, 0.125, 0.875, 0.1875, 0.875, 0.1875, 0.9375, 0.125, 0.9375 } }
 };
 
 // the chunk has a border so that I know what faces to cull between chunks (I only generate the mesh of the part inside the border)
-Chunk::Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, glm::vec3 position, ChunkCoord worldCoords) : 
+Chunk::Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, glm::vec3 position, ChunkCoord worldCoords, unsigned int seed) : 
 	m_XLength(xLength+2), m_YLength(yLength+2), m_ZLength(zLength+2), m_Position(std::move(position)), m_Chunk(Matrix<Block>(m_XLength, m_YLength, m_ZLength)), m_WorldCoords(worldCoords)
 {
 	//SinInit();
-	NoiseInit();
+	NoiseInit(seed);
+}
+
+// move this in a separate noise class
+
+static float Continentalness(int x, int y) {
+	float scale = 256.0f;
+	float ampl = 50.0f;
+	float freq = 0.3f;
+
+	float xf = x / scale;
+	float yf = y / scale;
+
+	float height = 0;
+	float noise = glm::perlin(glm::vec2(xf * freq, yf * freq));
+
+	if (noise < 0.3) {
+		height = (noise + 2.3f) / 0.026f;
+	}
+	else if (0.3 <= noise && noise < 0.4) {
+		height = 500 * noise - 50;
+	}
+	else if (noise >= 0.4) {
+		height = 150;
+	}
+
+	return height;
 }
 
 // can be optimized
-static float noise(int x, int y) {
-	float freq = 0.1f;
-	float ampl = 50.0f;
+static float Noise(int x, int y, const std::array<std::array<int, 2>, 4>& octaveOffsets) {
 
-	float xf = x / 40.0f;
-	float yf = y / 40.0f;
+	float freq = 0.5f;
+	float ampl = 20.0f;
+	float scale = 64.0f;
+	float terrain_height = Continentalness(x, y);
 
-	float sum = 0.0f;
-	for (int oct = 0; oct < 6; oct++) {
-		glm::vec2 p(xf * freq, yf * freq);
+	float xf = x / scale;
+	float yf = y / scale;
+
+	float height = 0.0f;
+	for (int oct = 0; oct < 4; oct++) {
+		glm::vec2 p(xf * freq + octaveOffsets[oct][0], yf * freq + octaveOffsets[oct][1]);
 		float val = glm::perlin(p) * ampl;
-		sum += val;
+		height += val;
 		freq *= 2;
 		ampl /= 2;
 	}
 
-	return 100 + sum;
+	return terrain_height + height;
 }
 
-void Chunk::NoiseInit() {
+void Chunk::NoiseInit(unsigned int seed) {
+	srand(seed);
+	std::array<std::array<int, 2>, 4> octaveOffsets;
+	for (unsigned int i = 0; i < octaveOffsets.size(); i++) {
+		octaveOffsets[i][0] = rand() % 10000;
+		octaveOffsets[i][1] = rand() % 10000;
+	}
+
 	for (unsigned int i = 0; i < m_XLength; i++) {
 		for (unsigned int k = 0; k < m_ZLength; k++) {
-			unsigned int w = static_cast<unsigned int>(noise(static_cast<int>(i + m_Position.x), static_cast<int>(k + m_Position.z)));
+			unsigned int w = static_cast<unsigned int>(Noise(static_cast<int>(i + m_Position.x), static_cast<int>(k + m_Position.z), octaveOffsets));
+
 			for (unsigned int j = 0; j < m_YLength; j++) {
 				if (j < w) {
-					if (j == w - 1 || j == m_YLength - 1)
+					if (j < 100)
+						m_Chunk(i, j, k) = Block::SAND;
+					else if (j == w - 1 || j == m_YLength - 1)
 						m_Chunk(i, j, k) = Block::GRASS;
 					else
 						m_Chunk(i, j, k) = Block::STONE;
 				}
 				else {
-					m_Chunk(i, j, k) = Block::EMPTY;
+					if (j < 100) // this value may depend on the biome
+						m_Chunk(i, j, k) = Block::WATER;
+					else
+						m_Chunk(i, j, k) = Block::EMPTY;
 				}
 			}
 		}
@@ -141,7 +171,7 @@ void Chunk::GenerateMesh() {
 		for (unsigned int k = 1; k < m_ZLength - 1; k++) {
 			for (unsigned int j = 1; j < m_YLength - 1; j++) {
 				if (m_Chunk(i, j, k) != Block::EMPTY) {
-					std::array<float, 24> textureCoords = s_AltTextureMap.at(m_Chunk(i, j, k));
+					std::array<float, 24> textureCoords = s_TextureMap.at(m_Chunk(i, j, k));
 					if (j > 0 && m_Chunk(i, j - 1, k) == Block::EMPTY) { // D
 						CreateDQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
 					}

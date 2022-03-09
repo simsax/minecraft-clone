@@ -39,4 +39,5 @@ private:
 	bool m_LoadingChunks;
 	bool m_GameStart;
 	std::future<std::vector<Vertex>> m_BufferFut;
+	unsigned int m_Seed;
 };
