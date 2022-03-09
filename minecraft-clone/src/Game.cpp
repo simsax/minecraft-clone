@@ -16,7 +16,7 @@ Game::Game() :
 	m_Proj(glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 500.0f)),
 	m_LastChunk({0,0}),
 	m_ChunkSize(16),
-	m_ViewDistance(6),
+	m_ViewDistance(12),
 	m_LoadingChunks(false),
 	m_GameStart(true)
 {
@@ -44,6 +44,7 @@ Game::Game() :
 
 	// initialize element buffer
 	unsigned int maxIndexCount = static_cast<unsigned int>(pow(m_ChunkSize, 2) * pow(2 * m_ViewDistance + 1, 2) * 36); // each cube has 6 faces, each face has 6 indexes
+	unsigned int maxVertexCount = static_cast<unsigned int>(pow(m_ChunkSize, 2) * pow(2 * m_ViewDistance + 1, 2) * 24); // each cube has 6 faces, each face has 4 vertices
 
 	std::vector<unsigned int> indices;
 	indices.reserve(maxIndexCount);
@@ -61,6 +62,10 @@ Game::Game() :
 	}
 
 	m_IBO = std::make_unique<IndexBuffer>(indices.size() * sizeof(unsigned int), indices.data());
+	m_VBO = std::make_unique<VertexBuffer>();
+	m_VBO->CreateDynamic(sizeof(Vertex) * maxVertexCount);
+	m_VAO = std::make_unique<VertexArray>();
+	m_VAO->AddBuffer(*m_VBO, m_VertexLayout);
 	
 	m_Seed = static_cast<unsigned int>(time(NULL));
 
@@ -129,14 +134,8 @@ void Game::GenerateChunks()
 			m_GameStart = false;
 
 		std::vector<Vertex> buffer = m_BufferFut.get();
-
 		size_t indexCount = buffer.size() / 4 * 6; // num faces * 6
-
-		m_VBO = std::make_unique<VertexBuffer>();
-		//m_VBO->CreateDynamic(sizeof(Vertex) * MaxVertexCount);
-		m_VBO->CreateStatic(buffer.size() * sizeof(Vertex), buffer.data());
-		m_VAO = std::make_unique<VertexArray>();
-		m_VAO->AddBuffer(*m_VBO, m_VertexLayout);
+		m_VBO->SendData(buffer.size() * sizeof(Vertex), buffer.data());
 		m_IBO->SetCount(indexCount);
 		m_LoadingChunks = false;
 	}
