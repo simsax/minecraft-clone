@@ -100,9 +100,9 @@ namespace glfw {
 		}
 	}
 
+	// camera input
 	void Window::ManageInput(float deltaTime)
 	{
-		// camera inputs
 		std::array<cam::Key, static_cast<int>(cam::Key::Key_MAX) + 1> keyPressed;
 		keyPressed.fill(cam::Key::NONE);
 		int k = 0;
@@ -123,12 +123,10 @@ namespace glfw {
 			keyPressed[k++] = cam::Key::RIGHT;
 
 		Game::camera.ProcessKeyboard(keyPressed, deltaTime);
-
-		// manage the other types of inputs in the callback
 	}
-
 }
 
+// camera input
 void glfw::Window::MouseCallback(GLFWwindow* window, double xpos, double ypos)
 {
 	if (firstMouse) {
@@ -146,6 +144,7 @@ void glfw::Window::MouseCallback(GLFWwindow* window, double xpos, double ypos)
 	Game::camera.ProcessMouse(xoffset, yoffset);
 }
 
+// game input
 void glfw::Window::KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 	if (key == GLFW_KEY_Z && action == GLFW_PRESS) { // toggle wireframe mode
@@ -155,9 +154,10 @@ void glfw::Window::KeyCallback(GLFWwindow* window, int key, int scancode, int ac
 		else
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
-	if (key == GLFW_KEY_F && action == GLFW_PRESS) { // set fly mode
-		Game::s_FlyMode = !Game::s_FlyMode;
-	}
+	if (key == GLFW_KEY_F && action == GLFW_PRESS)
+		Game::ProcessKey(cam::Key::F);
+	if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
+		Game::ProcessKey(cam::Key::SPACE);
 }
 
 void GLAPIENTRY glfw::Window::MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)

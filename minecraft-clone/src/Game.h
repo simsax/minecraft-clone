@@ -20,8 +20,9 @@ public:
 	~Game();
 	void OnUpdate(float deltaTime);
 	void OnRender();
+	static void ProcessKey(cam::Key key);
 	static cam::Camera camera;
-	static bool s_FlyMode;
+	 
 private:
 	struct bbox {
 		float width;
@@ -30,7 +31,8 @@ private:
 
 	void GenerateChunks();
 	void CheckCollision(glm::vec3*& playerPos, ChunkCoord currentChunk);
-	void Gravity(glm::vec3*& playerPos, float deltaTime);
+	void ApplyGravity(glm::vec3*& playerPos, float deltaTime);
+	void Jump();
 
 	std::unique_ptr<VertexArray> m_VAO;
 	std::unique_ptr<IndexBuffer> m_IBO;
@@ -38,6 +40,9 @@ private:
 	std::unique_ptr<Shader> m_Shader;
 	std::unique_ptr<Texture> m_Texture1;
 	
+	static bool s_FlyMode;
+	static bool s_Ground;
+	static bool s_Jump;
 	glm::mat4 m_Proj;
 	Renderer m_Renderer;
 	ChunkCoord m_LastChunk;
@@ -48,6 +53,5 @@ private:
 	bool m_GameStart;
 	std::future<std::vector<Vertex>> m_BufferFut;
 	unsigned int m_Seed;
-	float m_FallTime;
-	bool m_Ground;
+	float m_VerticalVelocity;
 };

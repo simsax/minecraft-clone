@@ -13,6 +13,7 @@ namespace cam {
 		LEFT,
 		RIGHT,
 		DOWN,
+		F,
 		Key_MAX = DOWN
 	};
 
@@ -23,6 +24,7 @@ namespace cam {
 
 		void ProcessKeyboard(const std::array<Key, static_cast<int>(cam::Key::Key_MAX) + 1>& keyPressed, float deltaTime);
 		void ProcessMouse(float xoffset, float yoffset);
+		void SetFlyMode(bool flyMode);
 		glm::mat4 GetViewMatrix() const;
 		glm::vec3* GetPlayerPosition();
 	private:
@@ -31,7 +33,7 @@ namespace cam {
 		glm::vec3 m_CameraUp;
 		float yaw;
 		float pitch;
-
+		bool m_FlyMode;
 	};
 
 }

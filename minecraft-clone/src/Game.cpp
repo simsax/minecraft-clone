@@ -12,6 +12,8 @@ using namespace std::chrono_literals;
 
 cam::Camera Game::camera = glm::vec3(0.0f, 0.0f, 0.0f);
 bool Game::s_FlyMode = true;
+bool Game::s_Jump = false;
+bool Game::s_Ground = false;
 
 Game::Game() :
 	m_Proj(glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 500.0f)),
@@ -20,8 +22,7 @@ Game::Game() :
 	m_ViewDistance(6),
 	m_LoadingChunks(false),
 	m_GameStart(true),
-	m_FallTime(0),
-	m_Ground(false)
+	m_VerticalVelocity(0.0f)
 {
 	// depth testing
 	glEnable(GL_DEPTH_TEST);
@@ -90,6 +91,24 @@ void Game::OnRender()
 	m_Renderer.Draw(*m_VAO, *m_IBO, GL_UNSIGNED_INT, *m_Shader);
 }
 
+void Game::ProcessKey(cam::Key key)
+{
+	switch (key)
+	{
+	case cam::Key::F:
+		s_FlyMode = !s_FlyMode;
+		camera.SetFlyMode(s_FlyMode);
+		break;
+	case cam::Key::SPACE:
+		if (s_Ground && !s_FlyMode && !s_Jump) {
+			s_Jump = true;
+		}
+		break;
+	default:
+		break;
+	}
+}
+
 void Game::GenerateChunks()
 {
 	auto meshFun = [this]() {
@@ -151,31 +170,52 @@ void Game::CheckCollision(glm::vec3*& playerPos, ChunkCoord currentChunk)
 	float playerPosY = playerPos->y + 150;
 	float playerPosZ = playerPos->z - (float)currentChunk.z * m_ChunkSize + (float)(m_ChunkSize+2) / 2;
 	
-	std::cout << "position (" << static_cast<unsigned int>(floor(playerPosX)) << "," << static_cast<unsigned int>(floor(playerPosY)) << "," << static_cast<unsigned int>(floor(playerPosZ)) << ")\r";
-	if (playerPosY < m_ChunkSize * 16 && (chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX+0.3f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ))) != Block::EMPTY || chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX + 0.3f)), static_cast<unsigned int>(floor(playerPosY-1)), static_cast<unsigned int>(floor(playerPosZ))) != Block::EMPTY))
+	if (playerPosY < m_ChunkSize * 16 && 
+		(chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX+0.3f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ))) != Block::EMPTY || 
+		 chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX + 0.3f)), static_cast<unsigned int>(floor(playerPosY-1)), static_cast<unsigned int>(floor(playerPosZ))) != Block::EMPTY))
 		playerPos->x -= playerPosX + 0.3f - static_cast<unsigned int>(floor(playerPosX + 0.3f));
-	if (playerPosX >= 0.3 && playerPosY < m_ChunkSize * 16 && (chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX - 0.3f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ))) != Block::EMPTY || chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX - 0.3f)), static_cast<unsigned int>(floor(playerPosY-1)), static_cast<unsigned int>(floor(playerPosZ))) != Block::EMPTY))
+	if (playerPosX >= 0.3 && playerPosY < m_ChunkSize * 16 && 
+		(chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX - 0.3f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ))) != Block::EMPTY || 
+		 chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX - 0.3f)), static_cast<unsigned int>(floor(playerPosY-1)), static_cast<unsigned int>(floor(playerPosZ))) != Block::EMPTY))
 		playerPos->x += static_cast<unsigned int>(ceil(playerPosX - 0.3f)) - playerPosX + 0.3f;
-	if (playerPosY < m_ChunkSize * 16 && (chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ + 0.3f))) != Block::EMPTY || chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX)), static_cast<unsigned int>(floor(playerPosY-1)), static_cast<unsigned int>(floor(playerPosZ + 0.3f))) != Block::EMPTY))
+	if (playerPosY < m_ChunkSize * 16 &&
+		(chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ + 0.3f))) != Block::EMPTY ||
+		 chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX)), static_cast<unsigned int>(floor(playerPosY-1)), static_cast<unsigned int>(floor(playerPosZ + 0.3f))) != Block::EMPTY))
 		playerPos->z -= playerPosZ + 0.3f - static_cast<unsigned int>(floor(playerPosZ + 0.3f));
-	if (playerPosZ >= 0.3 && playerPosY < m_ChunkSize * 16 && (chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ - 0.3f))) != Block::EMPTY || chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX)), static_cast<unsigned int>(floor(playerPosY-1)), static_cast<unsigned int>(floor(playerPosZ - 0.3f))) != Block::EMPTY))
+	if (playerPosZ >= 0.3 && playerPosY < m_ChunkSize * 16 &&
+		(chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ - 0.3f))) != Block::EMPTY ||
+		 chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX)), static_cast<unsigned int>(floor(playerPosY-1)), static_cast<unsigned int>(floor(playerPosZ - 0.3f))) != Block::EMPTY))
 		playerPos->z += static_cast<unsigned int>(ceil(playerPosZ - 0.3f)) - playerPosZ + 0.3f;
 	if (playerPosY < m_ChunkSize * 16 && chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ))) != Block::EMPTY)
 		playerPos->y -= playerPosY - static_cast<unsigned int>(floor(playerPosY));
 	if (playerPosY < m_ChunkSize * 16 && chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX)), static_cast<unsigned int>(floor(playerPosY - 1.8)), static_cast<unsigned int>(floor(playerPosZ))) != Block::EMPTY) {
 		playerPos->y += static_cast<unsigned int>(ceil(playerPosY - 1.8)) - playerPosY + 1.8f;
-		m_Ground = true;
-		m_FallTime = 0;
+		s_Ground = true;
 	}
 	else {
-		m_Ground = false;
+		s_Ground = false;
 	}
 }
 
-void Game::Gravity(glm::vec3*& playerPos, float deltaTime)
+void Game::ApplyGravity(glm::vec3*& playerPos, float deltaTime)
 {
-	if (!m_Ground)
-		playerPos->y -= 0.5f * 0.981f * deltaTime * deltaTime;
+	if (!s_FlyMode) {
+		float gravity = 30.0f;
+		if (!s_Ground)
+			m_VerticalVelocity += -gravity * deltaTime;
+		else
+			m_VerticalVelocity = -gravity * deltaTime;
+		playerPos->y += m_VerticalVelocity * deltaTime;
+	}
+}
+
+void Game::Jump()
+{
+	if (s_Jump) {
+		m_VerticalVelocity += 10.0f;
+		s_Jump = false;
+		s_Ground = false;
+	}
 }
 
 Game::~Game()
@@ -187,15 +227,10 @@ void Game::OnUpdate(float deltaTime)
 	glm::vec3* playerPos = camera.GetPlayerPosition();
 	ChunkCoord currentChunk = { static_cast<int>(round(playerPos->x / m_ChunkSize)), static_cast<int>(round(playerPos->z / m_ChunkSize)) };
 
-	if (!s_FlyMode) {
-		m_FallTime += deltaTime;
-		Gravity(playerPos, m_FallTime);
-	}
-	else {
-		m_FallTime = 0;
-	}
+	Jump();
+	ApplyGravity(playerPos, deltaTime);
 	CheckCollision(playerPos, currentChunk);
-
+	
 	// update chunks (LOGIC TO BE IMPROVED)
 	if (m_LastChunk - currentChunk >= m_ViewDistance / 4 || m_LoadingChunks) {
 		GenerateChunks();
