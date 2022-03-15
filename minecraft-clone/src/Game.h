@@ -21,8 +21,16 @@ public:
 	void OnUpdate(float deltaTime);
 	void OnRender();
 	static cam::Camera camera;
+	static bool s_FlyMode;
 private:
+	struct bbox {
+		float width;
+		float height;
+	};
+
 	void GenerateChunks();
+	void CheckCollision(glm::vec3*& playerPos, ChunkCoord currentChunk);
+	void Gravity(glm::vec3*& playerPos, float deltaTime);
 
 	std::unique_ptr<VertexArray> m_VAO;
 	std::unique_ptr<IndexBuffer> m_IBO;
@@ -40,4 +48,6 @@ private:
 	bool m_GameStart;
 	std::future<std::vector<Vertex>> m_BufferFut;
 	unsigned int m_Seed;
+	float m_FallTime;
+	bool m_Ground;
 };

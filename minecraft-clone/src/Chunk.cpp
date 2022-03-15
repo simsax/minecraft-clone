@@ -1,7 +1,7 @@
 #include "Chunk.h"
 #include <iostream>
-#include <glm/gtc/noise.hpp>
 #include <stdlib.h>
+#include "Noise.h"
 
 const float Chunk::s_TextureOffset = 0.0625f; // texture_size/atlas_size
 
@@ -50,21 +50,21 @@ Chunk::Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, g
 	m_XLength(xLength+2), m_YLength(yLength+2), m_ZLength(zLength+2), m_Position(std::move(position)), m_Chunk(Matrix<Block>(m_XLength, m_YLength, m_ZLength)), m_WorldCoords(worldCoords)
 {
 	//SinInit();
-	NoiseInit(seed);
+	Noise2DInit(seed);
 }
 
-// move this in a separate noise class
-
+// fine tune the values
 static float Continentalness(int x, int y) {
 	float scale = 256.0f;
-	float ampl = 50.0f;
+	float ampl = 1.0f;
 	float freq = 0.3f;
-
-	float xf = x / scale;
-	float yf = y / scale;
-
 	float height = 0;
-	float noise = glm::perlin(glm::vec2(xf * freq, yf * freq));
+	/*
+	std::vector<std::vector<int>> octaveOffsets;
+	for (unsigned int i = 0; i < 1; i++) {
+		octaveOffsets.push_back({ rand() % 10000, rand() % 10000 });
+	}*/
+	float noise = noise::Perlin2D(x, y, scale, freq, ampl);
 
 	if (noise < 0.3) {
 		height = (noise + 2.3f) / 0.026f;
@@ -79,40 +79,30 @@ static float Continentalness(int x, int y) {
 	return height;
 }
 
-// can be optimized
-static float Noise(int x, int y, const std::array<std::array<int, 2>, 4>& octaveOffsets) {
 
+static float Noise(int x, int y, unsigned int octaves, const std::vector<std::vector<int>>& octaveOffsets) {
 	float freq = 0.5f;
 	float ampl = 20.0f;
 	float scale = 64.0f;
-	float terrain_height = Continentalness(x, y);
+	//float terrain_height = Continentalness(x, y);
+	float terrain_height = 100;
 
-	float xf = x / scale;
-	float yf = y / scale;
-
-	float height = 0.0f;
-	for (int oct = 0; oct < 4; oct++) {
-		glm::vec2 p(xf * freq + octaveOffsets[oct][0], yf * freq + octaveOffsets[oct][1]);
-		float val = glm::perlin(p) * ampl;
-		height += val;
-		freq *= 2;
-		ampl /= 2;
-	}
+	float height = noise::Perlin2D(x, y, scale, freq, ampl, octaves, octaveOffsets);
 
 	return terrain_height + height;
 }
 
-void Chunk::NoiseInit(unsigned int seed) {
+void Chunk::Noise2DInit(unsigned int seed) {
 	srand(seed);
-	std::array<std::array<int, 2>, 4> octaveOffsets;
-	for (unsigned int i = 0; i < octaveOffsets.size(); i++) {
-		octaveOffsets[i][0] = rand() % 10000;
-		octaveOffsets[i][1] = rand() % 10000;
+	std::vector<std::vector<int>> octaveOffsets;
+	unsigned int n_octaves = 4;
+	for (unsigned int i = 0; i < n_octaves; i++) {
+		octaveOffsets.push_back({ rand() % 10000, rand() % 10000 });
 	}
 
 	for (unsigned int i = 0; i < m_XLength; i++) {
 		for (unsigned int k = 0; k < m_ZLength; k++) {
-			unsigned int w = static_cast<unsigned int>(Noise(static_cast<int>(i + m_Position.x), static_cast<int>(k + m_Position.z), octaveOffsets));
+			unsigned int w = static_cast<unsigned int>(Noise(static_cast<int>(i + m_Position.x), static_cast<int>(k + m_Position.z), n_octaves, octaveOffsets));
 
 			for (unsigned int j = 0; j < m_YLength; j++) {
 				if (j < w) {
@@ -128,6 +118,32 @@ void Chunk::NoiseInit(unsigned int seed) {
 						m_Chunk(i, j, k) = Block::WATER;
 					else
 						m_Chunk(i, j, k) = Block::EMPTY;
+				}
+			}
+		}
+	}
+}
+
+void Chunk::Noise3DInit(unsigned int seed) {
+	srand(seed);
+	float freq = 0.5f;
+	float ampl = 20.0f;
+	float scale = 64.0f;
+	std::vector<std::vector<int>> octaveOffsets;
+	unsigned int n_octaves = 1;
+	for (unsigned int i = 0; i < n_octaves; i++) {
+		octaveOffsets.push_back({ rand() % 10000, rand() % 10000, rand() % 10000 });
+	}
+
+	for (int i = 0; i < (int)m_XLength; i++) {
+		for (int k = 0; k < (int)m_ZLength; k++) {
+			for (int j = 0; j < (int)m_YLength; j++) {
+				float density = noise::Perlin3D(i + (int)m_Position.x, j + (int)m_Position.y, k + (int)m_Position.z, scale, 1, 1);
+				if (density <= 0 || j > 150) {
+					m_Chunk(i, j, k) = Block::EMPTY;
+				}
+				else {
+					m_Chunk(i, j, k) = Block::STONE;
 				}
 			}
 		}
@@ -201,6 +217,11 @@ std::vector<Vertex> Chunk::GetMesh()
 	if (m_Mesh.empty())
 		GenerateMesh();
 	return m_Mesh;
+}
+
+Matrix<Block> Chunk::GetMatrix() const
+{
+	return m_Chunk;
 }
 
 

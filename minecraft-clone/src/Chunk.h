@@ -45,13 +45,15 @@ class Chunk
 {
 public:
 	Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, glm::vec3 position, ChunkCoord worldCoords, unsigned int seed);
-	static const std::unordered_map<Block, std::array<float, 24>> s_TextureMap;
 	static std::unordered_map<ChunkCoord, Chunk, hash_fn> s_ChunkMap;
 	std::vector<Vertex> GetMesh();
+	Matrix<Block> GetMatrix() const;
 private:
+	static const std::unordered_map<Block, std::array<float, 24>> s_TextureMap;
 	void GenerateMesh();
 	void SinInit();
-	void NoiseInit(unsigned int seed);
+	void Noise2DInit(unsigned int seed);
+	void Noise3DInit(unsigned int seed);
 	void CreateUQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<float, 24>& textureCoords);
 	void CreateDQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<float, 24>& textureCoords);
 	void CreateFQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<float, 24>& textureCoords);

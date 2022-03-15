@@ -82,7 +82,7 @@ namespace glfw {
 			if (crntTime - prevTime >= 1.0) {
 				std::string fps = std::to_string(nFrames);
 				std::string ms = std::to_string(1000.0/nFrames);
-				std::string newTitle = "Minecraft 2 - " + fps + "FPS / " + ms + "ms" + "  -  PlayerPos: " + std::to_string(Game::camera.GetPlayerPosition().x) + "," + std::to_string(Game::camera.GetPlayerPosition().z);
+				std::string newTitle = "Minecraft 2 - " + fps + "FPS / " + ms + "ms" + "  -  PlayerPos: " + std::to_string(Game::camera.GetPlayerPosition()->x) + "," + std::to_string(Game::camera.GetPlayerPosition()->z);
 				glfwSetWindowTitle(m_Window, newTitle.c_str());
 				prevTime = crntTime;
 				nFrames = 0;
@@ -124,7 +124,7 @@ namespace glfw {
 
 		Game::camera.ProcessKeyboard(keyPressed, deltaTime);
 
-		// other type of inputs in the callback
+		// manage the other types of inputs in the callback
 	}
 
 }
@@ -154,6 +154,9 @@ void glfw::Window::KeyCallback(GLFWwindow* window, int key, int scancode, int ac
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		else
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	}
+	if (key == GLFW_KEY_F && action == GLFW_PRESS) { // set fly mode
+		Game::s_FlyMode = !Game::s_FlyMode;
 	}
 }
 
