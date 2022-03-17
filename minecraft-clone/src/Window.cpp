@@ -156,7 +156,7 @@ void glfw::Window::KeyCallback(GLFWwindow* window, int key, int scancode, int ac
 	}
 	if (key == GLFW_KEY_F && action == GLFW_PRESS)
 		Game::ProcessKey(cam::Key::F);
-	if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
+	if (key == GLFW_KEY_SPACE && (action == GLFW_PRESS || action == GLFW_REPEAT))
 		Game::ProcessKey(cam::Key::SPACE);
 }
 

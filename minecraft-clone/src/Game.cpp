@@ -166,41 +166,117 @@ void Game::GenerateChunks()
 void Game::CheckCollision(glm::vec3*& playerPos, ChunkCoord currentChunk)
 {
 	Chunk chunk = Chunk::s_ChunkMap.find(currentChunk)->second;
-	float playerPosX = playerPos->x - (float)currentChunk.x * m_ChunkSize + (float)(m_ChunkSize+2) / 2; // +2 because each chunk has a border that doesn't render
+	float playerPosX = playerPos->x - (float)currentChunk.x * m_ChunkSize + (float)(m_ChunkSize + 2) / 2; // +2 because each chunk has a border that doesn't render
 	float playerPosY = playerPos->y + 150;
-	float playerPosZ = playerPos->z - (float)currentChunk.z * m_ChunkSize + (float)(m_ChunkSize+2) / 2;
-	
-	if (playerPosY < m_ChunkSize * 16 && 
-		(chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX+0.3f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ))) != Block::EMPTY || 
-		 chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX + 0.3f)), static_cast<unsigned int>(floor(playerPosY-1)), static_cast<unsigned int>(floor(playerPosZ))) != Block::EMPTY))
-		playerPos->x -= playerPosX + 0.3f - static_cast<unsigned int>(floor(playerPosX + 0.3f));
-	if (playerPosX >= 0.3 && playerPosY < m_ChunkSize * 16 && 
-		(chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX - 0.3f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ))) != Block::EMPTY || 
-		 chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX - 0.3f)), static_cast<unsigned int>(floor(playerPosY-1)), static_cast<unsigned int>(floor(playerPosZ))) != Block::EMPTY))
-		playerPos->x += static_cast<unsigned int>(ceil(playerPosX - 0.3f)) - playerPosX + 0.3f;
-	if (playerPosY < m_ChunkSize * 16 &&
-		(chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ + 0.3f))) != Block::EMPTY ||
-		 chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX)), static_cast<unsigned int>(floor(playerPosY-1)), static_cast<unsigned int>(floor(playerPosZ + 0.3f))) != Block::EMPTY))
-		playerPos->z -= playerPosZ + 0.3f - static_cast<unsigned int>(floor(playerPosZ + 0.3f));
-	if (playerPosZ >= 0.3 && playerPosY < m_ChunkSize * 16 &&
-		(chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ - 0.3f))) != Block::EMPTY ||
-		 chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX)), static_cast<unsigned int>(floor(playerPosY-1)), static_cast<unsigned int>(floor(playerPosZ - 0.3f))) != Block::EMPTY))
-		playerPos->z += static_cast<unsigned int>(ceil(playerPosZ - 0.3f)) - playerPosZ + 0.3f;
-	if (playerPosY < m_ChunkSize * 16 && chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ))) != Block::EMPTY)
-		playerPos->y -= playerPosY - static_cast<unsigned int>(floor(playerPosY));
-	if (playerPosY < m_ChunkSize * 16 && chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX)), static_cast<unsigned int>(floor(playerPosY - 1.8)), static_cast<unsigned int>(floor(playerPosZ))) != Block::EMPTY) {
-		playerPos->y += static_cast<unsigned int>(ceil(playerPosY - 1.8)) - playerPosY + 1.8f;
+	float playerPosZ = playerPos->z - (float)currentChunk.z * m_ChunkSize + (float)(m_ChunkSize + 2) / 2;
+	bool checked = false;
+
+	if (m_VerticalVelocity >= 0 && playerPosX >= 0.3 && playerPosZ >= 0.3 && playerPosY < m_ChunkSize * 16 &&
+		(chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX - 0.29f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ - 0.29f))) != Block::EMPTY ||
+		chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX + 0.29f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ - 0.29f))) != Block::EMPTY ||
+		chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX - 0.29f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ + 0.29f))) != Block::EMPTY ||
+		chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX + 0.29f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ + 0.29f))) != Block::EMPTY)) {
+		float diff = playerPosY - static_cast<unsigned int>(floor(playerPosY));
+		playerPos->y -= diff;
+		playerPosY -= diff;
+	}
+	if (m_VerticalVelocity < 0 && playerPosX >= 0.3 && playerPosZ >= 0.3 && playerPosY < m_ChunkSize * 16 &&
+		(chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX-0.29f)), static_cast<unsigned int>(floor(playerPosY-1.8f)), static_cast<unsigned int>(floor(playerPosZ - 0.29f))) != Block::EMPTY ||
+		 chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX+0.29f)), static_cast<unsigned int>(floor(playerPosY-1.8f)), static_cast<unsigned int>(floor(playerPosZ - 0.29f))) != Block::EMPTY ||
+		 chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX-0.29f)), static_cast<unsigned int>(floor(playerPosY-1.8f)), static_cast<unsigned int>(floor(playerPosZ + 0.29f))) != Block::EMPTY ||
+		 chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX+0.29f)), static_cast<unsigned int>(floor(playerPosY-1.8f)), static_cast<unsigned int>(floor(playerPosZ + 0.29f))) != Block::EMPTY)) {
+		float diff = static_cast<unsigned int>(ceil(playerPosY - 1.8)) - playerPosY + 1.8f;
+		playerPos->y += diff;
+		playerPosY += diff;
 		s_Ground = true;
 	}
 	else {
 		s_Ground = false;
+	}
+
+	if (playerPosX >= 0.3 && playerPosZ >= 0.3 && playerPosY < m_ChunkSize * 16 &&
+		(chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX + 0.3f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ - 0.3f))) != Block::EMPTY &&
+		chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX - 0.3f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ - 0.3f))) != Block::EMPTY ||
+		chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX + 0.3f)), static_cast<unsigned int>(floor(playerPosY - 1.8f)), static_cast<unsigned int>(floor(playerPosZ - 0.3f))) != Block::EMPTY &&
+		chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX - 0.3f)), static_cast<unsigned int>(floor(playerPosY - 1.8f)), static_cast<unsigned int>(floor(playerPosZ - 0.3f))) != Block::EMPTY)) {
+		playerPos->z += static_cast<unsigned int>(ceil(playerPosZ - 0.3f)) - playerPosZ + 0.3f; 
+		checked = true;
+	}
+	if (playerPosX >= 0.3 && playerPosZ >= 0.3 && playerPosY < m_ChunkSize * 16 &&
+		(chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX + 0.3f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ + 0.3f))) != Block::EMPTY &&
+		chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX - 0.3f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ + 0.3f))) != Block::EMPTY ||
+		chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX + 0.3f)), static_cast<unsigned int>(floor(playerPosY - 1.8f)), static_cast<unsigned int>(floor(playerPosZ + 0.3f))) != Block::EMPTY &&
+		chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX - 0.3f)), static_cast<unsigned int>(floor(playerPosY - 1.8f)), static_cast<unsigned int>(floor(playerPosZ + 0.3f))) != Block::EMPTY)) {
+		playerPos->z -= playerPosZ + 0.3f - static_cast<unsigned int>(floor(playerPosZ + 0.3f));
+		checked = true;
+	}
+	if (playerPosX >= 0.3 && playerPosZ >= 0.3 && playerPosY < m_ChunkSize * 16 &&
+		(chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX - 0.3f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ + 0.3f))) != Block::EMPTY &&
+		chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX - 0.3f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ - 0.3f))) != Block::EMPTY ||
+		chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX - 0.3f)), static_cast<unsigned int>(floor(playerPosY - 1.8f)), static_cast<unsigned int>(floor(playerPosZ + 0.3f))) != Block::EMPTY &&
+		chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX - 0.3f)), static_cast<unsigned int>(floor(playerPosY - 1.8f)), static_cast<unsigned int>(floor(playerPosZ - 0.3f))) != Block::EMPTY)) {
+		playerPos->x += static_cast<unsigned int>(ceil(playerPosX - 0.3f)) - playerPosX + 0.3f; 
+		checked = true;
+	}
+	if (playerPosX >= 0.3 && playerPosZ >= 0.3 && playerPosY < m_ChunkSize * 16 &&
+		(chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX + 0.3f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ + 0.3f))) != Block::EMPTY &&
+		chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX + 0.3f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ - 0.3f))) != Block::EMPTY ||
+		chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX + 0.3f)), static_cast<unsigned int>(floor(playerPosY - 1.8f)), static_cast<unsigned int>(floor(playerPosZ + 0.3f))) != Block::EMPTY &&
+		chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX + 0.3f)), static_cast<unsigned int>(floor(playerPosY - 1.8f)), static_cast<unsigned int>(floor(playerPosZ - 0.3f))) != Block::EMPTY)) {
+		playerPos->x -= playerPosX + 0.3f - static_cast<unsigned int>(floor(playerPosX + 0.3f));
+		checked = true;
+	}
+
+	if (!checked && playerPosX >= 0.3 && playerPosZ >= 0.3 && playerPosY < m_ChunkSize * 16 &&
+		(chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX - 0.3f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ - 0.3f))) != Block::EMPTY ||
+		chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX - 0.3f)), static_cast<unsigned int>(floor(playerPosY - 1.8f)), static_cast<unsigned int>(floor(playerPosZ - 0.3f))) != Block::EMPTY)) {
+		float dx = static_cast<unsigned int>(ceil(playerPosX - 0.3f)) - playerPosX + 0.3f; 
+		float dz = static_cast<unsigned int>(ceil(playerPosZ - 0.3f)) - playerPosZ + 0.3f; 
+		if (dx > dz)
+			playerPos->z += dz;
+		else
+			playerPos->x += dx;
+		checked = true;
+	}
+	if (!checked && playerPosX >= 0.3 && playerPosZ >= 0.3 && playerPosY < m_ChunkSize * 16 &&
+		(chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX + 0.3f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ - 0.3f))) != Block::EMPTY ||
+		chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX + 0.3f)), static_cast<unsigned int>(floor(playerPosY - 1.8f)), static_cast<unsigned int>(floor(playerPosZ - 0.3f))) != Block::EMPTY)) {
+		float dx = playerPosX + 0.3f - static_cast<unsigned int>(floor(playerPosX + 0.3f));
+		float dz = static_cast<unsigned int>(ceil(playerPosZ - 0.3f)) - playerPosZ + 0.3f; 
+		if (dx > dz)
+			playerPos->z += dz;
+		else
+			playerPos->x -= dx;
+		checked = true;
+	}
+	if (!checked && playerPosX >= 0.3 && playerPosZ >= 0.3 && playerPosY < m_ChunkSize * 16 &&
+		(chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX - 0.3f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ + 0.3f))) != Block::EMPTY ||
+		chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX - 0.3f)), static_cast<unsigned int>(floor(playerPosY - 1.8f)), static_cast<unsigned int>(floor(playerPosZ + 0.3f))) != Block::EMPTY)) {
+		float dx = static_cast<unsigned int>(ceil(playerPosX - 0.3f)) - playerPosX + 0.3f; 
+		float dz = playerPosZ + 0.3f - static_cast<unsigned int>(floor(playerPosZ + 0.3f));
+		if (dx > dz)
+			playerPos->z -= dz;
+		else
+			playerPos->x += dx;
+		checked = true;
+	}
+	if (!checked && playerPosX >= 0.3 && playerPosZ >= 0.3 && playerPosY < m_ChunkSize * 16 &&
+		(chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX + 0.3f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ + 0.3f))) != Block::EMPTY ||
+		chunk.GetMatrix()(static_cast<unsigned int>(floor(playerPosX + 0.3f)), static_cast<unsigned int>(floor(playerPosY - 1.8f)), static_cast<unsigned int>(floor(playerPosZ + 0.3f))) != Block::EMPTY)) {
+		float dx = playerPosX + 0.3f - static_cast<unsigned int>(floor(playerPosX + 0.3f));
+		float dz = playerPosZ + 0.3f - static_cast<unsigned int>(floor(playerPosZ + 0.3f));
+		if (dx > dz)
+			playerPos->z -= dz;
+		else
+			playerPos->x -= dx;
+		checked = true;
 	}
 }
 
 void Game::ApplyGravity(glm::vec3*& playerPos, float deltaTime)
 {
 	if (!s_FlyMode) {
-		float gravity = 30.0f;
+		float gravity = 35.0f;
 		if (!s_Ground)
 			m_VerticalVelocity += -gravity * deltaTime;
 		else
@@ -212,7 +288,7 @@ void Game::ApplyGravity(glm::vec3*& playerPos, float deltaTime)
 void Game::Jump()
 {
 	if (s_Jump) {
-		m_VerticalVelocity += 10.0f;
+		m_VerticalVelocity += 8.7f;
 		s_Jump = false;
 		s_Ground = false;
 	}
