@@ -54,9 +54,8 @@ struct Vertex {
 class Chunk
 {
 public:
-	Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, glm::vec3 position, ChunkCoord worldCoords, unsigned int seed, const VertexBufferLayout& layout,
+	Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, glm::vec3 position, unsigned int seed, const VertexBufferLayout& layout,
 		unsigned int maxVertexCount, const std::vector<unsigned int>& indices);
-	static std::unordered_map<ChunkCoord, Chunk, hash_fn> s_ChunkMap;
 	Matrix<Block> GetMatrix() const;
 	void GenerateMesh();
 	void SetMatrix(unsigned int x, unsigned int y, unsigned int z, Block block);

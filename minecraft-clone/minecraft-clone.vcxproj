@@ -159,6 +159,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\ChunkManager.cpp" />
     <ClCompile Include="src\Noise.cpp" />
     <ClCompile Include="src\Chunk.cpp" />
     <ClCompile Include="src\Game.cpp" />
@@ -322,6 +323,7 @@
     <None Include="src\extern\glm\gtx\wrap.inl" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\ChunkManager.h" />
     <ClInclude Include="src\Noise.h" />
     <ClInclude Include="src\Matrix.hpp" />
     <ClInclude Include="src\Chunk.h" />

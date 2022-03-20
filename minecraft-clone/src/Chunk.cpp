@@ -5,8 +5,6 @@
 
 const float Chunk::s_TextureOffset = 0.0625f; // texture_size/atlas_size
 
-std::unordered_map<ChunkCoord, Chunk, hash_fn> Chunk::s_ChunkMap;
-
 bool operator==(const ChunkCoord& l, const ChunkCoord& r)
 {
 	return l.x == r.x && l.z == r.z;
@@ -46,9 +44,9 @@ const std::unordered_map<Block, std::array<float, 24>> Chunk::s_TextureMap =
 };
 
 // the chunk has a border so that I know what faces to cull between chunks (I only generate the mesh of the part inside the border)
-Chunk::Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, glm::vec3 position, ChunkCoord worldCoords, unsigned int seed, const VertexBufferLayout& layout,
+Chunk::Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, glm::vec3 position, unsigned int seed, const VertexBufferLayout& layout,
 		unsigned int maxVertexCount, const std::vector<unsigned int>& indices) : 
-	m_XLength(xLength+2), m_YLength(yLength+2), m_ZLength(zLength+2), m_Position(std::move(position)), m_Chunk(Matrix<Block>(m_XLength, m_YLength, m_ZLength)), m_WorldCoords(worldCoords), m_Seed(seed),
+	m_XLength(xLength+2), m_YLength(yLength+2), m_ZLength(zLength+2), m_Position(std::move(position)), m_Chunk(Matrix<Block>(m_XLength, m_YLength, m_ZLength)), m_Seed(seed),
 	m_MaxVertexCount(maxVertexCount)
 {
 	m_Shader = std::make_unique<Shader>("C:/dev/minecraft-clone/minecraft-clone/res/shaders/Basic.shader");
