@@ -27,6 +27,7 @@ namespace cam {
 		void SetFlyMode(bool flyMode);
 		glm::mat4 GetViewMatrix() const;
 		glm::vec3* GetPlayerPosition();
+		glm::vec3 GetPlayerDirection() const;
 	private:
 		glm::vec3 m_CameraPos;
 		glm::vec3 m_CameraFront;

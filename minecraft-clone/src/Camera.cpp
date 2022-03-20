@@ -1,6 +1,5 @@
 #include "Camera.h"
 #include "glm/gtc/matrix_transform.hpp"
-#include "iostream"
 
 namespace cam {
 
@@ -44,6 +43,11 @@ namespace cam {
 	glm::vec3* Camera::GetPlayerPosition()
 	{
 		return &m_CameraPos;
+	}
+
+	glm::vec3 Camera::GetPlayerDirection() const
+	{
+		return m_CameraFront;
 	}
 
 	void Camera::ProcessMouse(float xoffset, float yoffset)

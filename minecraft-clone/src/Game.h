@@ -1,15 +1,5 @@
 #pragma once
 
-#include "Renderer.h"
-#include "VertexArray.h"
-#include "VertexBuffer.h"
-#include "VertexBufferLayout.hpp"
-#include "IndexBuffer.h"
-#include "Texture.h"
-#include "Shader.h"
-#include <memory>
-#include <future>
-#include <glm/glm.hpp>
 #include "Camera.h"
 #include "Chunk.h"
 
@@ -17,10 +7,11 @@ class Game
 {
 public:
 	Game();
-	~Game();
 	void OnUpdate(float deltaTime);
 	void OnRender();
 	static void ProcessKey(cam::Key key);
+	static void ProcessLeftMouseButton();
+	static void ProcessRightMouseButton();
 	static cam::Camera camera;
 	 
 private:
@@ -30,28 +21,27 @@ private:
 	};
 
 	void GenerateChunks();
+	void CheckRayCast(glm::vec3*& playerPos, ChunkCoord currentChunk);
 	void CheckCollision(glm::vec3*& playerPos, ChunkCoord currentChunk);
 	void ApplyGravity(glm::vec3*& playerPos, float deltaTime);
-	void Jump();
+	void CheckJump();
 
-	std::unique_ptr<VertexArray> m_VAO;
-	std::unique_ptr<IndexBuffer> m_IBO;
-	std::unique_ptr<VertexBuffer> m_VBO;
-	std::unique_ptr<Shader> m_Shader;
-	std::unique_ptr<Texture> m_Texture1;
+	VertexBufferLayout m_VertexLayout;
 	
 	static bool s_FlyMode;
 	static bool s_Ground;
 	static bool s_Jump;
+	static bool s_RightButton;
+	static bool s_LeftButton;
 	glm::mat4 m_Proj;
-	Renderer m_Renderer;
 	ChunkCoord m_LastChunk;
 	unsigned int m_ChunkSize; // refactor later
-	VertexBufferLayout m_VertexLayout;
 	int m_ViewDistance;
-	bool m_LoadingChunks;
 	bool m_GameStart;
-	std::future<std::vector<Vertex>> m_BufferFut;
-	unsigned int m_Seed;
 	float m_VerticalVelocity;
+	unsigned int m_MaxIndexCount;
+	unsigned int m_MaxVertexCount;
+	std::vector<unsigned int> m_Indices;
+	std::vector<Chunk*> m_ChunksToRender;
+	unsigned int m_Seed;
 };

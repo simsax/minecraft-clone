@@ -41,6 +41,7 @@ namespace glfw {
 		std::cout << glGetString(GL_VERSION) << std::endl;
 
 		glfwSetCursorPosCallback(m_Window, MouseCallback);
+		glfwSetMouseButtonCallback(m_Window, MouseButtonCallback);
 		glfwSetKeyCallback(m_Window, KeyCallback);
 		glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); // capture cursor in the center and hide it
 
@@ -142,6 +143,16 @@ void glfw::Window::MouseCallback(GLFWwindow* window, double xpos, double ypos)
 	lastY = static_cast<float>(ypos);
 
 	Game::camera.ProcessMouse(xoffset, yoffset);
+}
+
+void glfw::Window::MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+{
+	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+		Game::ProcessLeftMouseButton();
+	}
+	if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
+		Game::ProcessRightMouseButton();
+	}
 }
 
 // game input

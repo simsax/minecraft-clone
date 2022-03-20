@@ -46,11 +46,26 @@ const std::unordered_map<Block, std::array<float, 24>> Chunk::s_TextureMap =
 };
 
 // the chunk has a border so that I know what faces to cull between chunks (I only generate the mesh of the part inside the border)
-Chunk::Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, glm::vec3 position, ChunkCoord worldCoords, unsigned int seed) : 
-	m_XLength(xLength+2), m_YLength(yLength+2), m_ZLength(zLength+2), m_Position(std::move(position)), m_Chunk(Matrix<Block>(m_XLength, m_YLength, m_ZLength)), m_WorldCoords(worldCoords)
+Chunk::Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, glm::vec3 position, ChunkCoord worldCoords, unsigned int seed, const VertexBufferLayout& layout,
+		unsigned int maxVertexCount, const std::vector<unsigned int>& indices) : 
+	m_XLength(xLength+2), m_YLength(yLength+2), m_ZLength(zLength+2), m_Position(std::move(position)), m_Chunk(Matrix<Block>(m_XLength, m_YLength, m_ZLength)), m_WorldCoords(worldCoords), m_Seed(seed),
+	m_MaxVertexCount(maxVertexCount)
 {
+	m_Shader = std::make_unique<Shader>("C:/dev/minecraft-clone/minecraft-clone/res/shaders/Basic.shader");
+	m_Shader->Bind();
+
+	m_Texture = std::make_unique<Texture>("C:/dev/minecraft-clone/minecraft-clone/res/textures/terrain.png");
+	m_Texture->Bind(0);
+	m_Shader->SetUniform1i("u_Texture", 0);
+
+	m_IBO = std::make_unique<IndexBuffer>(indices.size() * sizeof(unsigned int), indices.data());
+	m_VBO = std::make_unique<VertexBuffer>();
+	m_VBO->CreateDynamic(sizeof(Vertex) * maxVertexCount);
+	m_VAO = std::make_unique<VertexArray>();
+	m_VAO->AddBuffer(*m_VBO, layout);
+	
 	//SinInit();
-	Noise2DInit(seed);
+	Noise2DInit();
 }
 
 // fine tune the values
@@ -92,8 +107,8 @@ static float Noise(int x, int y, unsigned int octaves, const std::vector<std::ve
 	return terrain_height + height;
 }
 
-void Chunk::Noise2DInit(unsigned int seed) {
-	srand(seed);
+void Chunk::Noise2DInit() {
+	srand(m_Seed);
 	std::vector<std::vector<int>> octaveOffsets;
 	unsigned int n_octaves = 4;
 	for (unsigned int i = 0; i < n_octaves; i++) {
@@ -174,54 +189,83 @@ void Chunk::SinInit() {
 }
 
 void Chunk::GenerateMesh() {
-	m_Mesh.reserve(4096);
+	if (m_Mesh.empty()) {
+		m_Mesh.reserve(m_MaxVertexCount);
 
-	// I want to render it relative to the center of m_Position
-	int xCoord = static_cast<int>(m_Position.x - m_XLength / 2);
-	//int yCoord = static_cast<int>(m_Position.y - m_YLength - 1);
-	int yCoord = -150;
-	int zCoord = static_cast<int>(m_Position.z - m_ZLength / 2);
-	glm::vec3 center(xCoord, yCoord, zCoord);
+		// I want to render it relative to the center of m_Position
+		int xCoord = static_cast<int>(m_Position.x - m_XLength / 2);
+		//int yCoord = static_cast<int>(m_Position.y - m_YLength - 1);
+		int yCoord = -150;
+		int zCoord = static_cast<int>(m_Position.z - m_ZLength / 2);
+		glm::vec3 center(xCoord, yCoord, zCoord);
 
-	for (unsigned int i = 1; i < m_XLength - 1; i++) {
-		for (unsigned int k = 1; k < m_ZLength - 1; k++) {
-			for (unsigned int j = 1; j < m_YLength - 1; j++) {
-				if (m_Chunk(i, j, k) != Block::EMPTY) {
-					std::array<float, 24> textureCoords = s_TextureMap.at(m_Chunk(i, j, k));
-					if (j > 0 && m_Chunk(i, j - 1, k) == Block::EMPTY) { // D
-						CreateDQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
-					}
-					if (j < m_YLength - 1 && m_Chunk(i, j + 1, k) == Block::EMPTY) { // U	
-						CreateUQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
-					}
-					if (k > 0 && m_Chunk(i, j, k - 1) == Block::EMPTY) { // B
-						CreateBQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
-					}
-					if (k < m_ZLength - 1 && m_Chunk(i, j, k + 1) == Block::EMPTY) { // F
-						CreateFQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
-					}
-					if (i > 0 && m_Chunk(i - 1, j, k) == Block::EMPTY) { // L
-						CreateLQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
-					}
-					if (i < m_XLength - 1 && m_Chunk(i + 1, j, k) == Block::EMPTY) { // R
-						CreateRQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
+		for (unsigned int i = 1; i < m_XLength - 1; i++) {
+			for (unsigned int k = 1; k < m_ZLength - 1; k++) {
+				for (unsigned int j = 1; j < m_YLength - 1; j++) {
+					if (m_Chunk(i, j, k) != Block::EMPTY) {
+						std::array<float, 24> textureCoords = s_TextureMap.at(m_Chunk(i, j, k));
+						if (j > 0 && m_Chunk(i, j - 1, k) == Block::EMPTY) { // D
+							CreateDQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
+						}
+						if (j < m_YLength - 1 && m_Chunk(i, j + 1, k) == Block::EMPTY) { // U	
+							CreateUQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
+						}
+						if (k > 0 && m_Chunk(i, j, k - 1) == Block::EMPTY) { // B
+							CreateBQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
+						}
+						if (k < m_ZLength - 1 && m_Chunk(i, j, k + 1) == Block::EMPTY) { // F
+							CreateFQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
+						}
+						if (i > 0 && m_Chunk(i - 1, j, k) == Block::EMPTY) { // L
+							CreateLQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
+						}
+						if (i < m_XLength - 1 && m_Chunk(i + 1, j, k) == Block::EMPTY) { // R
+							CreateRQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
+						}
 					}
 				}
+			}
+		}
+		size_t indexCount = m_Mesh.size() / 4 * 6; // num faces * 6
+		m_VBO->SendData(m_Mesh.size() * sizeof(Vertex), m_Mesh.data());
+		m_IBO->SetCount(indexCount);
+	}
+}
+
+// can be called with multithreading if slow
+void Chunk::UpdateMesh(unsigned int x, unsigned int y, unsigned int z, Block block)
+{
+	// take care of border (I think, maybe I also have to do for y or not do this at all)
+	x += 1;
+	z += 1;
+	// check the blocks surrounding the modified block and figure out a way to edit the m_Mesh accordingly
+	for (unsigned int i = x - 1; i <= x + 1; i++) {
+		for (unsigned int k = z - 1; k <= z + 1; k++) {
+			for (unsigned int j = y - 1; j <= y + 1; j++) {
+				// to figure out
 			}
 		}
 	}
 }
 
-std::vector<Vertex> Chunk::GetMesh()
+void Chunk::Render(const glm::mat4& mvp)
 {
-	if (m_Mesh.empty())
-		GenerateMesh();
-	return m_Mesh;
+	m_Shader->SetUniformMat4f("u_MVP", mvp);
+	//m_Texture1->Bind(); // I need to bind texture and shaders if I use different textures or shaders in my code
+	//m_Shader->Bind();
+
+	m_Renderer.Draw(*m_VAO, *m_IBO, GL_UNSIGNED_INT, *m_Shader);
 }
 
 Matrix<Block> Chunk::GetMatrix() const
 {
 	return m_Chunk;
+}
+
+void Chunk::SetMatrix(unsigned int x, unsigned int y, unsigned int z, Block block)
+{
+	m_Chunk(x, y, z) = block;
+	UpdateMesh(x,y,z,block);
 }
 
 
@@ -278,4 +322,5 @@ void Chunk::CreateLQuad(std::vector<Vertex>& target, const glm::vec3& position, 
 	target.emplace_back(glm::vec3(position[0], position[1] + size, position[2] + size), glm::vec2(textureCoords[12], textureCoords[13]));
 	target.emplace_back(glm::vec3(position[0], position[1] + size, position[2]), glm::vec2(textureCoords[14], textureCoords[15]));
 }
+
 
