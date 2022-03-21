@@ -47,7 +47,7 @@ const std::unordered_map<Block, std::array<float, 24>> Chunk::s_TextureMap =
 Chunk::Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, glm::vec3 position, unsigned int seed, const VertexBufferLayout& layout,
 		unsigned int maxVertexCount, const std::vector<unsigned int>& indices) : 
 	m_XLength(xLength+2), m_YLength(yLength+2), m_ZLength(zLength+2), m_Position(std::move(position)), m_Chunk(Matrix<Block>(m_XLength, m_YLength, m_ZLength)), m_Seed(seed),
-	m_MaxVertexCount(maxVertexCount)
+	m_MaxVertexCount(maxVertexCount), m_NeedUpdate(false)
 {
 	m_Shader = std::make_unique<Shader>("C:/dev/minecraft-clone/minecraft-clone/res/shaders/Basic.shader");
 	m_Shader->Bind();
@@ -62,6 +62,7 @@ Chunk::Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, g
 	m_VAO = std::make_unique<VertexArray>();
 	m_VAO->AddBuffer(*m_VBO, layout);
 	
+	m_Mesh.reserve(m_MaxVertexCount);
 	//SinInit();
 	Noise2DInit();
 }
@@ -188,8 +189,6 @@ void Chunk::SinInit() {
 
 void Chunk::GenerateMesh() {
 	if (m_Mesh.empty()) {
-		m_Mesh.reserve(m_MaxVertexCount);
-
 		// I want to render it relative to the center of m_Position
 		int xCoord = static_cast<int>(m_Position.x - m_XLength / 2);
 		//int yCoord = static_cast<int>(m_Position.y - m_YLength - 1);
@@ -227,7 +226,13 @@ void Chunk::GenerateMesh() {
 		size_t indexCount = m_Mesh.size() / 4 * 6; // num faces * 6
 		m_VBO->SendData(m_Mesh.size() * sizeof(Vertex), m_Mesh.data());
 		m_IBO->SetCount(indexCount);
+		m_NeedUpdate = false;
 	}
+}
+
+bool Chunk::GetNeedUpdate() const
+{
+	return m_NeedUpdate;
 }
 
 // can be called with multithreading if slow
@@ -263,7 +268,9 @@ Matrix<Block> Chunk::GetMatrix() const
 void Chunk::SetMatrix(unsigned int x, unsigned int y, unsigned int z, Block block)
 {
 	m_Chunk(x, y, z) = block;
-	UpdateMesh(x,y,z,block);
+	m_Mesh.clear();
+	m_NeedUpdate = true;
+	//UpdateMesh(x,y,z,block);
 }
 
 

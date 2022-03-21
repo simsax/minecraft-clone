@@ -33,7 +33,7 @@ Game::Game() :
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CCW);
 
-	m_ChunkManager.GenerateChunks(*camera.GetPlayerPosition());
+	m_ChunkManager.InitWorld();
 }
 
 void Game::OnRender()

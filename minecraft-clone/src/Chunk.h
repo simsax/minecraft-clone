@@ -58,6 +58,7 @@ public:
 		unsigned int maxVertexCount, const std::vector<unsigned int>& indices);
 	Matrix<Block> GetMatrix() const;
 	void GenerateMesh();
+	bool GetNeedUpdate() const;
 	void SetMatrix(unsigned int x, unsigned int y, unsigned int z, Block block);
 	void Render(const glm::mat4& mvp);
 private:
@@ -90,4 +91,5 @@ private:
 	std::vector<Vertex> m_Mesh;
 	unsigned int m_Seed;
 	unsigned int m_MaxVertexCount;
+	bool m_NeedUpdate;
 };

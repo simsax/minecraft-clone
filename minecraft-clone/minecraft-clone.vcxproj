@@ -621,9 +621,11 @@
     <ClInclude Include="src\extern\imgui\imstb_textedit.h" />
     <ClInclude Include="src\extern\imgui\imstb_truetype.h" />
     <ClInclude Include="src\IndexBuffer.h" />
+    <ClInclude Include="src\Pool.h" />
     <ClInclude Include="src\Renderer.h" />
     <ClInclude Include="src\Shader.h" />
     <ClInclude Include="src\extern\stb_image\stb_image.h" />
+    <ClInclude Include="src\ThreadPool.hpp" />
     <ClInclude Include="src\VertexArray.h" />
     <ClInclude Include="src\VertexBuffer.h" />
     <ClInclude Include="src\VertexBufferLayout.hpp" />
