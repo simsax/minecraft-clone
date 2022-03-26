@@ -47,14 +47,8 @@ const std::unordered_map<Block, std::array<float, 24>> Chunk::s_TextureMap =
 Chunk::Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, glm::vec3 position, unsigned int seed, const VertexBufferLayout& layout,
 		unsigned int maxVertexCount, const std::vector<unsigned int>& indices) : 
 	m_XLength(xLength+2), m_YLength(yLength+2), m_ZLength(zLength+2), m_Position(std::move(position)), m_Chunk(Matrix<Block>(m_XLength, m_YLength, m_ZLength)), m_Seed(seed),
-	m_MaxVertexCount(maxVertexCount), m_NeedUpdate(false)
+	m_MaxVertexCount(maxVertexCount)
 {
-	m_Shader = std::make_unique<Shader>("C:/dev/minecraft-clone/minecraft-clone/res/shaders/Basic.shader");
-	m_Shader->Bind();
-
-	m_Texture = std::make_unique<Texture>("C:/dev/minecraft-clone/minecraft-clone/res/textures/terrain.png");
-	m_Texture->Bind(0);
-	m_Shader->SetUniform1i("u_Texture", 0);
 
 	m_IBO = std::make_unique<IndexBuffer>(indices.size() * sizeof(unsigned int), indices.data());
 	m_VBO = std::make_unique<VertexBuffer>();
@@ -226,13 +220,7 @@ void Chunk::GenerateMesh() {
 		size_t indexCount = m_Mesh.size() / 4 * 6; // num faces * 6
 		m_VBO->SendData(m_Mesh.size() * sizeof(Vertex), m_Mesh.data());
 		m_IBO->SetCount(indexCount);
-		m_NeedUpdate = false;
 	}
-}
-
-bool Chunk::GetNeedUpdate() const
-{
-	return m_NeedUpdate;
 }
 
 // can be called with multithreading if slow
@@ -251,13 +239,9 @@ void Chunk::UpdateMesh(unsigned int x, unsigned int y, unsigned int z, Block blo
 	}
 }
 
-void Chunk::Render(const glm::mat4& mvp)
+void Chunk::Render(const Renderer& renderer)
 {
-	m_Shader->SetUniformMat4f("u_MVP", mvp);
-	//m_Texture1->Bind(); // I need to bind texture and shaders if I use different textures or shaders in my code
-	//m_Shader->Bind();
-
-	m_Renderer.Draw(*m_VAO, *m_IBO, GL_UNSIGNED_INT, *m_Shader);
+	renderer.Draw(*m_VAO, *m_IBO, GL_UNSIGNED_INT);
 }
 
 Matrix<Block> Chunk::GetMatrix() const
@@ -269,7 +253,6 @@ void Chunk::SetMatrix(unsigned int x, unsigned int y, unsigned int z, Block bloc
 {
 	m_Chunk(x, y, z) = block;
 	m_Mesh.clear();
-	m_NeedUpdate = true;
 	//UpdateMesh(x,y,z,block);
 }
 

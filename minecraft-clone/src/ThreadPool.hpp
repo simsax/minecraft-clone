@@ -14,7 +14,7 @@ public:
 	void End();
 private:
 	std::queue<std::packaged_task<Chunk(ChunkCoord)>> m_Jobs;
-	std::vector<std::thread> m_Threads;
+	std::thread m_Thread;
 	bool m_Shutdown;
 	std::mutex m_Mtx;
 	std::condition_variable m_Cv;

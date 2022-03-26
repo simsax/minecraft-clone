@@ -15,7 +15,8 @@ using namespace std::chrono_literals;
 
 ChunkManager::ChunkManager():
 	m_ViewDistance(VIEW_DISTANCE),
-	m_Shutdown(false)
+	m_Shutdown(false),
+	m_LoadingChunks(false)
 //	m_ThreadPool(ctpl::thread_pool(std::thread::hardware_concurrency()))
 {
 	m_VertexLayout.Push<float>(3); // position
@@ -75,14 +76,19 @@ void ChunkManager::InitWorld()
 		LoadChunks();
 }
 
-void ChunkManager::Render(const glm::mat4& mvp)
+void ChunkManager::Render(const Renderer& renderer)
 {
 	LoadChunks();
 	//UpdateChunksToRender();
 	//std::unique_lock<std::mutex> lk(m_Mtx);
 	for (auto& chunk : m_ChunksToRender) {
-		chunk->Render(mvp);
+		chunk->Render(renderer);
 	}
+}
+
+void ChunkManager::UpdateChunk(ChunkCoord chunk)
+{
+	m_ChunksToLoad.push(chunk);
 }
 
 int ChunkManager::GetViewDistance() const
@@ -102,6 +108,32 @@ void ChunkManager::LoadChunks()
 		chunk.GenerateMesh();
 		return chunk;
 	};
+	auto meshFun2 = [this](const std::queue<ChunkCoord>& chunksToLoad) {
+		std::vector<std::pair<ChunkCoord, Chunk>> chunks;
+		while (!chunksToLoad.empty()) {
+			ChunkCoord coords = m_ChunksToLoad.front();
+			m_ChunksToLoad.pop();
+			Chunk chunk(m_ChunkSize[0], m_ChunkSize[1], m_ChunkSize[2], glm::vec3(coords.x * static_cast<int>(m_ChunkSize[0]), 0.0, coords.z * static_cast<int>(m_ChunkSize[2])), m_Seed, m_VertexLayout, MAX_VERTEX_COUNT, m_Indices);
+			chunk.GenerateMesh();
+			chunks.emplace_back(std::make_pair(coords, std::move(chunk)));
+		}
+		return chunks;
+	};
+
+
+//	if (!m_ChunksToLoad.empty() && !m_LoadingChunks) {
+//		m_FutureChunks = std::async(std::launch::async, meshFun2, m_ChunksToLoad);
+//		m_LoadingChunks = true;
+//	}
+//	if (m_LoadingChunks && m_FutureChunks.wait_for(1ms) == std::future_status::ready) {
+//		std::vector<std::pair<ChunkCoord, Chunk>> chunks = m_FutureChunks.get();
+//		for (auto& coord_chunk : chunks) {
+//			m_ChunkMap.insert({ coord_chunk.first, std::move(coord_chunk.second) });
+//			m_ChunksToRender.emplace_back(&m_ChunkMap.find(coord_chunk.first)->second);
+//		}
+//		m_ChunksToLoad = {};
+//	}
+
 
 	for (int n = 0; n < MAX_CHUNK_TO_LOAD && !m_ChunksToLoad.empty(); n++) {
 		ChunkCoord coords = m_ChunksToLoad.front();
@@ -132,7 +164,7 @@ void ChunkManager::GenerateChunks(const glm::vec3& playerPosition)
 		for (int j = -m_ViewDistance + playerPosZ; j <= m_ViewDistance + playerPosZ; j++) {
 			ChunkCoord coords = { i, j };
 			// check if this chunk hasn't already been generated
-			if (m_ChunkMap.find(coords) == m_ChunkMap.end() || m_ChunkMap.find(coords)->second.GetNeedUpdate()) {
+			if (m_ChunkMap.find(coords) == m_ChunkMap.end()) {
 				// add chunk to the loading queue
 				m_ChunksToLoad.push(coords);
 			}

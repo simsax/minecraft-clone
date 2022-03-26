@@ -33,6 +33,7 @@ Game::Game() :
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CCW);
 
+	m_Renderer.Init();
 	m_ChunkManager.InitWorld();
 }
 
@@ -41,10 +42,10 @@ void Game::OnRender()
 	glClearColor(173.0f / 255.0f, 223.0f / 255.0f, 230.0f / 255.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	glm::mat4 model = glm::mat4(1.0f);
-	glm::mat4 mvp = m_Proj * camera.GetViewMatrix() * model;
+	glm::mat4 mvp = m_Proj * camera.GetViewMatrix() * glm::mat4(1.0f);
+	m_Renderer.SetMVP(mvp);
 
-	m_ChunkManager.Render(mvp);
+	m_ChunkManager.Render(m_Renderer);
 }
 
 void Game::ProcessKey(cam::Key key)
@@ -199,6 +200,7 @@ void Game::ApplyGravity(glm::vec3*& playerPos, float deltaTime)
 	}
 }
 
+// should also check ray cast for neighboring chunks
 void Game::CheckRayCast(glm::vec3*& playerPos, ChunkCoord currentChunk) {
 	Chunk* chunk = &m_ChunkManager.m_ChunkMap.find(currentChunk)->second;
 	std::array<unsigned int, 3> chunkSize = m_ChunkManager.GetChunkSize();
@@ -280,12 +282,12 @@ void Game::CheckRayCast(glm::vec3*& playerPos, ChunkCoord currentChunk) {
 		chunk->SetMatrix(static_cast<unsigned int>(currentVoxel.x), static_cast<unsigned int>(currentVoxel.y), static_cast<unsigned int>(currentVoxel.z), Block::EMPTY);
 		std::cout << "colpito blocco (" << currentVoxel.x << "," << currentVoxel.y << "," << currentVoxel.z << ")\n";
 		s_LeftButton = false;
-		// shuld update only the current chunk (use same code as generate chunks, just push back all existing pointers and send data to vbo, it should be fast enough)
-		// the setmatrix function has to update only the mesh surrounding the block tho
+		m_ChunkManager.UpdateChunk(currentChunk);
 	}
 	else if (voxelFound && s_RightButton) {
 		chunk->SetMatrix(static_cast<unsigned int>(currentVoxel.x), static_cast<unsigned int>(currentVoxel.y), static_cast<unsigned int>(currentVoxel.z), Block::STONE);
 		s_RightButton = false;
+		m_ChunkManager.UpdateChunk(currentChunk);
 	}
 }
 

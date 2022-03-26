@@ -27,6 +27,7 @@ private:
 	static bool s_LeftButton;
 
 	glm::mat4 m_Proj;
+	Renderer m_Renderer;
 	ChunkManager m_ChunkManager;
 	bool m_GameStart;
 	ChunkCoord m_LastChunk;
