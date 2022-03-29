@@ -19,7 +19,8 @@ Game::Game() :
 	m_Proj(glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 500.0f)),
 	m_GameStart(true),
 	m_VerticalVelocity(0.0f),
-	m_LastChunk({0,0})
+	m_LastChunk({0,0}),
+	m_HoldingBlock(Block::STONE)
 {
 	// depth testing
 	glEnable(GL_DEPTH_TEST);
@@ -209,10 +210,11 @@ void Game::CheckRayCast(glm::vec3*& playerPos, ChunkCoord currentChunk) {
 	float playerPosZ = playerPos->z - (float)currentChunk.z * chunkSize[2] + (float)(chunkSize[2] + 2) / 2;
 
 	glm::vec3 playerDir = camera.GetPlayerDirection();
-	float Sx = sqrt(1 + (playerDir.x / playerDir.y) * (playerDir.x / playerDir.y) + (playerDir.x / playerDir.z) * (playerDir.x / playerDir.z));
-	float Sy = sqrt(1 + (playerDir.y / playerDir.x) * (playerDir.y / playerDir.x) + (playerDir.y / playerDir.z) * (playerDir.y / playerDir.z));
-	float Sz = sqrt(1 + (playerDir.z / playerDir.y) * (playerDir.z / playerDir.y) + (playerDir.z / playerDir.x) * (playerDir.z / playerDir.x));
+	float Sx = abs(1 / playerDir.x);
+	float Sy = abs(1 / playerDir.y);
+	float Sz = abs(1 / playerDir.z);
 	glm::vec3 currentVoxel = { floor(playerPosX), floor(playerPosY), floor(playerPosZ) };
+	glm::vec3 previousVoxel;
 	glm::vec3 rayLength;
 	glm::vec3 step;
 
@@ -245,6 +247,7 @@ void Game::CheckRayCast(glm::vec3*& playerPos, ChunkCoord currentChunk) {
 	float maxDistance = 5.0f;
 	float distance = 0.0f;
 	while (!voxelFound && distance < maxDistance) {
+		previousVoxel = currentVoxel;
 		// walk
 		if (rayLength.x < rayLength.y) {
 			if (rayLength.x < rayLength.z) {
@@ -279,13 +282,13 @@ void Game::CheckRayCast(glm::vec3*& playerPos, ChunkCoord currentChunk) {
 	}
 
 	if (voxelFound && s_LeftButton) {
+		m_HoldingBlock = chunk->GetMatrix()(static_cast<unsigned int>(currentVoxel.x), static_cast<unsigned int>(currentVoxel.y), static_cast<unsigned int>(currentVoxel.z));
 		chunk->SetMatrix(static_cast<unsigned int>(currentVoxel.x), static_cast<unsigned int>(currentVoxel.y), static_cast<unsigned int>(currentVoxel.z), Block::EMPTY);
-		std::cout << "colpito blocco (" << currentVoxel.x << "," << currentVoxel.y << "," << currentVoxel.z << ")\n";
 		s_LeftButton = false;
 		m_ChunkManager.UpdateChunk(currentChunk);
 	}
 	else if (voxelFound && s_RightButton) {
-		chunk->SetMatrix(static_cast<unsigned int>(currentVoxel.x), static_cast<unsigned int>(currentVoxel.y), static_cast<unsigned int>(currentVoxel.z), Block::STONE);
+		chunk->SetMatrix(static_cast<unsigned int>(previousVoxel.x), static_cast<unsigned int>(previousVoxel.y), static_cast<unsigned int>(previousVoxel.z), m_HoldingBlock);
 		s_RightButton = false;
 		m_ChunkManager.UpdateChunk(currentChunk);
 	}
@@ -300,8 +303,15 @@ void Game::CheckJump()
 	}
 }
 
+
+// 2 problems: raycasting neighboring chunk, s_LeftButton must become false after X frames otherwise I click in the sky, then I move until I encounter a block and hit it 
+
 void Game::OnUpdate(float deltaTime)
 {
+	bool clear_btn = false;
+	if (s_LeftButton || s_RightButton)
+		clear_btn = true;
+
 	// move those into the functions
 	glm::vec3* playerPos = camera.GetPlayerPosition();
 	ChunkCoord currentChunk = { static_cast<int>(round(playerPos->x / m_ChunkManager.GetChunkSize()[0])), static_cast<int>(round(playerPos->z / m_ChunkManager.GetChunkSize()[2]))};
@@ -310,7 +320,14 @@ void Game::OnUpdate(float deltaTime)
 	CheckRayCast(playerPos, currentChunk);
 	ApplyGravity(playerPos, deltaTime);
 	CheckCollision(playerPos, currentChunk);
-	
+
+	if (clear_btn) {
+		if (s_LeftButton)
+			s_LeftButton = false;
+		if (s_RightButton)
+			s_RightButton = false;
+	}
+
 	// update chunks (LOGIC TO BE IMPROVED)
 	if (m_LastChunk - currentChunk >= m_ChunkManager.GetViewDistance() / 4) {
 		m_ChunkManager.GenerateChunks(*playerPos);

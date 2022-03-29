@@ -28,9 +28,9 @@ private:
 	unsigned int m_Seed;
 	int m_ViewDistance;
 	//std::vector<std::future<Chunk>> m_ChunksLoaded;
-	std::thread m_Thread;
-	std::mutex m_Mtx;
-	std::condition_variable m_Cv;
+	//std::thread m_Thread;
+	//std::mutex m_Mtx;
+	//std::condition_variable m_Cv;
 	bool m_Shutdown;
 	bool m_LoadingChunks;
 };

@@ -32,4 +32,5 @@ private:
 	bool m_GameStart;
 	ChunkCoord m_LastChunk;
 	float m_VerticalVelocity;
+	Block m_HoldingBlock;
 };
