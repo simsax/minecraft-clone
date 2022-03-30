@@ -45,9 +45,9 @@ const std::unordered_map<Block, std::array<float, 24>> Chunk::s_TextureMap =
 
 // the chunk has a border so that I know what faces to cull between chunks (I only generate the mesh of the part inside the border)
 Chunk::Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, glm::vec3 position, unsigned int seed, const VertexBufferLayout& layout,
-		unsigned int maxVertexCount, const std::vector<unsigned int>& indices) : 
-	m_XLength(xLength+2), m_YLength(yLength+2), m_ZLength(zLength+2), m_Position(std::move(position)), m_Chunk(Matrix<Block>(m_XLength, m_YLength, m_ZLength)), m_Seed(seed),
-	m_MaxVertexCount(maxVertexCount)
+		unsigned int maxVertexCount, const std::vector<unsigned int>& indices, ChunkCoord worldCoords) : 
+	m_XLength(xLength), m_YLength(yLength), m_ZLength(zLength), m_Position(std::move(position)), m_Chunk(Matrix<Block>(m_XLength, m_YLength, m_ZLength)), m_Seed(seed),
+	m_MaxVertexCount(maxVertexCount), m_WorldCoords(worldCoords)
 {
 
 	m_IBO = std::make_unique<IndexBuffer>(indices.size() * sizeof(unsigned int), indices.data());
@@ -181,8 +181,69 @@ void Chunk::SinInit() {
 	}
 }
 
-void Chunk::GenerateMesh() {
+std::array<unsigned int,3> Chunk::GetChunkSize() const
+{
+	return {m_XLength, m_YLength, m_ZLength};
+}
+
+static bool CheckNorthChunk(Chunk* chunk, unsigned int x, unsigned int y) {
+	if (chunk->GetMatrix()(x, y, chunk->GetChunkSize()[2] - 1) == Block::EMPTY)
+		return true;
+	else
+		return false;
+}
+
+static bool CheckSouthChunk(Chunk* chunk, unsigned int x, unsigned int y) {
+	if (chunk->GetMatrix()(x, y, 0) == Block::EMPTY)
+		return true;
+	else
+		return false;
+}
+
+static bool CheckWestChunk(Chunk* chunk, unsigned int z, unsigned int y) {
+	if (chunk->GetMatrix()(chunk->GetChunkSize()[0] - 1, y, z) == Block::EMPTY)
+		return true;
+	else
+		return false;
+}
+
+static bool CheckEastChunk(Chunk* chunk, unsigned int z, unsigned int y) {
+	if (chunk->GetMatrix()(0, y, z) == Block::EMPTY)
+		return true;
+	else
+		return false;
+}
+
+void Chunk::GenerateMesh(std::unordered_map<ChunkCoord, Chunk, hash_fn>* ChunkMap) {
 	if (m_Mesh.empty()) {
+		Chunk* northChunk = nullptr;
+		Chunk* eastChunk = nullptr;
+		Chunk* southChunk = nullptr;
+		Chunk* westChunk = nullptr;
+
+		bool borderNorth = false;
+		bool borderEast = false;
+		bool borderSouth = false;
+		bool borderWest = false;
+
+		// if I find it I am not in the borders
+		if (ChunkMap->find({ m_WorldCoords.x, m_WorldCoords.z - 1 }) != ChunkMap->end())
+			northChunk = &ChunkMap->find({ m_WorldCoords.x, m_WorldCoords.z - 1 })->second;
+		else
+			borderNorth = true;
+		if (ChunkMap->find({ m_WorldCoords.x + 1, m_WorldCoords.z }) != ChunkMap->end())
+			eastChunk = &ChunkMap->find({ m_WorldCoords.x + 1, m_WorldCoords.z })->second;
+		else
+			borderEast = true;
+		if (ChunkMap->find({ m_WorldCoords.x, m_WorldCoords.z + 1 }) != ChunkMap->end())
+			southChunk = &ChunkMap->find({ m_WorldCoords.x, m_WorldCoords.z + 1 })->second;
+		else
+			borderSouth = true;
+		if (ChunkMap->find({ m_WorldCoords.x - 1, m_WorldCoords.z }) != ChunkMap->end())
+			westChunk = &ChunkMap->find({ m_WorldCoords.x - 1, m_WorldCoords.z })->second;
+		else
+			borderWest = true;
+
 		// I want to render it relative to the center of m_Position
 		int xCoord = static_cast<int>(m_Position.x - m_XLength / 2);
 		//int yCoord = static_cast<int>(m_Position.y - m_YLength - 1);
@@ -190,27 +251,27 @@ void Chunk::GenerateMesh() {
 		int zCoord = static_cast<int>(m_Position.z - m_ZLength / 2);
 		glm::vec3 center(xCoord, yCoord, zCoord);
 
-		for (unsigned int i = 1; i < m_XLength - 1; i++) {
-			for (unsigned int k = 1; k < m_ZLength - 1; k++) {
-				for (unsigned int j = 1; j < m_YLength - 1; j++) {
+		for (unsigned int i = 0; i < m_XLength; i++) {
+			for (unsigned int k = 0; k < m_ZLength; k++) {
+				for (unsigned int j = 0; j < m_YLength; j++) {
 					if (m_Chunk(i, j, k) != Block::EMPTY) {
 						std::array<float, 24> textureCoords = s_TextureMap.at(m_Chunk(i, j, k));
-						if (j > 0 && m_Chunk(i, j - 1, k) == Block::EMPTY) { // D
+						if (j == 0 || j > 0 && m_Chunk(i, j - 1, k) == Block::EMPTY) { // D
 							CreateDQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
 						}
-						if (j < m_YLength - 1 && m_Chunk(i, j + 1, k) == Block::EMPTY) { // U	
+						if (j == m_YLength - 1 || j < m_YLength - 1 && m_Chunk(i, j + 1, k) == Block::EMPTY) { // U	
 							CreateUQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
 						}
-						if (k > 0 && m_Chunk(i, j, k - 1) == Block::EMPTY) { // B
+						if (!borderNorth && k == 0 && CheckNorthChunk(northChunk, i, j) || k > 0 && m_Chunk(i, j, k - 1) == Block::EMPTY) { // B
 							CreateBQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
 						}
-						if (k < m_ZLength - 1 && m_Chunk(i, j, k + 1) == Block::EMPTY) { // F
+						if (!borderSouth && k == m_ZLength - 1 && CheckSouthChunk(southChunk, i, j) || k < m_ZLength - 1 && m_Chunk(i, j, k + 1) == Block::EMPTY) { // F
 							CreateFQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
 						}
-						if (i > 0 && m_Chunk(i - 1, j, k) == Block::EMPTY) { // L
+						if (!borderWest && i == 0 && CheckWestChunk(westChunk, k, j) || i > 0 && m_Chunk(i - 1, j, k) == Block::EMPTY) { // L
 							CreateLQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
 						}
-						if (i < m_XLength - 1 && m_Chunk(i + 1, j, k) == Block::EMPTY) { // R
+						if (!borderEast && i == m_XLength - 1 && CheckEastChunk(eastChunk, k, j) || i < m_XLength - 1 && m_Chunk(i + 1, j, k) == Block::EMPTY) { // R
 							CreateRQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
 						}
 					}
@@ -223,12 +284,8 @@ void Chunk::GenerateMesh() {
 	}
 }
 
-// can be called with multithreading if slow
 void Chunk::UpdateMesh(unsigned int x, unsigned int y, unsigned int z, Block block)
 {
-	// take care of border (I think, maybe I also have to do for y or not do this at all)
-	x += 1;
-	z += 1;
 	// check the blocks surrounding the modified block and figure out a way to edit the m_Mesh accordingly
 	for (unsigned int i = x - 1; i <= x + 1; i++) {
 		for (unsigned int k = z - 1; k <= z + 1; k++) {

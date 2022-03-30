@@ -52,7 +52,7 @@ ChunkManager::ChunkManager():
 				ChunkCoord coords = m_ChunksToLoad.front();
 				m_ChunksToLoad.pop();
 				Chunk chunk(m_ChunkSize[0], m_ChunkSize[1], m_ChunkSize[2], glm::vec3(coords.x * static_cast<int>(m_ChunkSize[0]), 0.0, coords.z * static_cast<int>(m_ChunkSize[2])), m_Seed, m_VertexLayout, MAX_VERTEX_COUNT, m_Indices);
-				chunk.GenerateMesh();
+				chunk.GenerateMesh(GenerateMesh()m_ChunkMap);
 				m_ChunkMap.insert({ coords, std::move(chunk) });
 				m_ChunksToRender.emplace_back(&m_ChunkMap.find(coords)->second);
 			}
@@ -103,23 +103,22 @@ std::array<unsigned int, 3> ChunkManager::GetChunkSize() const
 
 void ChunkManager::LoadChunks()
 {
-	auto meshFun = [this](ChunkCoord coords) {
-		Chunk chunk(m_ChunkSize[0], m_ChunkSize[1], m_ChunkSize[2], glm::vec3(coords.x * static_cast<int>(m_ChunkSize[0]), 0.0, coords.z * static_cast<int>(m_ChunkSize[2])), m_Seed, m_VertexLayout, MAX_VERTEX_COUNT, m_Indices);
-		chunk.GenerateMesh();
-		return chunk;
-	};
-	auto meshFun2 = [this](const std::queue<ChunkCoord>& chunksToLoad) {
-		std::vector<std::pair<ChunkCoord, Chunk>> chunks;
-		while (!chunksToLoad.empty()) {
-			ChunkCoord coords = m_ChunksToLoad.front();
-			m_ChunksToLoad.pop();
-			Chunk chunk(m_ChunkSize[0], m_ChunkSize[1], m_ChunkSize[2], glm::vec3(coords.x * static_cast<int>(m_ChunkSize[0]), 0.0, coords.z * static_cast<int>(m_ChunkSize[2])), m_Seed, m_VertexLayout, MAX_VERTEX_COUNT, m_Indices);
-			chunk.GenerateMesh();
-			chunks.emplace_back(std::make_pair(coords, std::move(chunk)));
-		}
-		return chunks;
-	};
-
+//	auto meshFun = [this](ChunkCoord coords) {
+//		Chunk chunk(m_ChunkSize[0], m_ChunkSize[1], m_ChunkSize[2], glm::vec3(coords.x * static_cast<int>(m_ChunkSize[0]), 0.0, coords.z * static_cast<int>(m_ChunkSize[2])), m_Seed, m_VertexLayout, MAX_VERTEX_COUNT, m_Indices, coords);
+//		chunk.GenerateMesh(&m_ChunkMap);
+//		return chunk;
+//	};
+//	auto meshFun2 = [this](const std::queue<ChunkCoord>& chunksToLoad) {
+//		std::vector<std::pair<ChunkCoord, Chunk>> chunks;
+//		while (!chunksToLoad.empty()) {
+//			ChunkCoord coords = m_ChunksToLoad.front();
+//			m_ChunksToLoad.pop();
+//			Chunk chunk(m_ChunkSize[0], m_ChunkSize[1], m_ChunkSize[2], glm::vec3(coords.x * static_cast<int>(m_ChunkSize[0]), 0.0, coords.z * static_cast<int>(m_ChunkSize[2])), m_Seed, m_VertexLayout, MAX_VERTEX_COUNT, m_Indices, coords);
+//			chunk.GenerateMesh(&m_ChunkMap);
+//			chunks.emplace_back(std::make_pair(coords, std::move(chunk)));
+//		}
+//		return chunks;
+//	};
 
 //	if (!m_ChunksToLoad.empty() && !m_LoadingChunks) {
 //		m_FutureChunks = std::async(std::launch::async, meshFun2, m_ChunksToLoad);
@@ -133,21 +132,10 @@ void ChunkManager::LoadChunks()
 //		}
 //		m_ChunksToLoad = {};
 //	}
-
-
 	for (int n = 0; n < MAX_CHUNK_TO_LOAD && !m_ChunksToLoad.empty(); n++) {
 		ChunkCoord coords = m_ChunksToLoad.front();
 		m_ChunksToLoad.pop();
-		if (m_ChunkMap.find(coords) != m_ChunkMap.end())
-			m_ChunkMap.find(coords)->second.GenerateMesh();
-		else {
-			//m_ChunksLoaded.push_back(m_ThreadPool.push(meshFun, coords));
-			// create new chunk and cache it
-			Chunk chunk(m_ChunkSize[0], m_ChunkSize[1], m_ChunkSize[2], glm::vec3(coords.x * static_cast<int>(m_ChunkSize[0]), 0.0, coords.z * static_cast<int>(m_ChunkSize[2])), m_Seed, m_VertexLayout, MAX_VERTEX_COUNT, m_Indices);
-			chunk.GenerateMesh();
-			m_ChunkMap.insert({ coords, std::move(chunk) });
-			m_ChunksToRender.emplace_back(&m_ChunkMap.find(coords)->second);
-		}
+		m_ChunkMap.find(coords)->second.GenerateMesh(&m_ChunkMap);
 	}
 }
 
@@ -165,12 +153,12 @@ void ChunkManager::GenerateChunks(const glm::vec3& playerPosition)
 			ChunkCoord coords = { i, j };
 			// check if this chunk hasn't already been generated
 			if (m_ChunkMap.find(coords) == m_ChunkMap.end()) {
+				Chunk chunk(m_ChunkSize[0], m_ChunkSize[1], m_ChunkSize[2], glm::vec3(coords.x * static_cast<int>(m_ChunkSize[0]), 0.0, coords.z * static_cast<int>(m_ChunkSize[2])), m_Seed, m_VertexLayout, MAX_VERTEX_COUNT, m_Indices, coords);
+				m_ChunkMap.insert({ coords, std::move(chunk) });
 				// add chunk to the loading queue
 				m_ChunksToLoad.push(coords);
 			}
-			else {
-				m_ChunksToRender.emplace_back(&m_ChunkMap.find(coords)->second);
-			}
+			m_ChunksToRender.emplace_back(&m_ChunkMap.find(coords)->second);
 		}
 	}
 //	m_Cv.notify_one();

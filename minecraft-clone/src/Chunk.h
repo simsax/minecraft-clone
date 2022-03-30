@@ -53,9 +53,10 @@ class Chunk
 {
 public:
 	Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, glm::vec3 position, unsigned int seed, const VertexBufferLayout& layout,
-		unsigned int maxVertexCount, const std::vector<unsigned int>& indices);
+		unsigned int maxVertexCount, const std::vector<unsigned int>& indices, ChunkCoord worldCoords);
 	Matrix<Block> GetMatrix() const;
-	void GenerateMesh();
+	std::array<unsigned int, 3> GetChunkSize() const;
+	void GenerateMesh(std::unordered_map<ChunkCoord, Chunk, hash_fn>* ChunkMap);
 	void SetMatrix(unsigned int x, unsigned int y, unsigned int z, Block block);
 	void Render(const Renderer& renderer);
 private:

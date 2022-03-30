@@ -82,12 +82,12 @@ void Game::CheckCollision(glm::vec3*& playerPos, ChunkCoord currentChunk)
 {
 	Chunk* chunk = &m_ChunkManager.m_ChunkMap.find(currentChunk)->second;
 	std::array<unsigned int, 3> chunkSize = m_ChunkManager.GetChunkSize();
-	float playerPosX = playerPos->x - (float)currentChunk.x * chunkSize[0] + (float)(chunkSize[0] + 2) / 2; // +2 because each chunk->has a border that doesn't render
+	float playerPosX = playerPos->x - (float)currentChunk.x * chunkSize[0] + (float)(chunkSize[0]) / 2;
 	float playerPosY = playerPos->y + 150;
-	float playerPosZ = playerPos->z - (float)currentChunk.z * chunkSize[2] + (float)(chunkSize[2] + 2) / 2;
+	float playerPosZ = playerPos->z - (float)currentChunk.z * chunkSize[2] + (float)(chunkSize[2]) / 2;
 	bool checked = false;
 
-	if (m_VerticalVelocity >= 0 && playerPosX >= 0.3 && playerPosZ >= 0.3 && playerPosY < chunkSize[1] &&
+	if (m_VerticalVelocity >= 0 && playerPosX - 0.3 >= 0 && playerPosX + 0.3 < chunkSize[0] && playerPosZ - 0.3 >= 0 && playerPosZ + 0.3 < chunkSize[2] && playerPosY < chunkSize[1] &&
 		(chunk->GetMatrix()(static_cast<unsigned int>(floor(playerPosX - 0.29f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ - 0.29f))) != Block::EMPTY ||
 		chunk->GetMatrix()(static_cast<unsigned int>(floor(playerPosX + 0.29f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ - 0.29f))) != Block::EMPTY ||
 		chunk->GetMatrix()(static_cast<unsigned int>(floor(playerPosX - 0.29f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ + 0.29f))) != Block::EMPTY ||
@@ -96,7 +96,7 @@ void Game::CheckCollision(glm::vec3*& playerPos, ChunkCoord currentChunk)
 		playerPos->y -= diff;
 		playerPosY -= diff;
 	}
-	if (m_VerticalVelocity < 0 && playerPosX >= 0.3 && playerPosZ >= 0.3 && playerPosY < chunkSize[1] &&
+	if (m_VerticalVelocity < 0 && playerPosX - 0.3 >= 0 && playerPosX + 0.3 < chunkSize[0] && playerPosZ - 0.3 >= 0 && playerPosZ + 0.3 < chunkSize[2] && playerPosY < chunkSize[1] &&
 		(chunk->GetMatrix()(static_cast<unsigned int>(floor(playerPosX-0.29f)), static_cast<unsigned int>(floor(playerPosY-1.8f)), static_cast<unsigned int>(floor(playerPosZ - 0.29f))) != Block::EMPTY ||
 		 chunk->GetMatrix()(static_cast<unsigned int>(floor(playerPosX+0.29f)), static_cast<unsigned int>(floor(playerPosY-1.8f)), static_cast<unsigned int>(floor(playerPosZ - 0.29f))) != Block::EMPTY ||
 		 chunk->GetMatrix()(static_cast<unsigned int>(floor(playerPosX-0.29f)), static_cast<unsigned int>(floor(playerPosY-1.8f)), static_cast<unsigned int>(floor(playerPosZ + 0.29f))) != Block::EMPTY ||
@@ -110,7 +110,7 @@ void Game::CheckCollision(glm::vec3*& playerPos, ChunkCoord currentChunk)
 		s_Ground = false;
 	}
 
-	if (playerPosX >= 0.3 && playerPosZ >= 0.3 && playerPosY < chunkSize[1] &&
+	if (playerPosX - 0.3 >= 0 && playerPosX + 0.3 < chunkSize[0] && playerPosZ - 0.3 >= 0 && playerPosZ + 0.3 < chunkSize[2] && playerPosY < chunkSize[1] &&
 		(chunk->GetMatrix()(static_cast<unsigned int>(floor(playerPosX + 0.3f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ - 0.3f))) != Block::EMPTY &&
 		chunk->GetMatrix()(static_cast<unsigned int>(floor(playerPosX - 0.3f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ - 0.3f))) != Block::EMPTY ||
 		chunk->GetMatrix()(static_cast<unsigned int>(floor(playerPosX + 0.3f)), static_cast<unsigned int>(floor(playerPosY - 1.8f)), static_cast<unsigned int>(floor(playerPosZ - 0.3f))) != Block::EMPTY &&
@@ -118,7 +118,7 @@ void Game::CheckCollision(glm::vec3*& playerPos, ChunkCoord currentChunk)
 		playerPos->z += static_cast<unsigned int>(ceil(playerPosZ - 0.3f)) - playerPosZ + 0.3f; 
 		checked = true;
 	}
-	if (playerPosX >= 0.3 && playerPosZ >= 0.3 && playerPosY < chunkSize[1] &&
+	if (playerPosX - 0.3 >= 0 && playerPosX + 0.3 < chunkSize[0] && playerPosZ - 0.3 >= 0 && playerPosZ + 0.3 < chunkSize[2] && playerPosY < chunkSize[1] &&
 		(chunk->GetMatrix()(static_cast<unsigned int>(floor(playerPosX + 0.3f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ + 0.3f))) != Block::EMPTY &&
 		chunk->GetMatrix()(static_cast<unsigned int>(floor(playerPosX - 0.3f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ + 0.3f))) != Block::EMPTY ||
 		chunk->GetMatrix()(static_cast<unsigned int>(floor(playerPosX + 0.3f)), static_cast<unsigned int>(floor(playerPosY - 1.8f)), static_cast<unsigned int>(floor(playerPosZ + 0.3f))) != Block::EMPTY &&
@@ -126,7 +126,7 @@ void Game::CheckCollision(glm::vec3*& playerPos, ChunkCoord currentChunk)
 		playerPos->z -= playerPosZ + 0.3f - static_cast<unsigned int>(floor(playerPosZ + 0.3f));
 		checked = true;
 	}
-	if (playerPosX >= 0.3 && playerPosZ >= 0.3 && playerPosY < chunkSize[1] &&
+	if (playerPosX - 0.3 >= 0 && playerPosX + 0.3 < chunkSize[0] && playerPosZ - 0.3 >= 0 && playerPosZ + 0.3 < chunkSize[2] && playerPosY < chunkSize[1] &&
 		(chunk->GetMatrix()(static_cast<unsigned int>(floor(playerPosX - 0.3f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ + 0.3f))) != Block::EMPTY &&
 		chunk->GetMatrix()(static_cast<unsigned int>(floor(playerPosX - 0.3f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ - 0.3f))) != Block::EMPTY ||
 		chunk->GetMatrix()(static_cast<unsigned int>(floor(playerPosX - 0.3f)), static_cast<unsigned int>(floor(playerPosY - 1.8f)), static_cast<unsigned int>(floor(playerPosZ + 0.3f))) != Block::EMPTY &&
@@ -134,7 +134,7 @@ void Game::CheckCollision(glm::vec3*& playerPos, ChunkCoord currentChunk)
 		playerPos->x += static_cast<unsigned int>(ceil(playerPosX - 0.3f)) - playerPosX + 0.3f; 
 		checked = true;
 	}
-	if (playerPosX >= 0.3 && playerPosZ >= 0.3 && playerPosY < chunkSize[1] &&
+	if (playerPosX - 0.3 >= 0 && playerPosX + 0.3 < chunkSize[0] && playerPosZ - 0.3 >= 0 && playerPosZ + 0.3 < chunkSize[2] && playerPosY < chunkSize[1] &&
 		(chunk->GetMatrix()(static_cast<unsigned int>(floor(playerPosX + 0.3f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ + 0.3f))) != Block::EMPTY &&
 		chunk->GetMatrix()(static_cast<unsigned int>(floor(playerPosX + 0.3f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ - 0.3f))) != Block::EMPTY ||
 		chunk->GetMatrix()(static_cast<unsigned int>(floor(playerPosX + 0.3f)), static_cast<unsigned int>(floor(playerPosY - 1.8f)), static_cast<unsigned int>(floor(playerPosZ + 0.3f))) != Block::EMPTY &&
@@ -143,7 +143,7 @@ void Game::CheckCollision(glm::vec3*& playerPos, ChunkCoord currentChunk)
 		checked = true;
 	}
 
-	if (!checked && playerPosX >= 0.3 && playerPosZ >= 0.3 && playerPosY < chunkSize[1] &&
+	if (playerPosX - 0.3 >= 0 && playerPosX + 0.3 < chunkSize[0] && playerPosZ - 0.3 >= 0 && playerPosZ + 0.3 < chunkSize[2] && !checked && playerPosY < chunkSize[1] &&
 		(chunk->GetMatrix()(static_cast<unsigned int>(floor(playerPosX - 0.3f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ - 0.3f))) != Block::EMPTY ||
 		chunk->GetMatrix()(static_cast<unsigned int>(floor(playerPosX - 0.3f)), static_cast<unsigned int>(floor(playerPosY - 1.8f)), static_cast<unsigned int>(floor(playerPosZ - 0.3f))) != Block::EMPTY)) {
 		float dx = static_cast<unsigned int>(ceil(playerPosX - 0.3f)) - playerPosX + 0.3f; 
@@ -154,7 +154,7 @@ void Game::CheckCollision(glm::vec3*& playerPos, ChunkCoord currentChunk)
 			playerPos->x += dx;
 		checked = true;
 	}
-	if (!checked && playerPosX >= 0.3 && playerPosZ >= 0.3 && playerPosY < chunkSize[1] &&
+	if (playerPosX - 0.3 >= 0 && playerPosX + 0.3 < chunkSize[0] && playerPosZ - 0.3 >= 0 && playerPosZ + 0.3 < chunkSize[2] && !checked && playerPosY < chunkSize[1] &&
 		(chunk->GetMatrix()(static_cast<unsigned int>(floor(playerPosX + 0.3f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ - 0.3f))) != Block::EMPTY ||
 		chunk->GetMatrix()(static_cast<unsigned int>(floor(playerPosX + 0.3f)), static_cast<unsigned int>(floor(playerPosY - 1.8f)), static_cast<unsigned int>(floor(playerPosZ - 0.3f))) != Block::EMPTY)) {
 		float dx = playerPosX + 0.3f - static_cast<unsigned int>(floor(playerPosX + 0.3f));
@@ -165,7 +165,7 @@ void Game::CheckCollision(glm::vec3*& playerPos, ChunkCoord currentChunk)
 			playerPos->x -= dx;
 		checked = true;
 	}
-	if (!checked && playerPosX >= 0.3 && playerPosZ >= 0.3 && playerPosY < chunkSize[1] &&
+	if (playerPosX - 0.3 >= 0 && playerPosX + 0.3 < chunkSize[0] && playerPosZ - 0.3 >= 0 && playerPosZ + 0.3 < chunkSize[2] && !checked && playerPosY < chunkSize[1] &&
 		(chunk->GetMatrix()(static_cast<unsigned int>(floor(playerPosX - 0.3f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ + 0.3f))) != Block::EMPTY ||
 		chunk->GetMatrix()(static_cast<unsigned int>(floor(playerPosX - 0.3f)), static_cast<unsigned int>(floor(playerPosY - 1.8f)), static_cast<unsigned int>(floor(playerPosZ + 0.3f))) != Block::EMPTY)) {
 		float dx = static_cast<unsigned int>(ceil(playerPosX - 0.3f)) - playerPosX + 0.3f; 
@@ -176,7 +176,7 @@ void Game::CheckCollision(glm::vec3*& playerPos, ChunkCoord currentChunk)
 			playerPos->x += dx;
 		checked = true;
 	}
-	if (!checked && playerPosX >= 0.3 && playerPosZ >= 0.3 && playerPosY < chunkSize[1] &&
+	if (playerPosX - 0.3 >= 0 && playerPosX + 0.3 < chunkSize[0] && playerPosZ - 0.3 >= 0 && playerPosZ + 0.3 < chunkSize[2] && !checked && playerPosY < chunkSize[1] &&
 		(chunk->GetMatrix()(static_cast<unsigned int>(floor(playerPosX + 0.3f)), static_cast<unsigned int>(floor(playerPosY)), static_cast<unsigned int>(floor(playerPosZ + 0.3f))) != Block::EMPTY ||
 		chunk->GetMatrix()(static_cast<unsigned int>(floor(playerPosX + 0.3f)), static_cast<unsigned int>(floor(playerPosY - 1.8f)), static_cast<unsigned int>(floor(playerPosZ + 0.3f))) != Block::EMPTY)) {
 		float dx = playerPosX + 0.3f - static_cast<unsigned int>(floor(playerPosX + 0.3f));
@@ -205,15 +205,16 @@ void Game::ApplyGravity(glm::vec3*& playerPos, float deltaTime)
 void Game::CheckRayCast(glm::vec3*& playerPos, ChunkCoord currentChunk) {
 	Chunk* chunk = &m_ChunkManager.m_ChunkMap.find(currentChunk)->second;
 	std::array<unsigned int, 3> chunkSize = m_ChunkManager.GetChunkSize();
-	float playerPosX = playerPos->x - (float)currentChunk.x * chunkSize[0] + (float)(chunkSize[0] + 2) / 2; // +2 because each chunk->has a border that doesn't render
+	float playerPosX = playerPos->x - (float)currentChunk.x * chunkSize[0] + (float)(chunkSize[0]) / 2;
 	float playerPosY = playerPos->y + 150;
-	float playerPosZ = playerPos->z - (float)currentChunk.z * chunkSize[2] + (float)(chunkSize[2] + 2) / 2;
+	float playerPosZ = playerPos->z - (float)currentChunk.z * chunkSize[2] + (float)(chunkSize[2]) / 2;
 
 	glm::vec3 playerDir = camera.GetPlayerDirection();
 	float Sx = abs(1 / playerDir.x);
 	float Sy = abs(1 / playerDir.y);
 	float Sz = abs(1 / playerDir.z);
 	glm::vec3 currentVoxel = { floor(playerPosX), floor(playerPosY), floor(playerPosZ) };
+	std::cout << "(" << playerPosX << "," << playerPosZ << ")\r";
 	glm::vec3 previousVoxel;
 	glm::vec3 rayLength;
 	glm::vec3 step;
@@ -288,9 +289,12 @@ void Game::CheckRayCast(glm::vec3*& playerPos, ChunkCoord currentChunk) {
 		m_ChunkManager.UpdateChunk(currentChunk);
 	}
 	else if (voxelFound && s_RightButton) {
-		chunk->SetMatrix(static_cast<unsigned int>(previousVoxel.x), static_cast<unsigned int>(previousVoxel.y), static_cast<unsigned int>(previousVoxel.z), m_HoldingBlock);
-		s_RightButton = false;
-		m_ChunkManager.UpdateChunk(currentChunk);
+		if (!(previousVoxel.x == floor(playerPosX) && previousVoxel.y == floor(playerPosY) && previousVoxel.z == floor(playerPosZ) ||
+			previousVoxel.x == floor(playerPosX) && previousVoxel.y == floor(playerPosY) - 1 && previousVoxel.z == floor(playerPosZ))) {
+			chunk->SetMatrix(static_cast<unsigned int>(previousVoxel.x), static_cast<unsigned int>(previousVoxel.y), static_cast<unsigned int>(previousVoxel.z), m_HoldingBlock);
+			s_RightButton = false;
+			m_ChunkManager.UpdateChunk(currentChunk);
+		}
 	}
 }
 
@@ -303,8 +307,6 @@ void Game::CheckJump()
 	}
 }
 
-
-// 2 problems: raycasting neighboring chunk, s_LeftButton must become false after X frames otherwise I click in the sky, then I move until I encounter a block and hit it 
 
 void Game::OnUpdate(float deltaTime)
 {
