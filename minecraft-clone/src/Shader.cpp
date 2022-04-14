@@ -104,7 +104,8 @@ unsigned int Shader::CompileShader(unsigned int type, const std::string& source)
 	if (result == GL_FALSE) { // our shader hasn't compiled successfully
 		int length;
 		glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
-		char* message = (char*)_malloca(length * sizeof(char));
+		//char* message = (char*)_malloca(length * sizeof(char));
+		char* message = (char*)malloc(length * sizeof(char));
 		glGetShaderInfoLog(id, length, &length, message);
 		std::cout << "Failed to compile " << (type == GL_VERTEX_SHADER ? "vertex\n" : "fragment\n");
 		std::cout << message << std::endl;

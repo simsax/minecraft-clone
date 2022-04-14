@@ -1,4 +1,5 @@
 #include <stdexcept>
+#include <cstring>
 
 template <typename T>
 class Matrix {
