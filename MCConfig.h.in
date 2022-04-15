@@ -1,0 +1,2 @@
+#define minecraft-clone_VERSION_MAJOR @minecraft-clone_VERSION_MAJOR@
+#define minecraft-clone_VERSION_MINOR @minecraft-clone_VERSION_MINOR@
