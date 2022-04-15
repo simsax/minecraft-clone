@@ -1,11 +1,12 @@
-/snap/clion/184/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_MAKE_PROGRAM=/snap/clion/184/bin/ninja/linux/ninja -G Ninja /home/sax/Desktop/Shared/dev/minecraft-clone
--- The CXX compiler identification is GNU 9.4.0
--- Detecting CXX compiler ABI info
--- Detecting CXX compiler ABI info - done
--- Check for working CXX compiler: /usr/bin/c++ - skipped
--- Detecting CXX compile features
--- Detecting CXX compile features - done
-x64 architecture in use
--- Configuring done
--- Generating done
--- Build files have been written to: /home/sax/Desktop/Shared/dev/minecraft-clone/cmake-build-release
+/snap/clion/189/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_MAKE_PROGRAM=/snap/clion/189/bin/ninja/linux/ninja -G Ninja -S /home/sax/Desktop/Shared/dev/minecraft-clone -B /home/sax/Desktop/Shared/dev/minecraft-clone/cmake-build-release
+CMake Error at CMakeLists.txt:10 (target_include_directories):
+  Cannot specify include directories for target "minecraft-clone" which is
+  not built by this project.
+
+
+CMake Error at minecraft-clone/CMakeLists.txt:496 (use_props):
+  Unknown CMake command "use_props".
+
+
+-- Configuring incomplete, errors occurred!
+See also "/home/sax/Desktop/Shared/dev/minecraft-clone/cmake-build-release/CMakeFiles/CMakeOutput.log".

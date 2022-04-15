@@ -1,4 +1,5 @@
 #include <iostream>
+#include <MCConfig.h>
 #include "Window.h"
 #include "Game.h"
 

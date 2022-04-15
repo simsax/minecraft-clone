@@ -4,6 +4,10 @@
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
 # User-specific files
+/cmake-build-debug
+/cmake-build-release
+/build
+/Cmake
 prova.txt
 *.rsuser
 *.suo

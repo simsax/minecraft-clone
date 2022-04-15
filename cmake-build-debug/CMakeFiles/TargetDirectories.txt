@@ -1,5 +1,0 @@
-/home/sax/Desktop/Shared/dev/minecraft-clone/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/home/sax/Desktop/Shared/dev/minecraft-clone/cmake-build-debug/CMakeFiles/edit_cache.dir
-/home/sax/Desktop/Shared/dev/minecraft-clone/cmake-build-debug/minecraft-clone/CMakeFiles/edit_cache.dir
-/home/sax/Desktop/Shared/dev/minecraft-clone/cmake-build-debug/minecraft-clone/CMakeFiles/rebuild_cache.dir
-/home/sax/Desktop/Shared/dev/minecraft-clone/cmake-build-debug/minecraft-clone/CMakeFiles/minecraft-clone.dir
