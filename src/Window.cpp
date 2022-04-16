@@ -1,5 +1,4 @@
 #include "Window.h"
-#include "glm/glm.hpp"
 #include <iostream>
 #include <exception>
 
@@ -21,7 +20,7 @@ namespace glfw {
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // set opengl to be core
-#ifdef _DEBUG
+#ifndef NDEBUG
 		// During init, enable debug output
 		glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
 #endif		
@@ -45,11 +44,11 @@ namespace glfw {
 		glfwSetKeyCallback(m_Window, KeyCallback);
 		glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); // capture cursor in the center and hide it
 
-#ifdef _DEBUG
+#ifndef NDEBUG
 		// debug stuff
-		glEnable(GL_DEBUG_OUTPUT);
-		glDebugMessageCallback(Window::MessageCallback, 0);
-		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
+	//	glEnable(GL_DEBUG_OUTPUT);
+	//	glDebugMessageCallback(Window::MessageCallback, 0);
+	//	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
 #endif
 	}
 
@@ -60,7 +59,7 @@ namespace glfw {
 
 	void Window::WindowLoop(Game& game) {
 		float currentFrame = 0.0f, deltaTime = 0.0f, lastFrame = 0.0f;
-#ifdef _DEBUG
+#ifndef NDEBUG
 		float prevTime = 0.0f, crntTime = 0.0f;
 		unsigned int nFrames = 0;
 #endif
@@ -68,7 +67,7 @@ namespace glfw {
 			//glClearColor(0.0f, 0.0f, 0.0f, 1.0f));
 
 			// exit when 'ESC' key is pressed
-			if (glfwGetKey(m_Window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+			if (glfwGetKey(m_Window, GLFW_KEY_CAPS_LOCK) == GLFW_PRESS) {
 				glfwDestroyWindow(m_Window);
 				break;
 			}
@@ -77,7 +76,7 @@ namespace glfw {
 			deltaTime = currentFrame - lastFrame;
 			lastFrame = currentFrame;
 
-#ifdef _DEBUG
+#ifndef NDEBUG
 			crntTime = static_cast<float>(glfwGetTime());
 			nFrames++;
 			if (crntTime - prevTime >= 1.0) {
