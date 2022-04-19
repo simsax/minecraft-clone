@@ -294,8 +294,6 @@ void Game::CheckRayCast(glm::vec3*& playerPos) {
         targetLocalVoxel = target.second;
         targetChunk = &m_ChunkManager.m_ChunkMap.find(targetLocalCoord)->second;
 
-        //std::cout << "(" << targetLocalCoord.x << "," << targetLocalCoord.z << ") - (" << targetLocalVoxel.x << "," << targetLocalVoxel.z << ")\n";
-
 		if (currentVoxel.y >= 0 && currentVoxel.y < m_ChunkManager.GetChunkSize()[1] &&
 			targetChunk->GetMatrix()(static_cast<unsigned int>(targetLocalVoxel.x), static_cast<unsigned int>(targetLocalVoxel.y), static_cast<unsigned int>(targetLocalVoxel.z)) != Block::EMPTY) {
 			voxelFound = true;
@@ -312,14 +310,13 @@ void Game::CheckRayCast(glm::vec3*& playerPos) {
             s_LeftButton = false;
             m_ChunkManager.UpdateChunk(targetLocalCoord);
             // check if the casted block is in the chunk border
-            std::cout << "updated: chunk(" << targetLocalCoord.x << "," << targetLocalCoord.z << ")\n";
             if (targetLocalVoxel.x == 1 || targetLocalVoxel.z == 1 || targetLocalVoxel.x == 16 || targetLocalVoxel.z == 16) {
                 UpdateNeighbor(currentVoxel, chunkSize, targetLocalCoord, Block::EMPTY);
             }
         } else if (s_RightButton &&
-                !(previousVoxel.x == std::floor(playerPos->x) && previousVoxel.y == std::floor(playerPos->y) && previousVoxel.z == std::floor(playerPos->z)) &&
-                !(previousVoxel.x == std::floor(playerPos->x) && previousVoxel.y == std::floor(playerPos->y - 1.8) && previousVoxel.z == std::floor(playerPos->z))) {
-           previousChunk->SetMatrix(static_cast<unsigned int>(previousLocalVoxel.x), static_cast<unsigned int>(previousLocalVoxel.y),
+                !(previousVoxel.x == std::floor(playerPos->x) && previousVoxel.y == std::floor(playerPosY) && previousVoxel.z == std::floor(playerPos->z)) &&
+                !(previousVoxel.x == std::floor(playerPos->x) && previousVoxel.y == std::floor(playerPosY - 1.5) && previousVoxel.z == std::floor(playerPos->z))) {
+            previousChunk->SetMatrix(static_cast<unsigned int>(previousLocalVoxel.x), static_cast<unsigned int>(previousLocalVoxel.y),
                              static_cast<unsigned int>(previousLocalVoxel.z), m_HoldingBlock);
             s_RightButton = false;
             m_ChunkManager.UpdateChunk(previousChunkCoord);
@@ -374,7 +371,6 @@ void Game::OnUpdate(float deltaTime)
 }
 
 void Game::UpdateNeighbor(glm::vec3 currentVoxel, unsigned int chunkSize, ChunkCoord targetLocalCoord, Block block) {
-    std::cout << "Before modifying: chunk(" << targetLocalCoord.x << "," << targetLocalCoord.z << ") - voxel(" << currentVoxel.x << "," << currentVoxel.z << ")\n";
     // take a step of 1 in every direction and update the neighboring chunks found
     currentVoxel.x += 1;
     std::pair<ChunkCoord, glm::vec3> neighbor = GlobalToLocal(currentVoxel, chunkSize);
@@ -382,7 +378,6 @@ void Game::UpdateNeighbor(glm::vec3 currentVoxel, unsigned int chunkSize, ChunkC
         Chunk* neighborChunk = &m_ChunkManager.m_ChunkMap.find(neighbor.first)->second;
         neighborChunk->SetMatrix(static_cast<unsigned int>(neighbor.second.x - 1), static_cast<unsigned int>(neighbor.second.y), static_cast<unsigned int>(neighbor.second.z), block);
         m_ChunkManager.UpdateChunk(neighbor.first);
-        std::cout << "Update block at x=" << neighbor.second.x - 1 << std::endl;
         currentVoxel.x -= 1;
     } else {
         currentVoxel.x -= 2;
@@ -391,7 +386,6 @@ void Game::UpdateNeighbor(glm::vec3 currentVoxel, unsigned int chunkSize, ChunkC
             Chunk* neighborChunk = &m_ChunkManager.m_ChunkMap.find(neighbor.first)->second;
             neighborChunk->SetMatrix(static_cast<unsigned int>(neighbor.second.x + 1), static_cast<unsigned int>(neighbor.second.y), static_cast<unsigned int>(neighbor.second.z), block);
             m_ChunkManager.UpdateChunk(neighbor.first);
-            std::cout << "Update block at x=" << neighbor.second.x + 1 << std::endl;
         }
         currentVoxel.x += 1;
     }
@@ -401,10 +395,7 @@ void Game::UpdateNeighbor(glm::vec3 currentVoxel, unsigned int chunkSize, ChunkC
         Chunk* neighborChunk = &m_ChunkManager.m_ChunkMap.find(neighbor.first)->second;
         neighborChunk->SetMatrix(static_cast<unsigned int>(neighbor.second.x), static_cast<unsigned int>(neighbor.second.y), static_cast<unsigned int>(neighbor.second.z - 1), block);
         m_ChunkManager.UpdateChunk(neighbor.first);
-        std::cout << "Update block at z1=" << neighbor.second.z - 1 << std::endl;
         currentVoxel.z -= 1;
-        std::cout << currentVoxel.z << " - (" << neighbor.first.x << "," << neighbor.first.z << ")\n";
-        std::cout << "After modifying: chunk(" << targetLocalCoord.x << "," << targetLocalCoord.z << ") - voxel(" << currentVoxel.x << "," << currentVoxel.z << ")\n";
     } else {
         currentVoxel.z -= 2;
         neighbor = GlobalToLocal(currentVoxel, chunkSize);
@@ -412,9 +403,7 @@ void Game::UpdateNeighbor(glm::vec3 currentVoxel, unsigned int chunkSize, ChunkC
             Chunk* neighborChunk = &m_ChunkManager.m_ChunkMap.find(neighbor.first)->second;
             neighborChunk->SetMatrix(static_cast<unsigned int>(neighbor.second.x), static_cast<unsigned int>(neighbor.second.y), static_cast<unsigned int>(neighbor.second.z + 1), block);
             m_ChunkManager.UpdateChunk(neighbor.first);
-            std::cout << "Update block at z2=" << neighbor.second.z + 1 << std::endl;
         }
         currentVoxel.z += 1;
-        std::cout << currentVoxel.z << " - (" << neighbor.first.x << "," << neighbor.first.z << ")\n";
     }
 }
