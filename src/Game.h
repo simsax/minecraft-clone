@@ -15,10 +15,11 @@ public:
 	static cam::Camera camera;
 	 
 private:
-	void CheckRayCast(glm::vec3*& playerPos, ChunkCoord currentChunk);
+	void CheckRayCast(glm::vec3*& playerPos);
 	void CheckCollision(glm::vec3*& playerPos, ChunkCoord currentChunk);
 	void ApplyGravity(glm::vec3*& playerPos, float deltaTime);
 	void CheckJump();
+    void UpdateNeighbor(glm::vec3 currentVoxel, unsigned int chunkSize, ChunkCoord targetLocalCoord, Block block);
 
 	static bool s_FlyMode;
 	static bool s_Ground;
