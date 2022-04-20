@@ -3,6 +3,28 @@
 #include <iostream>
 
 namespace noise {
+    float CombinedNoise(int xCoord, int yCoord, float scale, float frequency, float amplitude, unsigned int octaves)
+    {
+        int offset = static_cast<int>(OctaveNoise(xCoord, yCoord, scale, frequency, amplitude, octaves));
+        return OctaveNoise(xCoord + offset, yCoord, scale, frequency, amplitude, octaves);
+    }
+
+    float OctaveNoise(int xCoord, int yCoord, float scale, float frequency, float amplitude, unsigned int octaves)
+    {
+        float xf = xCoord / scale;
+        float yf = yCoord / scale;
+
+        float result = 0.0f;
+
+        for (int oct = 0; oct < octaves; oct++) {
+            result += glm::perlin(glm::vec2(xf * frequency, yf * frequency)) * amplitude;
+            frequency *= 0.5f;
+            amplitude *= 2.0f;
+        }
+
+        return result;
+    }
+
 	float Perlin2D(int xCoord, int yCoord, float scale, float frequency, float amplitude, int octaves, const std::vector<std::vector<int>>& offsets)
 	{
 		float xf = xCoord / scale;

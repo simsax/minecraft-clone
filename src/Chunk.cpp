@@ -112,7 +112,8 @@ Chunk::Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, g
 
     m_Mesh.reserve(m_MaxVertexCount);
     //SinInit();
-    Noise2DInit();
+    //Noise2DInit();
+    TerrainHeightGeneration();
 }
 
 // fine tune the values
@@ -150,10 +151,58 @@ static float Noise(int x, int y, unsigned int octaves, const std::vector<std::ve
     float terrain_height = 100;
 
     float height = noise::Perlin2D(x, y, scale, freq, ampl, octaves, octaveOffsets);
+    std::cout << height << std::endl;
 
     return terrain_height + height;
 }
 
+void Chunk::TerrainHeightGeneration() {
+    float terrain_height = 100;
+    srand(m_Seed);
+//    std::vector<std::vector<int>> octaveOffsets;
+//    unsigned int n_octaves = 8;
+//    for (unsigned int i = 0; i < n_octaves; i++) {
+//        octaveOffsets.push_back({ rand() % 10000, rand() % 10000 });
+//    }
+
+    // TODO: fix position since it is probably wrong (should be the global x,z coordinate of the upper left corner in the chunk)
+    for (unsigned int i = 0; i < m_XLength; i++) {
+        for (unsigned int k = 0; k < m_ZLength; k++) {
+            float hHigh;
+            float hLow = noise::CombinedNoise((i + m_Position.x) * 1.3f, (k + m_Position.z) * 1.3f, 1,1,1,8) / 6 - 4;
+            float height = hLow;
+
+            if (noise::OctaveNoise(i + m_Position.x, k + m_Position.z, 1,1,1,6) <= 0 ) {
+                hHigh = noise::CombinedNoise((i + m_Position.x) * 1.3f, (k + m_Position.z) * 1.3f, 1,1,1,8) /5 + 6;
+                height = std::max(hLow, hHigh);
+            }
+
+            height *= 0.5f;
+            if (height < 0)
+                height *= 0.8f;
+
+            auto adjHeight = static_cast<unsigned int>(height + terrain_height);
+            //minHeight = std::min(adjHeight, minHeight);
+
+            for (unsigned int j = 0; j < m_YLength; j++) {
+                if (j < adjHeight) {
+                    if (j < 100)
+                        m_Chunk(i, j, k) = Block::SAND;
+                    else if (j == adjHeight - 1 || j == m_YLength - 1)
+                        m_Chunk(i, j, k) = Block::GRASS;
+                    else
+                        m_Chunk(i, j, k) = Block::STONE;
+                }
+                else {
+                    if (j < 100) // this value may depend on the biome
+                        m_Chunk(i, j, k) = Block::WATER;
+                    else
+                        m_Chunk(i, j, k) = Block::EMPTY;
+                }
+            }
+        }
+    }
+}
 void Chunk::Noise2DInit() {
     srand(m_Seed);
     std::vector<std::vector<int>> octaveOffsets;

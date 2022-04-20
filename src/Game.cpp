@@ -309,7 +309,7 @@ void Game::CheckRayCast(glm::vec3*& playerPos) {
                              static_cast<unsigned int>(targetLocalVoxel.z), Block::EMPTY);
             s_LeftButton = false;
             m_ChunkManager.UpdateChunk(targetLocalCoord);
-            // check if the casted block is in the chunk border
+            // check if the target block is in the chunk border
             if (targetLocalVoxel.x == 1 || targetLocalVoxel.z == 1 || targetLocalVoxel.x == 16 || targetLocalVoxel.z == 16) {
                 UpdateNeighbor(currentVoxel, chunkSize, targetLocalCoord, Block::EMPTY);
             }
@@ -320,7 +320,7 @@ void Game::CheckRayCast(glm::vec3*& playerPos) {
                              static_cast<unsigned int>(previousLocalVoxel.z), m_HoldingBlock);
             s_RightButton = false;
             m_ChunkManager.UpdateChunk(previousChunkCoord);
-            // check if the casted block is in the chunk border
+            // check if the target is in the chunk border
             if (previousLocalVoxel.x == 1 || previousLocalVoxel.z == 1 || previousLocalVoxel.x == 16 || previousLocalVoxel.z == 16) {
                 UpdateNeighbor(previousVoxel, chunkSize, previousChunkCoord, m_HoldingBlock);
             }

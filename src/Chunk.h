@@ -63,6 +63,7 @@ private:
     void UpdateMesh(unsigned int x, unsigned int y, unsigned int z, Block block);
     void SinInit();
     void Noise2DInit();
+    void TerrainHeightGeneration();
     void Noise3DInit(unsigned int seed);
 
     std::unique_ptr<VertexArray> m_VAO;
