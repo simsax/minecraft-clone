@@ -45,6 +45,7 @@ Game::Game() :
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
 
+    srand(time(nullptr));
     m_Renderer.Init();
     m_ChunkManager.InitWorld();
 }
@@ -369,6 +370,8 @@ void Game::OnUpdate(float deltaTime)
         m_LastChunk = currentChunk;
     }
 }
+
+// should update only voxels around the mesh and not the whole chunk (write an update function that takes coordinates of specific voxel as input)
 
 void Game::UpdateNeighbor(glm::vec3 currentVoxel, unsigned int chunkSize, ChunkCoord targetLocalCoord, Block block) {
     // take a step of 1 in every direction and update the neighboring chunks found

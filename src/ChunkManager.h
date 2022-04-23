@@ -25,7 +25,6 @@ private:
 	std::vector<unsigned int> m_Indices;
 	std::vector<Chunk*> m_ChunksToRender;
 	std::queue<ChunkCoord> m_ChunksToLoad;
-	unsigned int m_Seed;
 	int m_ViewDistance;
 	//std::vector<std::future<Chunk>> m_ChunksLoaded;
 	//std::thread m_Thread;

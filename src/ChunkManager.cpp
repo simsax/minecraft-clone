@@ -40,7 +40,6 @@ ChunkManager::ChunkManager():
 	}
 
 	m_ChunkSize = { CHUNK_SIZE_X, CHUNK_SIZE_Y, CHUNK_SIZE_Z };
-	m_Seed = static_cast<unsigned int>(time(NULL));
 /*
 	m_Thread = std::thread([this](){
 			while (true) {
@@ -140,7 +139,7 @@ void ChunkManager::LoadChunks()
         else {
             //m_ChunksLoaded.push_back(m_ThreadPool.push(meshFun, coords));
             // create new chunk and cache it
-            Chunk chunk(m_ChunkSize[0], m_ChunkSize[1], m_ChunkSize[2], glm::vec3(coords.x * static_cast<int>(m_ChunkSize[0]), 0.0, coords.z * static_cast<int>(m_ChunkSize[2])), m_Seed, m_VertexLayout, MAX_VERTEX_COUNT, m_Indices);
+            Chunk chunk(m_ChunkSize[0], m_ChunkSize[1], m_ChunkSize[2], glm::vec3(coords.x * static_cast<int>(m_ChunkSize[0]), 0.0, coords.z * static_cast<int>(m_ChunkSize[2])), m_VertexLayout, MAX_VERTEX_COUNT, m_Indices);
             chunk.GenerateMesh();
             m_ChunkMap.insert({ coords, std::move(chunk) });
             m_ChunksToRender.emplace_back(&m_ChunkMap.find(coords)->second);

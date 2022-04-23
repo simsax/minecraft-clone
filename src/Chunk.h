@@ -52,7 +52,7 @@ struct Vertex {
 class Chunk
 {
 public:
-    Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, glm::vec3 position, unsigned int seed, const VertexBufferLayout& layout,
+    Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, glm::vec3 position, const VertexBufferLayout& layout,
           unsigned int maxVertexCount, const std::vector<unsigned int>& indices);
     Matrix<Block> GetMatrix() const;
     void GenerateMesh();

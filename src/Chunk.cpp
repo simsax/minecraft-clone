@@ -98,9 +98,9 @@ const std::unordered_map<Block, std::array<float, 24>> Chunk::s_TextureMap =
         };
 
 // the chunk has a border so that I know what faces to cull between chunks (I only generate the mesh of the part inside the border)
-Chunk::Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, glm::vec3 position, unsigned int seed, const VertexBufferLayout& layout,
+Chunk::Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, glm::vec3 position, const VertexBufferLayout& layout,
              unsigned int maxVertexCount, const std::vector<unsigned int>& indices) :
-        m_XLength(xLength+2), m_YLength(yLength+2), m_ZLength(zLength+2), m_Position(std::move(position)), m_Chunk(Matrix<Block>(m_XLength, m_YLength, m_ZLength)), m_Seed(seed),
+        m_XLength(xLength+2), m_YLength(yLength+2), m_ZLength(zLength+2), m_Position(std::move(position)), m_Chunk(Matrix<Block>(m_XLength, m_YLength, m_ZLength)),
         m_MaxVertexCount(maxVertexCount)
 {
 
@@ -156,24 +156,30 @@ static float Noise(int x, int y, unsigned int octaves, const std::vector<std::ve
     return terrain_height + height;
 }
 
+static std::vector<std::vector<int>> GenerateOffsets(unsigned int n_octaves) {
+    std::vector<std::vector<int>> octaveOffsets;
+    for (unsigned int i = 0; i < n_octaves; i++) {
+        float v1 = rand() % 10000;
+        std::cout << v1 << std::endl;
+        octaveOffsets.push_back({ rand() % 10000, rand() % 10000 });
+    }
+    return octaveOffsets;
+}
+
 void Chunk::TerrainHeightGeneration() {
     float terrain_height = 100;
-    srand(m_Seed);
-//    std::vector<std::vector<int>> octaveOffsets;
-//    unsigned int n_octaves = 8;
-//    for (unsigned int i = 0; i < n_octaves; i++) {
-//        octaveOffsets.push_back({ rand() % 10000, rand() % 10000 });
-//    }
 
     // TODO: fix position since it is probably wrong (should be the global x,z coordinate of the upper left corner in the chunk)
     for (unsigned int i = 0; i < m_XLength; i++) {
         for (unsigned int k = 0; k < m_ZLength; k++) {
             float hHigh;
-            float hLow = noise::CombinedNoise((i + m_Position.x) * 1.3f, (k + m_Position.z) * 1.3f, 1,1,1,8) / 6 - 4;
+            float hLow = noise::CombinedNoise((i + m_Position.x) * 1.3f, (k + m_Position.z) * 1.3f, 1,1,1,8,
+                                              GenerateOffsets(8)) / 6 - 4;
             float height = hLow;
 
-            if (noise::OctaveNoise(i + m_Position.x, k + m_Position.z, 1,1,1,6) <= 0 ) {
-                hHigh = noise::CombinedNoise((i + m_Position.x) * 1.3f, (k + m_Position.z) * 1.3f, 1,1,1,8) /5 + 6;
+            if (noise::OctaveNoise(i + m_Position.x, k + m_Position.z, 1,1,1,6, GenerateOffsets(6)) <= 0 ) {
+                hHigh = noise::CombinedNoise((i + m_Position.x) * 1.3f, (k + m_Position.z) * 1.3f, 1,1,1,8,
+                                             GenerateOffsets(8)) / 5 + 6;
                 height = std::max(hLow, hHigh);
             }
 
@@ -184,21 +190,32 @@ void Chunk::TerrainHeightGeneration() {
             auto adjHeight = static_cast<unsigned int>(height + terrain_height);
             //minHeight = std::min(adjHeight, minHeight);
 
+            int dirtThickness = static_cast<int>(noise::OctaveNoise(i + m_Position.x, k + m_Position.z,1, 1,1,8,
+                                                                    GenerateOffsets(8)) / 6) ;
+            //std::cout << dirtThickness << std::endl;
             for (unsigned int j = 0; j < m_YLength; j++) {
                 if (j < adjHeight) {
-                    if (j < 100)
-                        m_Chunk(i, j, k) = Block::SAND;
-                    else if (j == adjHeight - 1 || j == m_YLength - 1)
-                        m_Chunk(i, j, k) = Block::GRASS;
-                    else
-                        m_Chunk(i, j, k) = Block::STONE;
+                    m_Chunk(i, j, k) = Block::STONE;
+                } else if (j < adjHeight + dirtThickness) {
+                    m_Chunk(i, j, k) = Block::DIRT;
+                } else {
+                    m_Chunk(i,j,k) = Block::EMPTY;
                 }
-                else {
-                    if (j < 100) // this value may depend on the biome
-                        m_Chunk(i, j, k) = Block::WATER;
-                    else
-                        m_Chunk(i, j, k) = Block::EMPTY;
-                }
+
+//                if (j < adjHeight) {
+//                    if (j < 100)
+//                        m_Chunk(i, j, k) = Block::SAND;
+//                    else if (j == adjHeight - 1 || j == m_YLength - 1)
+//                        m_Chunk(i, j, k) = Block::GRASS;
+//                    else
+//                        m_Chunk(i, j, k) = Block::STONE;
+//                }
+//                else {
+//                    if (j < 100) // this value may depend on the biome
+//                        m_Chunk(i, j, k) = Block::WATER;
+//                    else
+//                        m_Chunk(i, j, k) = Block::EMPTY;
+//                }
             }
         }
     }
