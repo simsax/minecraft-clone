@@ -190,7 +190,7 @@ const std::unordered_map<Block, std::array<float, 24>> Chunk::s_TextureMap =
 // (I only generate the mesh of the part inside the border)
 Chunk::Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, glm::vec3 position,
              const VertexBufferLayout& layout, unsigned int maxVertexCount, const std::vector<unsigned int>& indices) :
-        m_XLength(xLength+2), m_YLength(yLength+2), m_ZLength(zLength+2), m_Position(std::move(position)),
+        m_XLength(xLength+2), m_YLength(yLength+2), m_ZLength(zLength+2), m_Position(position),
         m_Chunk(Matrix<Block>(m_XLength, m_YLength, m_ZLength)), m_MaxVertexCount(maxVertexCount)
 {
 
@@ -208,7 +208,7 @@ Chunk::Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, g
 
 // fine tune the values
 static float Continentalness(int x, int y) {
-    float scale = 256.0f;
+    float scale = 64.0f;
     float ampl = 1.0f;
     float freq = 0.3f;
     float height = 0;
@@ -217,8 +217,7 @@ static float Continentalness(int x, int y) {
     for (unsigned int i = 0; i < 1; i++) {
         octaveOffsets.push_back({ rand() % 10000, rand() % 10000 });
     }*/
-    float noise = noise::Perlin2D(x, y); // BUG ALWAYS 0
-    std::cout << noise << std::endl; // probably have to add a scale
+    float noise = noise::Perlin2D(x, y, scale);
 
     if (noise < 0.3) {
         height = (noise + 2.3f) / 0.026f;
@@ -250,7 +249,7 @@ static float Continentalness(int x, int y) {
 
 void Chunk::TerrainHeightGeneration() {
     int water_level = 63;
-    int snow_level = 120;
+    int snow_level = 100;
 
     for (unsigned int i = 0; i < m_XLength; i++) {
         for (unsigned int k = 0; k < m_ZLength; k++) {
@@ -308,19 +307,22 @@ void Chunk::TerrainHeightGeneration() {
                                                      1, 1, 1, 8, n1_offsets) > 8;
                 bool gravelChance = noise::OctaveNoise(i + m_Position.x, k + m_Position.z,
                                                        1, 1, 1, 8, n2_offsets) > 12;
-
                 bool snowChance = noise::OctaveNoise(i + m_Position.x, k + m_Position.z,
                                                        1, 1, 1, 8, n2_offsets) > 8;
                 Block blockAbove = m_Chunk(i,maxHeight+1,k);
                 if (blockAbove == Block::WATER && gravelChance)
                     m_Chunk(i, maxHeight, k) = Block::GRAVEL;
                 else if (blockAbove == Block::EMPTY) {
-                    if (maxHeight <= water_level && sandChance)
-                        m_Chunk(i,maxHeight,k) = Block::SAND;
-                    else if (maxHeight >= snow_level)
-                        m_Chunk(i, m_YLength - 1, k) = Block::SNOW;
-                    else
-                        m_Chunk(i,maxHeight,k) = Block::GRASS;
+                    if (maxHeight <= water_level && sandChance) {
+                        m_Chunk(i, maxHeight, k) = Block::SAND;
+                    } else if (maxHeight >= snow_level) {
+                        if (snowChance)
+                            m_Chunk(i, m_YLength - 1, k) = Block::SNOW;
+                        else
+                            m_Chunk(i, m_YLength - 1, k) = Block::STONE;
+                    } else {
+                        m_Chunk(i, maxHeight, k) = Block::GRASS;
+                    }
                 }
             }
         }
@@ -416,7 +418,7 @@ void Chunk::GenerateMesh() {
         // I want to render it relative to the center of m_Position
         int xCoord = static_cast<int>(m_Position.x - m_XLength / 2);
         //int yCoord = static_cast<int>(m_Position.y - m_YLength - 1);
-        int yCoord = -150;
+        int yCoord = 0;
         int zCoord = static_cast<int>(m_Position.z - m_ZLength / 2);
         glm::vec3 center(xCoord, yCoord, zCoord);
 

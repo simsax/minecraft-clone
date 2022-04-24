@@ -55,10 +55,13 @@ namespace noise {
 		return result;
 	}
 
-    float Perlin2D(int xCoord, int yCoord, const std::array<int, 2> &offsets) {
+    float Perlin2D(int xCoord, int yCoord, float scale, const std::array<int, 2> &offsets) {
+        float xf = xCoord/scale;
+        float yf = yCoord/scale;
+
         if (!offsets.empty())
-            return glm::perlin(glm::vec2(xCoord, yCoord));
+            return glm::perlin(glm::vec2(xf, yf));
         else
-            return glm::perlin(glm::vec2(xCoord + offsets[0], yCoord + offsets[1]));
+            return glm::perlin(glm::vec2(xf + offsets[0], yf + offsets[1]));
     }
 }

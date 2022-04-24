@@ -172,6 +172,17 @@ void ChunkManager::GenerateChunks(const glm::vec3& playerPosition)
 //	m_Cv.notify_one();
 }
 
+int ChunkManager::SpawnHeight() {
+   Chunk* chunk = &m_ChunkMap.find({ 0,0 })->second;
+   int water_level = 63;
+   int i;
+   for (i = water_level; i < CHUNK_SIZE_Y; i++) {
+        if (chunk->GetMatrix()((CHUNK_SIZE_X+2)/2, i, (CHUNK_SIZE_Z+2)/2) == Block::EMPTY)
+            break;
+   }
+   return i;
+}
+
 /*
 void ChunkManager::UpdateChunksToRender()
 {

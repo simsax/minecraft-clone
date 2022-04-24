@@ -47,6 +47,8 @@ Game::Game() :
 
     m_Renderer.Init();
     m_ChunkManager.InitWorld();
+    // spawn player over a block
+    camera.GetPlayerPosition()->y += static_cast<float>(m_ChunkManager.SpawnHeight() + 1.8);
 }
 
 void Game::OnRender()
@@ -94,7 +96,7 @@ void Game::CheckCollision(glm::vec3*& playerPos, ChunkCoord currentChunk)
     Chunk* chunk = &m_ChunkManager.m_ChunkMap.find(currentChunk)->second;
     std::array<unsigned int, 3> chunkSize = m_ChunkManager.GetChunkSize();
     float playerPosX = playerPos->x - (float)currentChunk.x * chunkSize[0] + (float)(chunkSize[0] + 2) / 2; // +2 because each chunk->has a border that doesn't render
-    float playerPosY = playerPos->y + 150;
+    float playerPosY = playerPos->y;
     float playerPosZ = playerPos->z - (float)currentChunk.z * chunkSize[2] + (float)(chunkSize[2] + 2) / 2;
     bool checked = false;
 
@@ -218,7 +220,7 @@ void Game::CheckRayCast(glm::vec3*& playerPos) {
 	float Sx = std::abs(1 / playerDir.x);
 	float Sy = std::abs(1 / playerDir.y);
 	float Sz = std::abs(1 / playerDir.z);
-    float playerPosY = playerPos->y + 150;
+    float playerPosY = playerPos->y;
 	glm::vec3 currentVoxel = { std::floor(playerPos->x), std::floor(playerPosY), std::floor(playerPos->z) };
 	glm::vec3 rayLength;
 	glm::vec3 step;

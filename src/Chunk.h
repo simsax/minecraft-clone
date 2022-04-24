@@ -84,8 +84,6 @@ private:
     unsigned int m_ZLength;
     glm::vec3 m_Position;
     Matrix<Block> m_Chunk;
-    ChunkCoord m_WorldCoords;
     std::vector<Vertex> m_Mesh;
-    unsigned int m_Seed;
     unsigned int m_MaxVertexCount;
 };

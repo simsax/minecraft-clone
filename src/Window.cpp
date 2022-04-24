@@ -86,6 +86,7 @@ namespace glfw {
 				std::string ms = std::to_string(1000.0/nFrames);
 				std::string newTitle = "Minecraft 2 - " + fps + "FPS / " + ms + "ms" +
                         "  -  PlayerPos: " + std::to_string(Game::camera.GetPlayerPosition()->x) +
+                        "," + std::to_string(Game::camera.GetPlayerPosition()->y) +
                         "," + std::to_string(Game::camera.GetPlayerPosition()->z);
 				glfwSetWindowTitle(m_Window, newTitle.c_str());
 				prevTime = crntTime;

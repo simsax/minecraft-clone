@@ -9,6 +9,7 @@ public:
 	ChunkManager();
 	~ChunkManager();
 	void InitWorld();
+    int SpawnHeight();
 	void GenerateChunks(const glm::vec3& playerPosition);
 	//void UpdateChunksToRender();
 	void Render(const Renderer& renderer);
