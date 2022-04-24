@@ -10,7 +10,8 @@ namespace glfw {
 	float Window::mouseSensitivity = 0.1f;
 	bool Window::wireframe = false;
 
-	Window::Window(int width, int height, std::string name) : m_Width(width), m_Height(height), m_Name(std::move(name))
+	Window::Window(int width, int height, std::string name) :
+        m_Width(width), m_Height(height), m_Name(std::move(name))
 	{
 		// initialize GLFW
 		if (!glfwInit()) {
@@ -42,7 +43,8 @@ namespace glfw {
 		glfwSetCursorPosCallback(m_Window, MouseCallback);
 		glfwSetMouseButtonCallback(m_Window, MouseButtonCallback);
 		glfwSetKeyCallback(m_Window, KeyCallback);
-		glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); // capture cursor in the center and hide it
+        // capture cursor in the center and hide it
+		glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 #ifndef NDEBUG
 		// debug stuff
@@ -82,7 +84,9 @@ namespace glfw {
 			if (crntTime - prevTime >= 1.0) {
 				std::string fps = std::to_string(nFrames);
 				std::string ms = std::to_string(1000.0/nFrames);
-				std::string newTitle = "Minecraft 2 - " + fps + "FPS / " + ms + "ms" + "  -  PlayerPos: " + std::to_string(Game::camera.GetPlayerPosition()->x) + "," + std::to_string(Game::camera.GetPlayerPosition()->z);
+				std::string newTitle = "Minecraft 2 - " + fps + "FPS / " + ms + "ms" +
+                        "  -  PlayerPos: " + std::to_string(Game::camera.GetPlayerPosition()->x) +
+                        "," + std::to_string(Game::camera.GetPlayerPosition()->z);
 				glfwSetWindowTitle(m_Window, newTitle.c_str());
 				prevTime = crntTime;
 				nFrames = 0;
@@ -170,7 +174,8 @@ void glfw::Window::KeyCallback(GLFWwindow* window, int key, int scancode, int ac
 		Game::ProcessKey(cam::Key::SPACE);
 }
 
-void GLAPIENTRY glfw::Window::MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
+void GLAPIENTRY glfw::Window::MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity,
+                                              GLsizei length, const GLchar* message, const void* userParam)
 {
 	fprintf(stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
 		(type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),

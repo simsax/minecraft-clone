@@ -4,6 +4,38 @@
 #include "Noise.h"
 
 const float Chunk::s_TextureOffset = 0.0625f; // texture_size/atlas_size
+const std::vector<std::array<int, 2>> Chunk::n1_offsets = [](){
+    srand(time(NULL));
+    std::vector<std::array<int, 2>> octaveOffsets;
+    for (unsigned int i = 0; i < 8; i++) {
+        octaveOffsets.push_back({ rand() % 10000, rand() % 10000 });
+    }
+    return octaveOffsets;
+}();
+const std::vector<std::array<int, 2>> Chunk::n2_offsets = [](){
+    srand(time(NULL));
+    std::vector<std::array<int, 2>> octaveOffsets{};
+    for (unsigned int i = 0; i < 8; i++) {
+        octaveOffsets.push_back({ rand() % 10000, rand() % 10000 });
+    }
+    return octaveOffsets;
+}();
+const std::vector<std::array<int, 2>> Chunk::n3_offsets = [](){
+    srand(time(NULL));
+    std::vector<std::array<int, 2>> octaveOffsets{};
+    for (unsigned int i = 0; i < 6; i++) {
+        octaveOffsets.push_back({ rand() % 10000, rand() % 10000 });
+    }
+    return octaveOffsets;
+}();
+const std::vector<std::array<int, 2>> Chunk::n4_offsets = [](){
+    srand(time(NULL));
+    std::vector<std::array<int, 2>> octaveOffsets{};
+    for (unsigned int i = 0; i < 8; i++) {
+        octaveOffsets.push_back({ rand() % 10000, rand() % 10000 });
+    }
+    return octaveOffsets;
+}();
 
 bool operator==(const ChunkCoord& l, const ChunkCoord& r)
 {
@@ -26,82 +58,140 @@ std::size_t hash_fn::operator()(const ChunkCoord& coord) const
     return h1 ^ h2;
 }
 
-static void CreateUQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<float, 24>& textureCoords) {
+static void CreateUQuad(std::vector<Vertex>& target, const glm::vec3& position,
+                        const std::array<float, 24>& textureCoords) {
     float size = 1.0f;
 
-    target.emplace_back(glm::vec3(position[0], position[1] + size, position[2] + size),glm::vec2(textureCoords[0], textureCoords[1]));
-    target.emplace_back(glm::vec3(position[0] + size, position[1] + size, position[2] + size),glm::vec2(textureCoords[2], textureCoords[3]));
-    target.emplace_back(glm::vec3(position[0] + size, position[1] + size, position[2]),glm::vec2(textureCoords[4], textureCoords[5]));
-    target.emplace_back(glm::vec3(position[0], position[1] + size, position[2]),glm::vec2(textureCoords[6], textureCoords[7]));
+    target.emplace_back(glm::vec3(position[0], position[1] + size, position[2] + size),
+                        glm::vec2(textureCoords[0], textureCoords[1]));
+    target.emplace_back(glm::vec3(position[0] + size, position[1] + size, position[2] + size),
+                        glm::vec2(textureCoords[2], textureCoords[3]));
+    target.emplace_back(glm::vec3(position[0] + size, position[1] + size, position[2]),
+                        glm::vec2(textureCoords[4], textureCoords[5]));
+    target.emplace_back(glm::vec3(position[0], position[1] + size, position[2]),
+                        glm::vec2(textureCoords[6], textureCoords[7]));
 }
 
-static void CreateDQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<float, 24>& textureCoords) {
+static void CreateDQuad(std::vector<Vertex>& target, const glm::vec3& position,
+                        const std::array<float, 24>& textureCoords) {
     float size = 1.0f;
 
-    target.emplace_back(glm::vec3(position[0], position[1], position[2] + size), glm::vec2(textureCoords[16], textureCoords[17]));
-    target.emplace_back(glm::vec3(position[0], position[1], position[2]), glm::vec2(textureCoords[18], textureCoords[19]));
-    target.emplace_back(glm::vec3(position[0] + size, position[1], position[2]), glm::vec2(textureCoords[20], textureCoords[21]));
-    target.emplace_back(glm::vec3(position[0] + size, position[1], position[2] + size), glm::vec2(textureCoords[22], textureCoords[23]));
+    target.emplace_back(glm::vec3(position[0], position[1], position[2] + size),
+                        glm::vec2(textureCoords[16], textureCoords[17]));
+    target.emplace_back(glm::vec3(position[0], position[1], position[2]),
+                        glm::vec2(textureCoords[18], textureCoords[19]));
+    target.emplace_back(glm::vec3(position[0] + size, position[1], position[2]),
+                        glm::vec2(textureCoords[20], textureCoords[21]));
+    target.emplace_back(glm::vec3(position[0] + size, position[1], position[2] + size),
+                        glm::vec2(textureCoords[22], textureCoords[23]));
 }
 
-static void CreateFQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<float, 24>& textureCoords) {
+static void CreateFQuad(std::vector<Vertex>& target, const glm::vec3& position,
+                        const std::array<float, 24>& textureCoords) {
     float size = 1.0f;
 
-    target.emplace_back(glm::vec3(position[0], position[1], position[2] + size), glm::vec2(textureCoords[8], textureCoords[9]));
-    target.emplace_back(glm::vec3(position[0] + size, position[1], position[2] + size), glm::vec2(textureCoords[10], textureCoords[11]));
-    target.emplace_back(glm::vec3(position[0] + size, position[1] + size, position[2] + size), glm::vec2(textureCoords[12], textureCoords[13]));
-    target.emplace_back(glm::vec3(position[0], position[1] + size, position[2] + size), glm::vec2(textureCoords[14], textureCoords[15]));
+    target.emplace_back(glm::vec3(position[0], position[1], position[2] + size),
+                        glm::vec2(textureCoords[8], textureCoords[9]));
+    target.emplace_back(glm::vec3(position[0] + size, position[1], position[2] + size),
+                        glm::vec2(textureCoords[10], textureCoords[11]));
+    target.emplace_back(glm::vec3(position[0] + size, position[1] + size, position[2] + size),
+                        glm::vec2(textureCoords[12], textureCoords[13]));
+    target.emplace_back(glm::vec3(position[0], position[1] + size, position[2] + size),
+                        glm::vec2(textureCoords[14], textureCoords[15]));
 }
 
-static void CreateBQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<float, 24>& textureCoords) {
+static void CreateBQuad(std::vector<Vertex>& target, const glm::vec3& position,
+                        const std::array<float, 24>& textureCoords) {
     float size = 1.0f;
 
-    target.emplace_back(glm::vec3(position[0] + size, position[1], position[2]), glm::vec2(textureCoords[8], textureCoords[9]));
-    target.emplace_back(glm::vec3(position[0], position[1], position[2]), glm::vec2(textureCoords[10], textureCoords[11]));
-    target.emplace_back(glm::vec3(position[0], position[1] + size, position[2]), glm::vec2(textureCoords[12], textureCoords[13]));
-    target.emplace_back(glm::vec3(position[0] + size, position[1] + size, position[2]), glm::vec2(textureCoords[14], textureCoords[15]));
+    target.emplace_back(glm::vec3(position[0] + size, position[1], position[2]),
+                        glm::vec2(textureCoords[8], textureCoords[9]));
+    target.emplace_back(glm::vec3(position[0], position[1], position[2]),
+                        glm::vec2(textureCoords[10], textureCoords[11]));
+    target.emplace_back(glm::vec3(position[0], position[1] + size, position[2]),
+                        glm::vec2(textureCoords[12], textureCoords[13]));
+    target.emplace_back(glm::vec3(position[0] + size, position[1] + size, position[2]),
+                        glm::vec2(textureCoords[14], textureCoords[15]));
 }
 
-static void CreateRQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<float, 24>& textureCoords) {
+static void CreateRQuad(std::vector<Vertex>& target, const glm::vec3& position,
+                        const std::array<float, 24>& textureCoords) {
     float size = 1.0f;
 
-    target.emplace_back(glm::vec3(position[0] + size, position[1], position[2] + size), glm::vec2(textureCoords[8], textureCoords[9]));
-    target.emplace_back(glm::vec3(position[0] + size, position[1], position[2]), glm::vec2(textureCoords[10], textureCoords[11]));
-    target.emplace_back(glm::vec3(position[0] + size, position[1] + size, position[2]), glm::vec2(textureCoords[12], textureCoords[13]));
-    target.emplace_back(glm::vec3(position[0] + size, position[1] + size, position[2] + size), glm::vec2(textureCoords[14], textureCoords[15]));
+    target.emplace_back(glm::vec3(position[0] + size, position[1], position[2] + size),
+                        glm::vec2(textureCoords[8], textureCoords[9]));
+    target.emplace_back(glm::vec3(position[0] + size, position[1], position[2]),
+                        glm::vec2(textureCoords[10], textureCoords[11]));
+    target.emplace_back(glm::vec3(position[0] + size, position[1] + size, position[2]),
+                        glm::vec2(textureCoords[12], textureCoords[13]));
+    target.emplace_back(glm::vec3(position[0] + size, position[1] + size, position[2] + size),
+                        glm::vec2(textureCoords[14], textureCoords[15]));
 }
 
-static void CreateLQuad(std::vector<Vertex>& target, const glm::vec3& position, const std::array<float, 24>& textureCoords) {
+static void CreateLQuad(std::vector<Vertex>& target, const glm::vec3& position,
+                        const std::array<float, 24>& textureCoords) {
     float size = 1.0f;
 
-    target.emplace_back(glm::vec3(position[0], position[1], position[2]), glm::vec2(textureCoords[8], textureCoords[9]));
-    target.emplace_back(glm::vec3(position[0], position[1], position[2] + size), glm::vec2(textureCoords[10], textureCoords[11]));
-    target.emplace_back(glm::vec3(position[0], position[1] + size, position[2] + size), glm::vec2(textureCoords[12], textureCoords[13]));
-    target.emplace_back(glm::vec3(position[0], position[1] + size, position[2]), glm::vec2(textureCoords[14], textureCoords[15]));
+    target.emplace_back(glm::vec3(position[0], position[1], position[2]),
+                        glm::vec2(textureCoords[8], textureCoords[9]));
+    target.emplace_back(glm::vec3(position[0], position[1], position[2] + size),
+                        glm::vec2(textureCoords[10], textureCoords[11]));
+    target.emplace_back(glm::vec3(position[0], position[1] + size, position[2] + size),
+                        glm::vec2(textureCoords[12], textureCoords[13]));
+    target.emplace_back(glm::vec3(position[0], position[1] + size, position[2]),
+                        glm::vec2(textureCoords[14], textureCoords[15]));
 }
 
 // values are precomputed for speed
 const std::unordered_map<Block, std::array<float, 24>> Chunk::s_TextureMap =
-        {
-                { Block::GRASS,		{0.75, 0.1875, 0.8125, 0.1875, 0.8125, 0.25, 0.75, 0.25, 0.1875, 0.9375, 0.25, 0.9375, 0.25, 1.0, 0.1875, 1.0, 0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0 } },
-                { Block::DIRT,		{0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0, 0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0, 0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0 } },
-                { Block::STONE,		{0.0625, 0.9375, 0.125, 0.9375, 0.125, 1.0, 0.0625, 1.0, 0.0625, 0.9375, 0.125, 0.9375, 0.125, 1.0, 0.0625, 1.0, 0.0625, 0.9375, 0.125, 0.9375, 0.125, 1.0, 0.0625, 1.0 } },
-                { Block::DIAMOND,		{0.125, 0.75, 0.1875, 0.75, 0.1875, 0.8125, 0.125, 0.8125, 0.125, 0.75, 0.1875, 0.75, 0.1875, 0.8125, 0.125, 0.8125, 0.125, 0.75, 0.1875, 0.75, 0.1875, 0.8125, 0.125, 0.8125 } },
-                { Block::GOLD,	{0.0, 0.8125, 0.0625, 0.8125, 0.0625, 0.875, 0.0, 0.875, 0.0, 0.8125, 0.0625, 0.8125, 0.0625, 0.875, 0.0, 0.875, 0.0, 0.8125, 0.0625, 0.8125, 0.0625, 0.875, 0.0, 0.875 } },
-                { Block::COAL,		{0.125, 0.8125, 0.1875, 0.8125, 0.1875, 0.875, 0.125, 0.875, 0.125, 0.8125, 0.1875, 0.8125, 0.1875, 0.875, 0.125, 0.875, 0.125, 0.8125, 0.1875, 0.8125, 0.1875, 0.875, 0.125, 0.875 } },
-                { Block::STEEL,		{0.0625, 0.8125, 0.125, 0.8125, 0.125, 0.875, 0.0625, 0.875, 0.0625, 0.8125, 0.125, 0.8125, 0.125, 0.875, 0.0625, 0.875, 0.0625, 0.8125, 0.125, 0.8125, 0.125, 0.875, 0.0625, 0.875 } },
-                { Block::LEAVES,		{0.6875, 0.0625, 0.75, 0.0625, 0.75, 0.125, 0.6875, 0.125, 0.6875, 0.0625, 0.75, 0.0625, 0.75, 0.125, 0.6875, 0.125, 0.6875, 0.0625, 0.75, 0.0625, 0.75, 0.125, 0.6875, 0.125 } },
-                { Block::WOOD,	{0.3125, 0.875, 0.375, 0.875, 0.375, 0.9375, 0.3125, 0.9375, 0.25, 0.875, 0.3125, 0.875, 0.3125, 0.9375, 0.25, 0.9375, 0.3125, 0.875, 0.375, 0.875, 0.375, 0.9375, 0.3125, 0.9375 } },
-                { Block::SNOW,		{0.125, 0.6875, 0.1875, 0.6875, 0.1875, 0.75, 0.125, 0.75, 0.25, 0.6875, 0.3125, 0.6875, 0.3125, 0.75, 0.25, 0.75, 0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0 } },
-                { Block::WATER,		{0.9375, 0.125, 1.0, 0.125, 1.0, 0.1875, 0.9375, 0.1875, 0.9375, 0.125, 1.0, 0.125, 1.0, 0.1875, 0.9375, 0.1875, 0.9375, 0.125, 1.0, 0.125, 1.0, 0.1875, 0.9375, 0.1875 } },
-                { Block::SAND,		{0.125, 0.875, 0.1875, 0.875, 0.1875, 0.9375, 0.125, 0.9375, 0.125, 0.875, 0.1875, 0.875, 0.1875, 0.9375, 0.125, 0.9375, 0.125, 0.875, 0.1875, 0.875, 0.1875, 0.9375, 0.125, 0.9375 } }
-        };
+    {
+        { Block::GRASS,{0.75, 0.1875, 0.8125, 0.1875, 0.8125, 0.25, 0.75, 0.25,
+                            0.1875, 0.9375, 0.25, 0.9375, 0.25, 1.0, 0.1875, 1.0,
+                            0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0 } },
+        { Block::DIRT,{0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0,
+                       0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0,
+                       0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0 } },
+        { Block::STONE,{0.0625, 0.9375, 0.125, 0.9375, 0.125, 1.0, 0.0625, 1.0,
+                            0.0625, 0.9375, 0.125, 0.9375, 0.125, 1.0, 0.0625, 1.0,
+                            0.0625, 0.9375, 0.125, 0.9375, 0.125, 1.0, 0.0625, 1.0 } },
+        { Block::DIAMOND,{0.125, 0.75, 0.1875, 0.75, 0.1875, 0.8125, 0.125, 0.8125,
+                               0.125, 0.75, 0.1875, 0.75, 0.1875, 0.8125, 0.125, 0.8125,
+                               0.125, 0.75, 0.1875, 0.75, 0.1875, 0.8125, 0.125, 0.8125 } },
+        { Block::GOLD,	{0.0, 0.8125, 0.0625, 0.8125, 0.0625, 0.875, 0.0, 0.875,
+                                0.0, 0.8125, 0.0625, 0.8125, 0.0625, 0.875, 0.0, 0.875,
+                                0.0, 0.8125, 0.0625, 0.8125, 0.0625, 0.875, 0.0, 0.875 } },
+        { Block::COAL,	{0.125, 0.8125, 0.1875, 0.8125, 0.1875, 0.875, 0.125, 0.875,
+                                0.125, 0.8125, 0.1875, 0.8125, 0.1875, 0.875, 0.125, 0.875,
+                                0.125, 0.8125, 0.1875, 0.8125, 0.1875, 0.875, 0.125, 0.875 } },
+        { Block::STEEL,	{0.0625, 0.8125, 0.125, 0.8125, 0.125, 0.875, 0.0625, 0.875,
+                                0.0625, 0.8125, 0.125, 0.8125, 0.125, 0.875, 0.0625, 0.875,
+                                0.0625, 0.8125, 0.125, 0.8125, 0.125, 0.875, 0.0625, 0.875 } },
+        { Block::LEAVES,	{0.6875, 0.0625, 0.75, 0.0625, 0.75, 0.125, 0.6875, 0.125,
+                                0.6875, 0.0625, 0.75, 0.0625, 0.75, 0.125, 0.6875, 0.125,
+                                0.6875, 0.0625, 0.75, 0.0625, 0.75, 0.125, 0.6875, 0.125 } },
+        { Block::WOOD,	{0.3125, 0.875, 0.375, 0.875, 0.375, 0.9375, 0.3125, 0.9375,
+                                0.25, 0.875, 0.3125, 0.875, 0.3125, 0.9375, 0.25, 0.9375,
+                                0.3125, 0.875, 0.375, 0.875, 0.375, 0.9375, 0.3125, 0.9375 } },
+        { Block::SNOW,	{0.125, 0.6875, 0.1875, 0.6875, 0.1875, 0.75, 0.125, 0.75,
+                                0.25, 0.6875, 0.3125, 0.6875, 0.3125, 0.75, 0.25, 0.75,
+                                0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0 } },
+        { Block::WATER,	{0.9375, 0.125, 1.0, 0.125, 1.0, 0.1875, 0.9375, 0.1875,
+                                0.9375, 0.125, 1.0, 0.125, 1.0, 0.1875, 0.9375, 0.1875,
+                                0.9375, 0.125, 1.0, 0.125, 1.0, 0.1875, 0.9375, 0.1875 } },
+        { Block::SAND,	{0.125, 0.875, 0.1875, 0.875, 0.1875, 0.9375, 0.125, 0.9375,
+                                0.125, 0.875, 0.1875, 0.875, 0.1875, 0.9375, 0.125, 0.9375,
+                                0.125, 0.875, 0.1875, 0.875, 0.1875, 0.9375, 0.125, 0.9375 } },
+        { Block::GRAVEL,	{0.1875, 0.875, 0.25, 0.875, 0.25, 0.9375, 0.1875, 0.9375,
+                                0.1875, 0.875, 0.25, 0.875, 0.25, 0.9375, 0.1875, 0.9375,
+                                0.1875, 0.875, 0.25, 0.875, 0.25, 0.9375, 0.1875, 0.9375 } }
+    };
 
-// the chunk has a border so that I know what faces to cull between chunks (I only generate the mesh of the part inside the border)
-Chunk::Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, glm::vec3 position, const VertexBufferLayout& layout,
-             unsigned int maxVertexCount, const std::vector<unsigned int>& indices) :
-        m_XLength(xLength+2), m_YLength(yLength+2), m_ZLength(zLength+2), m_Position(std::move(position)), m_Chunk(Matrix<Block>(m_XLength, m_YLength, m_ZLength)),
-        m_MaxVertexCount(maxVertexCount)
+// the chunk has a border so that I know what faces to cull between chunks
+// (I only generate the mesh of the part inside the border)
+Chunk::Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, glm::vec3 position,
+             const VertexBufferLayout& layout, unsigned int maxVertexCount, const std::vector<unsigned int>& indices) :
+        m_XLength(xLength+2), m_YLength(yLength+2), m_ZLength(zLength+2), m_Position(std::move(position)),
+        m_Chunk(Matrix<Block>(m_XLength, m_YLength, m_ZLength)), m_MaxVertexCount(maxVertexCount)
 {
 
     m_IBO = std::make_unique<IndexBuffer>(indices.size() * sizeof(unsigned int), indices.data());
@@ -127,7 +217,8 @@ static float Continentalness(int x, int y) {
     for (unsigned int i = 0; i < 1; i++) {
         octaveOffsets.push_back({ rand() % 10000, rand() % 10000 });
     }*/
-    float noise = noise::Perlin2D(x, y, scale, freq, ampl);
+    float noise = noise::Perlin2D(x, y); // BUG ALWAYS 0
+    std::cout << noise << std::endl; // probably have to add a scale
 
     if (noise < 0.3) {
         height = (noise + 2.3f) / 0.026f;
@@ -143,43 +234,42 @@ static float Continentalness(int x, int y) {
 }
 
 
-static float Noise(int x, int y, unsigned int octaves, const std::vector<std::vector<int>>& octaveOffsets) {
-    float freq = 0.5f;
-    float ampl = 20.0f;
-    float scale = 64.0f;
-    //float terrain_height = Continentalness(x, y);
-    float terrain_height = 100;
-
-    float height = noise::Perlin2D(x, y, scale, freq, ampl, octaves, octaveOffsets);
-    std::cout << height << std::endl;
-
-    return terrain_height + height;
-}
-
-static std::vector<std::vector<int>> GenerateOffsets(unsigned int n_octaves) {
-    std::vector<std::vector<int>> octaveOffsets;
-    for (unsigned int i = 0; i < n_octaves; i++) {
-        float v1 = rand() % 10000;
-        std::cout << v1 << std::endl;
-        octaveOffsets.push_back({ rand() % 10000, rand() % 10000 });
-    }
-    return octaveOffsets;
-}
+//static float Noise(int x, int y, unsigned int octaves, const std::vector<std::vector<int>>& octaveOffsets) {
+//    float freq = 0.5f;
+//    float ampl = 20.0f;
+//    float scale = 64.0f;
+//    //float terrain_height = Continentalness(x, y);
+//    float terrain_height = 100;
+//
+//    float height = noise::Perlin2D(x, y, scale, freq, ampl,
+//                                   octaves, octaveOffsets);
+//    std::cout << height << std::endl;
+//
+//    return terrain_height + height;
+//}
 
 void Chunk::TerrainHeightGeneration() {
-    float terrain_height = 100;
+    int water_level = 63;
+    int snow_level = 120;
 
-    // TODO: fix position since it is probably wrong (should be the global x,z coordinate of the upper left corner in the chunk)
     for (unsigned int i = 0; i < m_XLength; i++) {
         for (unsigned int k = 0; k < m_ZLength; k++) {
+            float terrain_height = Continentalness(i + m_Position.x, k + m_Position.z);
+            if (terrain_height < water_level)
+                terrain_height = water_level;
             float hHigh;
-            float hLow = noise::CombinedNoise((i + m_Position.x) * 1.3f, (k + m_Position.z) * 1.3f, 1,1,1,8,
-                                              GenerateOffsets(8)) / 6 - 4;
+            float hLow = noise::CombinedNoise((i + m_Position.x) * 1.3f,
+                                              (k + m_Position.z) * 1.3f,
+                                              1,1,1,8,
+                                              n1_offsets) / 6 - 4;
             float height = hLow;
 
-            if (noise::OctaveNoise(i + m_Position.x, k + m_Position.z, 1,1,1,6, GenerateOffsets(6)) <= 0 ) {
-                hHigh = noise::CombinedNoise((i + m_Position.x) * 1.3f, (k + m_Position.z) * 1.3f, 1,1,1,8,
-                                             GenerateOffsets(8)) / 5 + 6;
+            if (noise::OctaveNoise(i + m_Position.x, k + m_Position.z,
+                                   1,1,1,6, n3_offsets) <= 0 ) {
+                hHigh = noise::CombinedNoise((i + m_Position.x) * 1.3f,
+                                             (k + m_Position.z) * 1.3f,
+                                             1,1,1,8,
+                                             n2_offsets) / 5 + 6;
                 height = std::max(hLow, hHigh);
             }
 
@@ -187,25 +277,74 @@ void Chunk::TerrainHeightGeneration() {
             if (height < 0)
                 height *= 0.8f;
 
-            auto adjHeight = static_cast<unsigned int>(height + terrain_height);
-            //minHeight = std::min(adjHeight, minHeight);
+            auto maxHeight = static_cast<unsigned int>(height + terrain_height);
 
-            int dirtThickness = static_cast<int>(noise::OctaveNoise(i + m_Position.x, k + m_Position.z,1, 1,1,8,
-                                                                    GenerateOffsets(8)) / 6) ;
-            //std::cout << dirtThickness << std::endl;
+            int dirtThickness = static_cast<int>(
+                    noise::OctaveNoise(i + m_Position.x,
+                                       k + m_Position.z,
+                                       1, 1,1,8,
+                                       n4_offsets) / 6) ;
+
             for (unsigned int j = 0; j < m_YLength; j++) {
-                if (j < adjHeight) {
-                    m_Chunk(i, j, k) = Block::STONE;
-                } else if (j < adjHeight + dirtThickness) {
-                    m_Chunk(i, j, k) = Block::DIRT;
+                if (j < maxHeight) {
+                    if (j < terrain_height){
+                        m_Chunk(i, j, k) = Block::STONE;
+                    } else if (j < terrain_height + dirtThickness) {
+                        m_Chunk(i, j, k) = Block::DIRT;
+                    } else {
+                        m_Chunk(i, j, k) = Block::STONE;
+                    }
                 } else {
-                    m_Chunk(i,j,k) = Block::EMPTY;
+                    if (j < water_level) {
+                        m_Chunk(i,j,k) = Block::WATER;
+                    } else {
+                        m_Chunk(i,j,k) = Block::EMPTY;
+                    }
                 }
+            }
+            // create surface layer
+            if (maxHeight < m_YLength - 1) {
+                bool sandChance = noise::OctaveNoise(i + m_Position.x, k + m_Position.z,
+                                                     1, 1, 1, 8, n1_offsets) > 8;
+                bool gravelChance = noise::OctaveNoise(i + m_Position.x, k + m_Position.z,
+                                                       1, 1, 1, 8, n2_offsets) > 12;
 
-//                if (j < adjHeight) {
+                bool snowChance = noise::OctaveNoise(i + m_Position.x, k + m_Position.z,
+                                                       1, 1, 1, 8, n2_offsets) > 8;
+                Block blockAbove = m_Chunk(i,maxHeight+1,k);
+                if (blockAbove == Block::WATER && gravelChance)
+                    m_Chunk(i, maxHeight, k) = Block::GRAVEL;
+                else if (blockAbove == Block::EMPTY) {
+                    if (maxHeight <= water_level && sandChance)
+                        m_Chunk(i,maxHeight,k) = Block::SAND;
+                    else if (maxHeight >= snow_level)
+                        m_Chunk(i, m_YLength - 1, k) = Block::SNOW;
+                    else
+                        m_Chunk(i,maxHeight,k) = Block::GRASS;
+                }
+            }
+        }
+    }
+}
+//void Chunk::Noise2DInit() {
+//    srand(m_Seed);
+//    std::vector<std::vector<int>> octaveOffsets;
+//    unsigned int n_octaves = 4;
+//    for (unsigned int i = 0; i < n_octaves; i++) {
+//        octaveOffsets.push_back({ rand() % 10000, rand() % 10000 });
+//    }
+//
+//    for (unsigned int i = 0; i < m_XLength; i++) {
+//        for (unsigned int k = 0; k < m_ZLength; k++) {
+//            unsigned int w = static_cast<unsigned int>(
+//                    Noise(static_cast<int>(i + m_Position.x),
+//                          static_cast<int>(k + m_Position.z),n_octaves, octaveOffsets));
+//
+//            for (unsigned int j = 0; j < m_YLength; j++) {
+//                if (j < w) {
 //                    if (j < 100)
 //                        m_Chunk(i, j, k) = Block::SAND;
-//                    else if (j == adjHeight - 1 || j == m_YLength - 1)
+//                    else if (j == w - 1 || j == m_YLength - 1)
 //                        m_Chunk(i, j, k) = Block::GRASS;
 //                    else
 //                        m_Chunk(i, j, k) = Block::STONE;
@@ -216,41 +355,10 @@ void Chunk::TerrainHeightGeneration() {
 //                    else
 //                        m_Chunk(i, j, k) = Block::EMPTY;
 //                }
-            }
-        }
-    }
-}
-void Chunk::Noise2DInit() {
-    srand(m_Seed);
-    std::vector<std::vector<int>> octaveOffsets;
-    unsigned int n_octaves = 4;
-    for (unsigned int i = 0; i < n_octaves; i++) {
-        octaveOffsets.push_back({ rand() % 10000, rand() % 10000 });
-    }
-
-    for (unsigned int i = 0; i < m_XLength; i++) {
-        for (unsigned int k = 0; k < m_ZLength; k++) {
-            unsigned int w = static_cast<unsigned int>(Noise(static_cast<int>(i + m_Position.x), static_cast<int>(k + m_Position.z), n_octaves, octaveOffsets));
-
-            for (unsigned int j = 0; j < m_YLength; j++) {
-                if (j < w) {
-                    if (j < 100)
-                        m_Chunk(i, j, k) = Block::SAND;
-                    else if (j == w - 1 || j == m_YLength - 1)
-                        m_Chunk(i, j, k) = Block::GRASS;
-                    else
-                        m_Chunk(i, j, k) = Block::STONE;
-                }
-                else {
-                    if (j < 100) // this value may depend on the biome
-                        m_Chunk(i, j, k) = Block::WATER;
-                    else
-                        m_Chunk(i, j, k) = Block::EMPTY;
-                }
-            }
-        }
-    }
-}
+//            }
+//        }
+//    }
+//}
 
 void Chunk::Noise3DInit(unsigned int seed) {
     srand(seed);
@@ -266,7 +374,9 @@ void Chunk::Noise3DInit(unsigned int seed) {
     for (int i = 0; i < (int)m_XLength; i++) {
         for (int k = 0; k < (int)m_ZLength; k++) {
             for (int j = 0; j < (int)m_YLength; j++) {
-                float density = noise::Perlin3D(i + (int)m_Position.x, j + (int)m_Position.y, k + (int)m_Position.z, scale, 1, 1);
+                float density = noise::Perlin3D(i + (int)m_Position.x,
+                                                j + (int)m_Position.y,
+                                                k + (int)m_Position.z, scale, 1, 1);
                 if (density <= 0 || j > 150) {
                     m_Chunk(i, j, k) = Block::EMPTY;
                 }

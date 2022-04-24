@@ -11,6 +11,7 @@
 #include <unordered_map>
 #include <array>
 #include <vector>
+#include <array>
 #include "Matrix.hpp"
 
 enum class Block : unsigned char {
@@ -26,7 +27,8 @@ enum class Block : unsigned char {
     LEAVES,
     WOOD,
     WATER,
-    SAND
+    SAND,
+    GRAVEL
 };
 
 struct ChunkCoord {
@@ -43,7 +45,8 @@ bool operator!=(const ChunkCoord& l, const ChunkCoord& r);
 int operator-(const ChunkCoord& l, const ChunkCoord& r);
 
 struct Vertex {
-    Vertex(glm::vec3 position, glm::vec2 texCoords) : Position(std::move(position)), TexCoords(std::move(texCoords)) {}
+    Vertex(glm::vec3 position, glm::vec2 texCoords) :
+        Position(std::move(position)), TexCoords(std::move(texCoords)) {}
 
     glm::vec3 Position;
     glm::vec2 TexCoords;
@@ -52,7 +55,8 @@ struct Vertex {
 class Chunk
 {
 public:
-    Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, glm::vec3 position, const VertexBufferLayout& layout,
+    Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength,
+          glm::vec3 position, const VertexBufferLayout& layout,
           unsigned int maxVertexCount, const std::vector<unsigned int>& indices);
     Matrix<Block> GetMatrix() const;
     void GenerateMesh();
@@ -62,7 +66,7 @@ private:
     static const std::unordered_map<Block, std::array<float, 24>> s_TextureMap;
     void UpdateMesh(unsigned int x, unsigned int y, unsigned int z, Block block);
     void SinInit();
-    void Noise2DInit();
+//    void Noise2DInit();
     void TerrainHeightGeneration();
     void Noise3DInit(unsigned int seed);
 
@@ -71,6 +75,10 @@ private:
     std::unique_ptr<VertexBuffer> m_VBO;
 
     static const float s_TextureOffset; // depends on the texture atlas
+    static const std::vector<std::array<int, 2>> n1_offsets;
+    static const std::vector<std::array<int, 2>> n2_offsets;
+    static const std::vector<std::array<int, 2>> n3_offsets;
+    static const std::vector<std::array<int, 2>> n4_offsets;
     unsigned int m_XLength;
     unsigned int m_YLength;
     unsigned int m_ZLength;

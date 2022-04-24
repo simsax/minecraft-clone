@@ -45,7 +45,6 @@ Game::Game() :
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
 
-    srand(time(nullptr));
     m_Renderer.Init();
     m_ChunkManager.InitWorld();
 }
