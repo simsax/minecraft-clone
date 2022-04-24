@@ -145,9 +145,9 @@ static void CreateLQuad(std::vector<Vertex>& target, const glm::vec3& position,
 // values are precomputed for speed
 const std::unordered_map<Block, std::array<float, 24>> Chunk::s_TextureMap =
     {
-        { Block::GRASS,{0.75, 0.1875, 0.8125, 0.1875, 0.8125, 0.25, 0.75, 0.25,
-                            0.1875, 0.9375, 0.25, 0.9375, 0.25, 1.0, 0.1875, 1.0,
-                            0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0 } },
+        { Block::GRASS,{0.75, 0.1875, 0.8125, 0.1875, 0.8125, 0.25, 0.75, 0.25, // top
+                            0.1875, 0.9375, 0.25, 0.9375, 0.25, 1.0, 0.1875, 1.0, // side
+                            0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0 } }, //bottom
         { Block::DIRT,{0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0,
                        0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0,
                        0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0 } },
@@ -173,8 +173,11 @@ const std::unordered_map<Block, std::array<float, 24>> Chunk::s_TextureMap =
                                 0.25, 0.875, 0.3125, 0.875, 0.3125, 0.9375, 0.25, 0.9375,
                                 0.3125, 0.875, 0.375, 0.875, 0.375, 0.9375, 0.3125, 0.9375 } },
         { Block::SNOW,	{0.125, 0.6875, 0.1875, 0.6875, 0.1875, 0.75, 0.125, 0.75,
-                                0.25, 0.6875, 0.3125, 0.6875, 0.3125, 0.75, 0.25, 0.75,
-                                0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0 } },
+                                0.125, 0.6875, 0.1875, 0.6875, 0.1875, 0.75, 0.125, 0.75,
+                                0.125, 0.6875, 0.1875, 0.6875, 0.1875, 0.75, 0.125, 0.75,} },
+        { Block::SNOWY_GRASS,{0.125, 0.6875, 0.1875, 0.6875, 0.1875, 0.75, 0.125, 0.75,
+                                  0.25, 0.6875, 0.3125, 0.6875, 0.3125, 0.75, 0.25, 0.75,
+                                  0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0 } },
         { Block::WATER,	{0.9375, 0.125, 1.0, 0.125, 1.0, 0.1875, 0.9375, 0.1875,
                                 0.9375, 0.125, 1.0, 0.125, 1.0, 0.1875, 0.9375, 0.1875,
                                 0.9375, 0.125, 1.0, 0.125, 1.0, 0.1875, 0.9375, 0.1875 } },
@@ -208,25 +211,24 @@ Chunk::Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, g
 
 // fine tune the values
 static float Continentalness(int x, int y) {
-    float scale = 64.0f;
+    float scale = 256.0f;
     float ampl = 1.0f;
-    float freq = 0.3f;
+    float freq = 1.0f;
     float height = 0;
-    /*
-    std::vector<std::vector<int>> octaveOffsets;
-    for (unsigned int i = 0; i < 1; i++) {
-        octaveOffsets.push_back({ rand() % 10000, rand() % 10000 });
-    }*/
-    float noise = noise::Perlin2D(x, y, scale);
+
+    float noise = noise::Perlin2D(x, y, scale, freq, ampl, 8);
 
     if (noise < 0.3) {
-        height = (noise + 2.3f) / 0.026f;
+        //height = (noise + 2.3f) / 0.026f;
+        height = (200.0f * noise + 980)/13.0f;
     }
-    else if (0.3 <= noise && noise < 0.4) {
-        height = 500 * noise - 50;
+    else if (0.3 <= noise && noise < 0.8) {
+        //height = 40 * noise + 88;
+        height = 40 * noise + 68;
     }
-    else if (noise >= 0.4) {
-        height = 150;
+    else if (noise >= 0.8) {
+        //height = 120;
+        height = 100;
     }
 
     return height;
@@ -309,17 +311,19 @@ void Chunk::TerrainHeightGeneration() {
                                                        1, 1, 1, 8, n2_offsets) > 12;
                 bool snowChance = noise::OctaveNoise(i + m_Position.x, k + m_Position.z,
                                                        1, 1, 1, 8, n2_offsets) > 8;
+
                 Block blockAbove = m_Chunk(i,maxHeight+1,k);
-                if (blockAbove == Block::WATER && gravelChance)
+                if (blockAbove == Block::WATER && gravelChance) {
                     m_Chunk(i, maxHeight, k) = Block::GRAVEL;
+                }
                 else if (blockAbove == Block::EMPTY) {
                     if (maxHeight <= water_level && sandChance) {
                         m_Chunk(i, maxHeight, k) = Block::SAND;
-                    } else if (maxHeight >= snow_level) {
-                        if (snowChance)
-                            m_Chunk(i, m_YLength - 1, k) = Block::SNOW;
-                        else
-                            m_Chunk(i, m_YLength - 1, k) = Block::STONE;
+                    } else if (maxHeight >= snow_level && maxHeight < snow_level + 5 && snowChance ||
+                                maxHeight >= snow_level + 5) {
+                        m_Chunk(i, maxHeight, k) = Block::SNOW;
+                    } else if (maxHeight >= snow_level - 5 && snowChance) {
+                        m_Chunk(i, maxHeight, k) = Block::SNOWY_GRASS;
                     } else {
                         m_Chunk(i, maxHeight, k) = Block::GRASS;
                     }
@@ -328,39 +332,6 @@ void Chunk::TerrainHeightGeneration() {
         }
     }
 }
-//void Chunk::Noise2DInit() {
-//    srand(m_Seed);
-//    std::vector<std::vector<int>> octaveOffsets;
-//    unsigned int n_octaves = 4;
-//    for (unsigned int i = 0; i < n_octaves; i++) {
-//        octaveOffsets.push_back({ rand() % 10000, rand() % 10000 });
-//    }
-//
-//    for (unsigned int i = 0; i < m_XLength; i++) {
-//        for (unsigned int k = 0; k < m_ZLength; k++) {
-//            unsigned int w = static_cast<unsigned int>(
-//                    Noise(static_cast<int>(i + m_Position.x),
-//                          static_cast<int>(k + m_Position.z),n_octaves, octaveOffsets));
-//
-//            for (unsigned int j = 0; j < m_YLength; j++) {
-//                if (j < w) {
-//                    if (j < 100)
-//                        m_Chunk(i, j, k) = Block::SAND;
-//                    else if (j == w - 1 || j == m_YLength - 1)
-//                        m_Chunk(i, j, k) = Block::GRASS;
-//                    else
-//                        m_Chunk(i, j, k) = Block::STONE;
-//                }
-//                else {
-//                    if (j < 100) // this value may depend on the biome
-//                        m_Chunk(i, j, k) = Block::WATER;
-//                    else
-//                        m_Chunk(i, j, k) = Block::EMPTY;
-//                }
-//            }
-//        }
-//    }
-//}
 
 void Chunk::Noise3DInit(unsigned int seed) {
     srand(seed);
