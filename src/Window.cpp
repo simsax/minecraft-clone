@@ -61,13 +61,11 @@ namespace glfw {
 
 	void Window::WindowLoop(Game& game) {
 		float currentFrame = 0.0f, deltaTime = 0.0f, lastFrame = 0.0f;
-#ifndef NDEBUG
+#ifdef NDEBUG
 		float prevTime = 0.0f, crntTime = 0.0f;
 		unsigned int nFrames = 0;
 #endif
 		while (!glfwWindowShouldClose(m_Window)) {
-			//glClearColor(0.0f, 0.0f, 0.0f, 1.0f));
-
 			// exit when 'ESC' key is pressed
 			if (glfwGetKey(m_Window, GLFW_KEY_CAPS_LOCK) == GLFW_PRESS) {
 				glfwDestroyWindow(m_Window);
@@ -78,7 +76,7 @@ namespace glfw {
 			deltaTime = currentFrame - lastFrame;
 			lastFrame = currentFrame;
 
-#ifndef NDEBUG
+#ifdef NDEBUG
 			crntTime = static_cast<float>(glfwGetTime());
 			nFrames++;
 			if (crntTime - prevTime >= 1.0) {
@@ -96,7 +94,7 @@ namespace glfw {
 
 			glfwPollEvents();
 
-			ManageInput(deltaTime);
+			ManageInput();
 
 			game.OnUpdate(deltaTime);
 			game.OnRender();
@@ -106,7 +104,7 @@ namespace glfw {
 	}
 
 	// camera input
-	void Window::ManageInput(float deltaTime)
+	void Window::ManageInput()
 	{
 		std::array<cam::Key, static_cast<int>(cam::Key::Key_MAX) + 1> keyPressed;
 		keyPressed.fill(cam::Key::NONE);
@@ -127,7 +125,7 @@ namespace glfw {
 		if (glfwGetKey(m_Window, GLFW_KEY_D) == GLFW_PRESS)
 			keyPressed[k++] = cam::Key::RIGHT;
 
-		Game::camera.ProcessKeyboard(keyPressed, deltaTime);
+		Game::ProcessKeyboard(keyPressed);
 	}
 }
 

@@ -12,14 +12,17 @@ public:
 	static void ProcessKey(cam::Key key);
 	static void ProcessLeftMouseButton();
 	static void ProcessRightMouseButton();
-	static cam::Camera camera;
-	 
+	static cam::Camera camera; // to refactor
+    static void ProcessKeyboard(const std::array<cam::Key, static_cast<int>(cam::Key::Key_MAX) + 1>& keyPressed);
+
 private:
-	void CheckRayCast(glm::vec3*& playerPos);
-	void CheckCollision(glm::vec3*& playerPos, ChunkCoord currentChunk);
-	void ApplyGravity(glm::vec3*& playerPos, float deltaTime);
+	void CheckRayCast();
+	void ApplyGravity(float deltaTime);
 	void CheckJump();
     void UpdateNeighbor(glm::vec3 currentVoxel, unsigned int chunkSize, ChunkCoord targetLocalCoord, Block block);
+    void Move(float deltaTime);
+    float CalculateCollision(const glm::vec3& currentPosition, const glm::vec3& playerSpeed, unsigned int chunkSize,
+                                   bool& min_collx, bool& min_colly, bool& min_collz);
 
 	static bool s_FlyMode;
 	static bool s_Ground;
@@ -30,7 +33,6 @@ private:
 	glm::mat4 m_Proj;
 	Renderer m_Renderer;
 	ChunkManager m_ChunkManager;
-	bool m_GameStart;
 	ChunkCoord m_LastChunk;
 	float m_VerticalVelocity;
 	Block m_HoldingBlock;

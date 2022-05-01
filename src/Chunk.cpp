@@ -306,11 +306,11 @@ void Chunk::TerrainHeightGeneration() {
             // create surface layer
             if (maxHeight < m_YLength - 1) {
                 bool sandChance = noise::OctaveNoise(i + m_Position.x, k + m_Position.z,
-                                                     1, 1, 1, 8, n1_offsets) > 8;
+                                                   1, 1, 1, 8, n1_offsets) > 8;
                 bool gravelChance = noise::OctaveNoise(i + m_Position.x, k + m_Position.z,
-                                                       1, 1, 1, 8, n2_offsets) > 12;
+                                                   1, 1, 1, 8, n2_offsets) > 12;
                 bool snowChance = noise::OctaveNoise(i + m_Position.x, k + m_Position.z,
-                                                       1, 1, 1, 8, n2_offsets) > 8;
+                                                   1, 1, 1, 8, n2_offsets) > 8;
 
                 Block blockAbove = m_Chunk(i,maxHeight+1,k);
                 if (blockAbove == Block::WATER && gravelChance) {

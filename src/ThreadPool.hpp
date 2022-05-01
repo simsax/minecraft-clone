@@ -3,7 +3,7 @@
 #include <queue>
 #include <future>
 #include "Chunk.h"
-
+/*
 class ThreadPool {
 public:
 	ThreadPool();
@@ -64,5 +64,5 @@ void ThreadPool::End()
 	m_Cv.notify_all();
 	for (auto& thread : m_Threads)
 		thread.join();
-}
+}*/
 
