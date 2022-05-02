@@ -29,7 +29,8 @@ enum class Block : unsigned char {
     WATER,
     SAND,
     GRAVEL,
-    SNOWY_GRASS
+    SNOWY_GRASS,
+    BEDROCK
 };
 
 struct ChunkCoord {

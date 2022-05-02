@@ -101,35 +101,32 @@ void Game::ProcessRightMouseButton()
     s_RightButton = true;
 }
 
-float Game::CalculateCollision(const glm::vec3& currentPosition, const glm::vec3& playerSpeed, unsigned int chunkSize,
-                               bool& min_collx, bool& min_colly, bool& min_collz) {
-    float minEntry = 1.0f;
-    glm::vec3 finalPosition = currentPosition + playerSpeed;
+bool Game::CalculateCollision(glm::vec3* currentPosition, const glm::vec3& playerSpeed, unsigned int chunkSize) {
+    glm::vec3 finalPosition = *currentPosition + playerSpeed;
     int startX, endX, startY, endY, startZ, endZ;
-    if (finalPosition.x >= currentPosition.x) {
-        startX = std::floor(currentPosition.x - 0.3);
+    if (finalPosition.x >= currentPosition->x) {
+        startX = std::floor(currentPosition->x - 0.3);
         endX = std::floor(finalPosition.x + 0.3);
     } else {
         startX = std::floor(finalPosition.x - 0.3);
-        endX = std::floor(currentPosition.x + 0.3);
+        endX = std::floor(currentPosition->x + 0.3);
     }
-    if (finalPosition.y >= currentPosition.y) {
-        startY = std::floor(currentPosition.y - 1.6);
+    if (finalPosition.y >= currentPosition->y) {
+        startY = std::floor(currentPosition->y - 1.6);
         endY = std::floor(finalPosition.y + 0.2);
     } else {
         startY = std::floor(finalPosition.y - 1.6);
-        endY = std::floor(currentPosition.y + 0.2);
+        endY = std::floor(currentPosition->y + 0.2);
     }
-    if (finalPosition.z >= currentPosition.z) {
-        startZ = std::floor(currentPosition.z - 0.3);
+    if (finalPosition.z >= currentPosition->z) {
+        startZ = std::floor(currentPosition->z - 0.3);
         endZ = std::floor(finalPosition.z + 0.3);
     } else {
         startZ = std::floor(finalPosition.z - 0.3);
-        endZ = std::floor(currentPosition.z + 0.3);
+        endZ = std::floor(currentPosition->z + 0.3);
     }
 
-    Aabb playerBbox = physics::CreatePlayerAabb(currentPosition);
-    bool collx, colly, collz;
+    Aabb playerBbox = physics::CreatePlayerAabb(*currentPosition);
     for (int i = startX; i <= endX; i++) {
         for (int j = startY; j <= endY; j++) {
             for (int k = startZ; k <= endZ; k++) {
@@ -139,45 +136,58 @@ float Game::CalculateCollision(const glm::vec3& currentPosition, const glm::vec3
                                        static_cast<unsigned int>(localPos.second.y),
                                        static_cast<unsigned int>(localPos.second.z)) != Block::EMPTY) {
                     Aabb blockBbox = physics::CreateBlockAabb(glm::vec3(i, j, k));
-                    float collisionTime = physics::SweptAabb(playerBbox, blockBbox, playerSpeed,
-                                                              collx, colly, collz);
-
-                    if (collisionTime < minEntry) {
-                        minEntry = collisionTime;
-                        min_collx = collx;
-                        min_colly = colly;
-                        min_collz = collz;
-                    }
+                    physics::SnapAabb(playerBbox, blockBbox, playerSpeed, currentPosition);
+                    return true;
                 }
             }
         }
     }
-
-    return minEntry;
+    return false;
 }
-
-
 
 void Game::Move(float deltaTime) {
     glm::vec3 *currentPosition = camera.GetPlayerPosition();
     unsigned int chunkSize = m_ChunkManager.GetChunkSize()[0];
     glm::vec3 playerSpeed = camera.GetCameraSpeed() * deltaTime; // the destination in the next frame
-    bool min_collx, min_colly, min_collz;
-    while (true) {
-        float minEntry = CalculateCollision(*currentPosition, playerSpeed, chunkSize, min_collx, min_colly, min_collz)
-                - 0.001f;
-        *currentPosition += playerSpeed * minEntry;
-        if (std::abs(minEntry - 1.0f) <= 0.001f)
-            break;
-        float remainingTime = 1.0f - minEntry;
-        if (min_collx)
-            playerSpeed.x = 0.0f;
-        if (min_colly)
-            playerSpeed.y = 0.0f;
-        if (min_collz)
-            playerSpeed.z = 0.0f;
-        playerSpeed *= remainingTime;
+
+    bool collidedx, collidedy, collidedz;
+    if (playerSpeed.x < playerSpeed.y && playerSpeed.x < playerSpeed.z) {
+        collidedx = CalculateCollision(currentPosition, glm::vec3(playerSpeed.x, 0, 0), chunkSize);
+        if (playerSpeed.y < playerSpeed.z) {
+            collidedy = CalculateCollision(currentPosition, glm::vec3(0, playerSpeed.y, 0), chunkSize);
+            collidedz = CalculateCollision(currentPosition, glm::vec3(0, 0, playerSpeed.z), chunkSize);
+        } else {
+            collidedz = CalculateCollision(currentPosition, glm::vec3(0, 0, playerSpeed.z), chunkSize);
+            collidedy = CalculateCollision(currentPosition, glm::vec3(0, playerSpeed.y, 0), chunkSize);
+        }
+    } else if (playerSpeed.y < playerSpeed.z) {
+        collidedy = CalculateCollision(currentPosition, glm::vec3(0, playerSpeed.y, 0), chunkSize);
+        if (playerSpeed.x < playerSpeed.z) {
+            collidedx = CalculateCollision(currentPosition, glm::vec3(playerSpeed.x, 0, 0), chunkSize);
+            collidedz = CalculateCollision(currentPosition, glm::vec3(0, 0, playerSpeed.z), chunkSize);
+        } else {
+            collidedz = CalculateCollision(currentPosition, glm::vec3(0, 0, playerSpeed.z), chunkSize);
+            collidedx = CalculateCollision(currentPosition, glm::vec3(playerSpeed.x, 0, 0), chunkSize);
+        }
+    } else {
+        collidedz = CalculateCollision(currentPosition, glm::vec3(0, 0, playerSpeed.z), chunkSize);
+        if (playerSpeed.x < playerSpeed.y) {
+            collidedx = CalculateCollision(currentPosition, glm::vec3(playerSpeed.x, 0, 0), chunkSize);
+            collidedy = CalculateCollision(currentPosition, glm::vec3(0, playerSpeed.y, 0), chunkSize);
+        } else {
+            collidedy = CalculateCollision(currentPosition, glm::vec3(0, playerSpeed.y, 0), chunkSize);
+            collidedx = CalculateCollision(currentPosition, glm::vec3(playerSpeed.x, 0, 0), chunkSize);
+        }
     }
+
+    if (collidedx)
+        playerSpeed.x = 0;
+    if (collidedy)
+        playerSpeed.y = 0;
+    if (collidedz)
+        playerSpeed.z = 0;
+
+    *currentPosition += playerSpeed;
 
     if (!s_FlyMode) {
         // check if block below me is solid
@@ -304,15 +314,19 @@ void Game::CheckRayCast() {
             m_HoldingBlock = targetChunk->GetMatrix()(static_cast<unsigned int>(targetLocalVoxel.x),
                                                 static_cast<unsigned int>(targetLocalVoxel.y),
                                                 static_cast<unsigned int>(targetLocalVoxel.z));
-            targetChunk->SetMatrix(static_cast<unsigned int>(targetLocalVoxel.x),
-                                   static_cast<unsigned int>(targetLocalVoxel.y),
-                                   static_cast<unsigned int>(targetLocalVoxel.z), Block::EMPTY);
-            s_LeftButton = false;
-            m_ChunkManager.UpdateChunk(targetLocalCoord);
-            // check if the target block is in the chunk border
-            if (targetLocalVoxel.x == 1 || targetLocalVoxel.z == 1 ||
-                targetLocalVoxel.x == 16 || targetLocalVoxel.z == 16) {
-                UpdateNeighbor(currentVoxel, chunkSize, targetLocalCoord, Block::EMPTY);
+            if (m_HoldingBlock == Block::BEDROCK) {
+                m_HoldingBlock = Block::EMPTY;
+            } else {
+                targetChunk->SetMatrix(static_cast<unsigned int>(targetLocalVoxel.x),
+                                       static_cast<unsigned int>(targetLocalVoxel.y),
+                                       static_cast<unsigned int>(targetLocalVoxel.z), Block::EMPTY);
+                s_LeftButton = false;
+                m_ChunkManager.UpdateChunk(targetLocalCoord);
+                // check if the target block is in the chunk border
+                if (targetLocalVoxel.x == 1 || targetLocalVoxel.z == 1 ||
+                    targetLocalVoxel.x == 16 || targetLocalVoxel.z == 16) {
+                    UpdateNeighbor(currentVoxel, chunkSize, targetLocalCoord, Block::EMPTY);
+                }
             }
         } else if (s_RightButton &&
                 !(previousVoxel.x == std::floor(playerPos->x) && previousVoxel.y == std::floor(playerPos->y) &&

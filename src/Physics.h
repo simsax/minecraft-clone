@@ -23,6 +23,6 @@ namespace physics {
     Aabb CreateBlockAabb(glm::vec3 position);
     Aabb CreatePlayerAabb(glm::vec3 position);
     bool Intersect(Aabb a, Aabb b);
-    float SweptAabb(Aabb player, Aabb block, glm::vec3 playerSpeed, bool& x_collision, bool& y_collision, bool& z_collision);
+    void SnapAabb(Aabb player, Aabb block, const glm::vec3& playerSpeed, glm::vec3* currentPosition);
     float AabbDistance(Aabb a, Aabb b);
 };

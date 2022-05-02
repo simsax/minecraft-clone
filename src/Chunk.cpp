@@ -186,7 +186,10 @@ const std::unordered_map<Block, std::array<float, 24>> Chunk::s_TextureMap =
                                 0.125, 0.875, 0.1875, 0.875, 0.1875, 0.9375, 0.125, 0.9375 } },
         { Block::GRAVEL,	{0.1875, 0.875, 0.25, 0.875, 0.25, 0.9375, 0.1875, 0.9375,
                                 0.1875, 0.875, 0.25, 0.875, 0.25, 0.9375, 0.1875, 0.9375,
-                                0.1875, 0.875, 0.25, 0.875, 0.25, 0.9375, 0.1875, 0.9375 } }
+                                0.1875, 0.875, 0.25, 0.875, 0.25, 0.9375, 0.1875, 0.9375 } },
+        { Block::BEDROCK,   {0.0625, 0.875, 0.125, 0.875, 0.125, 0.9375, 0.0625, 0.9375,
+                            0.0625, 0.875, 0.125, 0.875, 0.125, 0.9375, 0.0625, 0.9375,
+                            0.0625, 0.875, 0.125, 0.875, 0.125, 0.9375, 0.0625, 0.9375} },
     };
 
 // the chunk has a border so that I know what faces to cull between chunks
@@ -286,20 +289,24 @@ void Chunk::TerrainHeightGeneration() {
                                        1, 1,1,8,
                                        n4_offsets) / 6) ;
 
-            for (unsigned int j = 0; j < m_YLength; j++) {
-                if (j < maxHeight) {
-                    if (j < terrain_height){
-                        m_Chunk(i, j, k) = Block::STONE;
-                    } else if (j < terrain_height + dirtThickness) {
-                        m_Chunk(i, j, k) = Block::DIRT;
+            for (unsigned int j = 1; j < m_YLength; j++) {
+                if (j == 1)
+                    m_Chunk(i,j,k) = Block::BEDROCK;
+                else {
+                    if (j < maxHeight) {
+                        if (j < terrain_height){
+                            m_Chunk(i, j, k) = Block::STONE;
+                        } else if (j < terrain_height + dirtThickness) {
+                            m_Chunk(i, j, k) = Block::DIRT;
+                        } else {
+                            m_Chunk(i, j, k) = Block::STONE;
+                        }
                     } else {
-                        m_Chunk(i, j, k) = Block::STONE;
-                    }
-                } else {
-                    if (j < water_level) {
-                        m_Chunk(i,j,k) = Block::WATER;
-                    } else {
-                        m_Chunk(i,j,k) = Block::EMPTY;
+                        if (j < water_level) {
+                            m_Chunk(i,j,k) = Block::WATER;
+                        } else {
+                            m_Chunk(i,j,k) = Block::EMPTY;
+                        }
                     }
                 }
             }

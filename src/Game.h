@@ -21,8 +21,7 @@ private:
 	void CheckJump();
     void UpdateNeighbor(glm::vec3 currentVoxel, unsigned int chunkSize, ChunkCoord targetLocalCoord, Block block);
     void Move(float deltaTime);
-    float CalculateCollision(const glm::vec3& currentPosition, const glm::vec3& playerSpeed, unsigned int chunkSize,
-                                   bool& min_collx, bool& min_colly, bool& min_collz);
+    bool CalculateCollision(glm::vec3* currentPosition, const glm::vec3& playerSpeed, unsigned int chunkSize);
 
 	static bool s_FlyMode;
 	static bool s_Ground;
