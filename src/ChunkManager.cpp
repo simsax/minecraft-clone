@@ -1,7 +1,7 @@
 #include "ChunkManager.h"
 #include "time.h"
 #include <iostream>
-#include <chrono>
+#include <glm/gtx/norm.hpp>
 
 using namespace std::chrono_literals;
 
@@ -13,10 +13,12 @@ using namespace std::chrono_literals;
 #define CHUNK_SIZE_Z 16
 #define MAX_CHUNK_TO_LOAD 1
 
-ChunkManager::ChunkManager():
+ChunkManager::ChunkManager(glm::vec3* playerPosition):
 	m_ViewDistance(VIEW_DISTANCE),
 	m_Shutdown(false),
-	m_LoadingChunks(false)
+	m_LoadingChunks(false),
+    m_PlayerPosition(playerPosition),
+    m_NewChunks(false)
 //	m_ThreadPool(ctpl::thread_pool(std::thread::hardware_concurrency()))
 {
 	m_VertexLayout.Push<float>(3); // position
@@ -69,10 +71,10 @@ ChunkManager::~ChunkManager()
 
 void ChunkManager::InitWorld()
 {
-	glm::vec3 playerPos(0.0f, 0.0f, 0.0f);
-	GenerateChunks(playerPos);
+	GenerateChunks();
 	while (!m_ChunksToLoad.empty())
 		LoadChunks();
+    SortChunks();
 }
 
 void ChunkManager::Render(const Renderer& renderer)
@@ -80,6 +82,10 @@ void ChunkManager::Render(const Renderer& renderer)
 	LoadChunks();
 	//UpdateChunksToRender();
 	//std::unique_lock<std::mutex> lk(m_Mtx);
+    if (m_NewChunks) {
+        m_NewChunks = false;
+        SortChunks();
+    }
 	for (auto& chunk : m_ChunksToRender) {
 		chunk->Render(renderer);
 	}
@@ -137,9 +143,13 @@ void ChunkManager::LoadChunks()
         if (m_ChunkMap.find(coords) != m_ChunkMap.end())
             m_ChunkMap.find(coords)->second.GenerateMesh();
         else {
+            m_NewChunks = true;
             //m_ChunksLoaded.push_back(m_ThreadPool.push(meshFun, coords));
             // create new chunk and cache it
-            Chunk chunk(m_ChunkSize[0], m_ChunkSize[1], m_ChunkSize[2], glm::vec3(coords.x * static_cast<int>(m_ChunkSize[0]), 0.0, coords.z * static_cast<int>(m_ChunkSize[2])), m_VertexLayout, MAX_VERTEX_COUNT, m_Indices);
+            Chunk chunk(m_ChunkSize[0], m_ChunkSize[1], m_ChunkSize[2],
+                        glm::vec3(coords.x * static_cast<int>(m_ChunkSize[0]), 0.0f,
+                                  coords.z * static_cast<int>(m_ChunkSize[2])),
+                                  m_VertexLayout, MAX_VERTEX_COUNT, m_Indices, m_PlayerPosition);
             chunk.GenerateMesh();
             m_ChunkMap.insert({ coords, std::move(chunk) });
             m_ChunksToRender.emplace_back(&m_ChunkMap.find(coords)->second);
@@ -147,10 +157,10 @@ void ChunkManager::LoadChunks()
     }
 }
 
-void ChunkManager::GenerateChunks(const glm::vec3& playerPosition)
+void ChunkManager::GenerateChunks()
 {
-    int playerPosX = static_cast<int>(round(playerPosition.x / static_cast<int>(m_ChunkSize[0])));
-    int playerPosZ = static_cast<int>(round(playerPosition.z / static_cast<int>(m_ChunkSize[2])));
+    int playerPosX = static_cast<int>(std::round(m_PlayerPosition->x / m_ChunkSize[0]));
+    int playerPosZ = static_cast<int>(std::round(m_PlayerPosition->z / m_ChunkSize[2]));
 
     m_ChunksToRender.clear();
 
@@ -181,6 +191,17 @@ int ChunkManager::SpawnHeight() {
             break;
    }
    return i;
+}
+
+void ChunkManager::SortChunks() {
+    glm::vec3 playerPos = glm::vec3(m_PlayerPosition->x, 0, m_PlayerPosition->z);
+    std::sort(m_ChunksToRender.begin(), m_ChunksToRender.end(), [&playerPos](Chunk* a, Chunk* b) {
+        return glm::length2(playerPos - a->GetPosition()) > glm::length2(playerPos - b->GetPosition());
+    });
+}
+
+void ChunkManager::SetNewChunks() {
+    m_NewChunks = true;
 }
 
 /*

@@ -20,6 +20,7 @@ private:
 	void ApplyGravity(float deltaTime);
 	void CheckJump();
     void UpdateNeighbor(glm::vec3 currentVoxel, unsigned int chunkSize, ChunkCoord targetLocalCoord, Block block);
+    void UpdateChunks();
     void Move(float deltaTime);
     bool CalculateCollision(glm::vec3* currentPosition, const glm::vec3& playerSpeed, unsigned int chunkSize);
 

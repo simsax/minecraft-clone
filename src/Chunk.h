@@ -48,7 +48,7 @@ int operator-(const ChunkCoord& l, const ChunkCoord& r);
 
 struct Vertex {
     Vertex(glm::vec3 position, glm::vec2 texCoords) :
-        Position(std::move(position)), TexCoords(std::move(texCoords)) {}
+        Position(position), TexCoords(texCoords) {}
 
     glm::vec3 Position;
     glm::vec2 TexCoords;
@@ -59,22 +59,24 @@ class Chunk
 public:
     Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength,
           glm::vec3 position, const VertexBufferLayout& layout,
-          unsigned int maxVertexCount, const std::vector<unsigned int>& indices);
+          unsigned int maxVertexCount, const std::vector<unsigned int>& indices, glm::vec3* playerPosition);
     Matrix<Block> GetMatrix() const;
     void GenerateMesh();
     void SetMatrix(unsigned int x, unsigned int y, unsigned int z, Block block);
     void Render(const Renderer& renderer);
+    glm::vec3 GetPosition() const;
 private:
     static const std::unordered_map<Block, std::array<float, 24>> s_TextureMap;
     void UpdateMesh(unsigned int x, unsigned int y, unsigned int z, Block block);
-    void SinInit();
-//    void Noise2DInit();
     void TerrainHeightGeneration();
     void Noise3DInit(unsigned int seed);
 
     std::unique_ptr<VertexArray> m_VAO;
+    std::unique_ptr<VertexArray> m_TransparentVAO;
     std::unique_ptr<IndexBuffer> m_IBO;
+    std::unique_ptr<IndexBuffer> m_TransparentIBO;
     std::unique_ptr<VertexBuffer> m_VBO;
+    std::unique_ptr<VertexBuffer> m_TransparentVBO;
 
     static const float s_TextureOffset; // depends on the texture atlas
     static const std::vector<std::array<int, 2>> n1_offsets;
@@ -87,5 +89,7 @@ private:
     glm::vec3 m_Position;
     Matrix<Block> m_Chunk;
     std::vector<Vertex> m_Mesh;
+    std::vector<Vertex> m_TransparentMesh;
     unsigned int m_MaxVertexCount;
+    glm::vec3* m_PlayerPosition;
 };

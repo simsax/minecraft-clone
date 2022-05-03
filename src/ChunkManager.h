@@ -6,19 +6,21 @@
 class ChunkManager
 {
 public:
-	ChunkManager();
+	ChunkManager(glm::vec3* playerPosition);
 	~ChunkManager();
 	void InitWorld();
     int SpawnHeight();
-	void GenerateChunks(const glm::vec3& playerPosition);
+	void GenerateChunks();
 	//void UpdateChunksToRender();
 	void Render(const Renderer& renderer);
 	void UpdateChunk(ChunkCoord chunk);
 	int GetViewDistance() const;
+    void SetNewChunks();
 	std::array<unsigned int, 3> GetChunkSize() const;
 	std::unordered_map<ChunkCoord, Chunk, hash_fn> m_ChunkMap;
 
 private:
+    void SortChunks();
 	void LoadChunks();
 	std::array<unsigned int, 3> m_ChunkSize;
 	std::future<std::vector<std::pair<ChunkCoord, Chunk>>> m_FutureChunks;
@@ -33,5 +35,7 @@ private:
 	//std::condition_variable m_Cv;
 	bool m_Shutdown;
 	bool m_LoadingChunks;
+    glm::vec3* m_PlayerPosition;
+    bool m_NewChunks;
 };
 

@@ -48,7 +48,9 @@ add_executable(${PROJECT_NAME}
         src/VertexArray.cpp
         src/VertexBuffer.cpp
         src/VertexBufferLayout.hpp
-        src/Window.cpp src/Physics.h src/Physics.cpp)
+        src/Window.cpp
+        src/Physics.h
+        src/Physics.cpp)
 
 add_subdirectory(extern/glfw)
 add_subdirectory(extern/glew)

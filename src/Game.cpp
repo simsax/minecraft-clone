@@ -40,6 +40,7 @@ static std::pair<ChunkCoord, glm::vec3> GlobalToLocal(glm::vec3 playerPosition, 
 
 Game::Game() :
         m_Proj(glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 500.0f)),
+        m_ChunkManager(camera.GetPlayerPosition()),
         m_VerticalVelocity(0.0f),
         m_LastChunk({0,0}),
         m_HoldingBlock(Block::STONE)
@@ -60,6 +61,15 @@ Game::Game() :
     m_ChunkManager.InitWorld();
     // spawn player over a block
     camera.GetPlayerPosition()->y += static_cast<float>(m_ChunkManager.SpawnHeight() + 1.6 + 1);
+}
+
+void Game::OnUpdate(float deltaTime)
+{
+    CheckJump();
+    CheckRayCast();
+    ApplyGravity(deltaTime);
+    Move(deltaTime);
+    UpdateChunks();
 }
 
 void Game::OnRender()
@@ -320,7 +330,6 @@ void Game::CheckRayCast() {
                 targetChunk->SetMatrix(static_cast<unsigned int>(targetLocalVoxel.x),
                                        static_cast<unsigned int>(targetLocalVoxel.y),
                                        static_cast<unsigned int>(targetLocalVoxel.z), Block::EMPTY);
-                s_LeftButton = false;
                 m_ChunkManager.UpdateChunk(targetLocalCoord);
                 // check if the target block is in the chunk border
                 if (targetLocalVoxel.x == 1 || targetLocalVoxel.z == 1 ||
@@ -335,7 +344,6 @@ void Game::CheckRayCast() {
             previousChunk->SetMatrix(static_cast<unsigned int>(previousLocalVoxel.x),
                                      static_cast<unsigned int>(previousLocalVoxel.y),
                                      static_cast<unsigned int>(previousLocalVoxel.z), m_HoldingBlock);
-            s_RightButton = false;
             m_ChunkManager.UpdateChunk(previousChunkCoord);
             // check if the target is in the chunk border
             if (previousLocalVoxel.x == 1 || previousLocalVoxel.z == 1 ||
@@ -344,6 +352,8 @@ void Game::CheckRayCast() {
             }
         }
     }
+    s_LeftButton = false;
+    s_RightButton = false;
 }
 
 
@@ -356,31 +366,13 @@ void Game::CheckJump()
     }
 }
 
-void Game::OnUpdate(float deltaTime)
-{
-    bool clear_btn = false;
-    if (s_LeftButton || s_RightButton)
-        clear_btn = true;
-
-    // move those into the functions
+void Game::UpdateChunks() {
     glm::vec3* playerPos = camera.GetPlayerPosition();
-
-    CheckJump();
-    CheckRayCast();
-    ApplyGravity(deltaTime);
-    Move(deltaTime);
-
-    if (clear_btn) {
-        if (s_LeftButton)
-            s_LeftButton = false;
-        if (s_RightButton)
-            s_RightButton = false;
-    }
-
-    // update chunks (LOGIC TO BE IMPROVED)
     ChunkCoord currentChunk = CalculateChunkCoord(*playerPos, m_ChunkManager.GetChunkSize()[0]);
+    if (m_LastChunk != currentChunk)
+        m_ChunkManager.SetNewChunks();
     if (m_LastChunk - currentChunk >= m_ChunkManager.GetViewDistance() / 4) {
-        m_ChunkManager.GenerateChunks(*playerPos);
+        m_ChunkManager.GenerateChunks();
         m_LastChunk = currentChunk;
     }
 }
