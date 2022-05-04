@@ -12,7 +12,11 @@
 #include <array>
 #include <vector>
 #include <array>
-#include "Matrix.hpp"
+#include "Matrix3D.hpp"
+
+#define XSIZE 18
+#define YSIZE 258
+#define ZSIZE 18
 
 enum class Block : unsigned char {
     EMPTY,
@@ -57,10 +61,9 @@ struct Vertex {
 class Chunk
 {
 public:
-    Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength,
-          glm::vec3 position, const VertexBufferLayout& layout,
+    Chunk(glm::vec3 position, const VertexBufferLayout& layout,
           unsigned int maxVertexCount, const std::vector<unsigned int>& indices, glm::vec3* playerPosition);
-    Matrix<Block> GetMatrix() const;
+    Matrix3D<Block, XSIZE, YSIZE, ZSIZE> GetMatrix() const;
     void GenerateMesh();
     void SetMatrix(unsigned int x, unsigned int y, unsigned int z, Block block);
     void Render(const Renderer& renderer);
@@ -83,11 +86,8 @@ private:
     static const std::vector<std::array<int, 2>> n2_offsets;
     static const std::vector<std::array<int, 2>> n3_offsets;
     static const std::vector<std::array<int, 2>> n4_offsets;
-    unsigned int m_XLength;
-    unsigned int m_YLength;
-    unsigned int m_ZLength;
     glm::vec3 m_Position;
-    Matrix<Block> m_Chunk;
+    Matrix3D<Block, XSIZE, YSIZE, ZSIZE> m_Chunk;
     std::vector<Vertex> m_Mesh;
     std::vector<Vertex> m_TransparentMesh;
     unsigned int m_MaxVertexCount;

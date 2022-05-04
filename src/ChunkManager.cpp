@@ -7,10 +7,7 @@ using namespace std::chrono_literals;
 
 #define MAX_INDEX_COUNT 18432 // each cube has 6 faces, each face has 6 indexes
 #define MAX_VERTEX_COUNT 12228 // each cube has 6 faces, each face has 4 vertices 
-#define VIEW_DISTANCE 6 // how far the player sees
-#define CHUNK_SIZE_X 16
-#define CHUNK_SIZE_Y 256
-#define CHUNK_SIZE_Z 16
+#define VIEW_DISTANCE 24 // how far the player sees
 #define MAX_CHUNK_TO_LOAD 1
 
 ChunkManager::ChunkManager(glm::vec3* playerPosition):
@@ -41,7 +38,7 @@ ChunkManager::ChunkManager(glm::vec3* playerPosition):
 		offset += 4;
 	}
 
-	m_ChunkSize = { CHUNK_SIZE_X, CHUNK_SIZE_Y, CHUNK_SIZE_Z };
+	m_ChunkSize = { XSIZE - 2, YSIZE - 2, ZSIZE - 2}; // -2 because each chunk has a border
 /*
 	m_Thread = std::thread([this](){
 			while (true) {
@@ -146,8 +143,7 @@ void ChunkManager::LoadChunks()
             m_NewChunks = true;
             //m_ChunksLoaded.push_back(m_ThreadPool.push(meshFun, coords));
             // create new chunk and cache it
-            Chunk chunk(m_ChunkSize[0], m_ChunkSize[1], m_ChunkSize[2],
-                        glm::vec3(coords.x * static_cast<int>(m_ChunkSize[0]), 0.0f,
+            Chunk chunk(glm::vec3(coords.x * static_cast<int>(m_ChunkSize[0]), 0.0f,
                                   coords.z * static_cast<int>(m_ChunkSize[2])),
                                   m_VertexLayout, MAX_VERTEX_COUNT, m_Indices, m_PlayerPosition);
             chunk.GenerateMesh();
@@ -186,8 +182,8 @@ int ChunkManager::SpawnHeight() {
    Chunk* chunk = &m_ChunkMap.find({ 0,0 })->second;
    int water_level = 63;
    int i;
-   for (i = water_level; i < CHUNK_SIZE_Y; i++) {
-        if (chunk->GetMatrix()((CHUNK_SIZE_X+2)/2, i, (CHUNK_SIZE_Z+2)/2) == Block::EMPTY)
+   for (i = water_level; i < YSIZE; i++) {
+        if (chunk->GetMatrix()(XSIZE / 2, i, ZSIZE / 2) == Block::EMPTY)
             break;
    }
    return i;

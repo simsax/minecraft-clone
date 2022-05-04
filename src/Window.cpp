@@ -32,7 +32,7 @@ namespace glfw {
 		}
 		glfwMakeContextCurrent(m_Window);
 
-		glfwSwapInterval(1); // enables v-sync
+		glfwSwapInterval(0); // enables v-sync
 
 		// initialize glew
 		if (glewInit() != GLEW_OK) {
@@ -61,10 +61,10 @@ namespace glfw {
 
 	void Window::WindowLoop(Game& game) {
 		float currentFrame = 0.0f, deltaTime = 0.0f, lastFrame = 0.0f;
-#ifdef NDEBUG
+//#ifndef NDEBUG
 		float prevTime = 0.0f, crntTime = 0.0f;
 		unsigned int nFrames = 0;
-#endif
+//#endif
 		while (!glfwWindowShouldClose(m_Window)) {
 			// exit when 'ESC' key is pressed
 			if (glfwGetKey(m_Window, GLFW_KEY_CAPS_LOCK) == GLFW_PRESS) {
@@ -76,7 +76,7 @@ namespace glfw {
 			deltaTime = currentFrame - lastFrame;
 			lastFrame = currentFrame;
 
-#ifdef NDEBUG
+//#ifndef NDEBUG
 			crntTime = static_cast<float>(glfwGetTime());
 			nFrames++;
 			if (crntTime - prevTime >= 1.0) {
@@ -90,7 +90,7 @@ namespace glfw {
 				prevTime = crntTime;
 				nFrames = 0;
 			}
-#endif
+//#endif
 
 			glfwPollEvents();
 

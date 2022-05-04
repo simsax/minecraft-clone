@@ -5,6 +5,10 @@ project(minecraft-clone)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+# profiler
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
+
 # download the submodules
 find_package(Git QUIET)
 if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
@@ -39,7 +43,7 @@ add_executable(${PROJECT_NAME}
         src/Game.cpp
         src/IndexBuffer.cpp
         src/main.cpp
-        src/Matrix.hpp
+        src/Matrix3D.hpp
         src/Noise.cpp
         src/Renderer.cpp
         src/Shader.cpp

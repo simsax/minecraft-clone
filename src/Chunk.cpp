@@ -197,11 +197,10 @@ const std::unordered_map<Block, std::array<float, 24>> Chunk::s_TextureMap =
 
 // the chunk has a border so that I know what faces to cull between chunks
 // (I only generate the mesh of the part inside the border)
-Chunk::Chunk(unsigned int xLength, unsigned int yLength, unsigned int zLength, glm::vec3 position,
+Chunk::Chunk(glm::vec3 position,
              const VertexBufferLayout& layout, unsigned int maxVertexCount, const std::vector<unsigned int>& indices,
              glm::vec3* playerPosition) :
-        m_XLength(xLength+2), m_YLength(yLength+2), m_ZLength(zLength+2), m_Position(position),
-        m_Chunk(Matrix<Block>(m_XLength, m_YLength, m_ZLength)), m_MaxVertexCount(maxVertexCount),
+        m_Position(position), m_Chunk(Matrix3D<Block, XSIZE, YSIZE, ZSIZE>()), m_MaxVertexCount(maxVertexCount),
         m_PlayerPosition(playerPosition)
 {
 
@@ -250,8 +249,8 @@ void Chunk::TerrainHeightGeneration() {
     int water_level = 63;
     int snow_level = 100;
 
-    for (unsigned int i = 0; i < m_XLength; i++) {
-        for (unsigned int k = 0; k < m_ZLength; k++) {
+    for (unsigned int i = 0; i < XSIZE; i++) {
+        for (unsigned int k = 0; k < ZSIZE; k++) {
             float terrain_height = Continentalness(i + m_Position.x, k + m_Position.z);
             if (terrain_height < water_level)
                 terrain_height = water_level;
@@ -283,8 +282,8 @@ void Chunk::TerrainHeightGeneration() {
                                        1, 1,1,8,
                                        n4_offsets) / 6) ;
 
-            for (unsigned int j = 1; j < m_YLength; j++) {
-                if (j == 1)
+            for (unsigned int j = 0; j < YSIZE; j++) {
+                if (j <= 1)
                     m_Chunk(i,j,k) = Block::BEDROCK;
                 else {
                     if (j < maxHeight) {
@@ -305,7 +304,7 @@ void Chunk::TerrainHeightGeneration() {
                 }
             }
             // create surface layer
-            if (maxHeight < m_YLength - 1) {
+            if (maxHeight < YSIZE - 1) {
                 bool sandChance = noise::OctaveNoise(i + m_Position.x, k + m_Position.z,
                                                    1, 1, 1, 8, n1_offsets) > 8;
                 bool gravelChance = noise::OctaveNoise(i + m_Position.x, k + m_Position.z,
@@ -345,9 +344,9 @@ void Chunk::Noise3DInit(unsigned int seed) {
         octaveOffsets.push_back({ rand() % 10000, rand() % 10000, rand() % 10000 });
     }
 
-    for (int i = 0; i < (int)m_XLength; i++) {
-        for (int k = 0; k < (int)m_ZLength; k++) {
-            for (int j = 0; j < (int)m_YLength; j++) {
+    for (int i = 0; i < XSIZE; i++) {
+        for (int k = 0; k < ZSIZE; k++) {
+            for (int j = 0; j < YSIZE; j++) {
                 float density = noise::Perlin3D(i + (int)m_Position.x,
                                                 j + (int)m_Position.y,
                                                 k + (int)m_Position.z, scale, 1, 1);
@@ -376,35 +375,35 @@ static std::vector<Vertex> GenerateTransVector(const std::multimap<float, std::v
 void Chunk::GenerateMesh() {
     if (m_Mesh.empty() && m_TransparentMesh.empty()) {
         // I want to render it relative to the center of m_Position
-        int xCoord = static_cast<int>(m_Position.x - m_XLength / 2);
-        //int yCoord = static_cast<int>(m_Position.y - m_YLength - 1);
+        int xCoord = static_cast<int>(m_Position.x - XSIZE / 2);
+        //int yCoord = static_cast<int>(m_Position.y - YSIZE - 1);
         int yCoord = 0;
-        int zCoord = static_cast<int>(m_Position.z - m_ZLength / 2);
+        int zCoord = static_cast<int>(m_Position.z - ZSIZE / 2);
         glm::vec3 center(xCoord, yCoord, zCoord);
 //        std::multimap<float, std::vector<Vertex>, std::greater<>> transparentMeshMap;
 
-        for (unsigned int i = 1; i < m_XLength - 1; i++) {
-            for (unsigned int k = 1; k < m_ZLength - 1; k++) {
-                for (unsigned int j = 1; j < m_YLength - 1; j++) {
+        for (unsigned int i = 1; i < XSIZE - 1; i++) {
+            for (unsigned int k = 1; k < ZSIZE - 1; k++) {
+                for (unsigned int j = 1; j < YSIZE - 1; j++) {
                     if (m_Chunk(i, j, k) != Block::EMPTY) {
                         std::array<float, 24> textureCoords = s_TextureMap.at(m_Chunk(i, j, k));
                         if (m_Chunk(i,j,k) != Block::WATER) {
                             if (j > 0 && (m_Chunk(i, j - 1, k) == Block::EMPTY || m_Chunk(i, j - 1, k) == Block::WATER)) { // D
                                 CreateDQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
                             }
-                            if (j < m_YLength - 1 && (m_Chunk(i, j + 1, k) == Block::EMPTY || m_Chunk(i, j + 1, k) == Block::WATER)) { // U
+                            if (j < YSIZE - 1 && (m_Chunk(i, j + 1, k) == Block::EMPTY || m_Chunk(i, j + 1, k) == Block::WATER)) { // U
                                 CreateUQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
                             }
                             if (k > 0 && (m_Chunk(i, j, k - 1) == Block::EMPTY || m_Chunk(i, j, k - 1) == Block::WATER)) { // B
                                 CreateBQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
                             }
-                            if (k < m_ZLength - 1 && (m_Chunk(i, j, k + 1) == Block::EMPTY || m_Chunk(i, j, k + 1) == Block::WATER)) { // F
+                            if (k < ZSIZE - 1 && (m_Chunk(i, j, k + 1) == Block::EMPTY || m_Chunk(i, j, k + 1) == Block::WATER)) { // F
                                 CreateFQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
                             }
                             if (i > 0 && (m_Chunk(i - 1, j, k) == Block::EMPTY || m_Chunk(i - 1, j, k) == Block::WATER)) { // L
                                 CreateLQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
                             }
-                            if (i < m_XLength - 1 && (m_Chunk(i + 1, j, k) == Block::EMPTY || m_Chunk(i + 1, j, k) == Block::WATER)) { // R
+                            if (i < XSIZE - 1 && (m_Chunk(i + 1, j, k) == Block::EMPTY || m_Chunk(i + 1, j, k) == Block::WATER)) { // R
                                 CreateRQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
                             }
                         } else { // add to transparent buffer
@@ -413,19 +412,19 @@ void Chunk::GenerateMesh() {
                             if (j > 0 && m_Chunk(i, j - 1, k) == Block::EMPTY) { // D
                                 CreateDQuad(m_TransparentMesh, center + glm::vec3(i, j, k), textureCoords);
                             }
-                            if (j < m_YLength - 1 && m_Chunk(i, j + 1, k) == Block::EMPTY) { // U
+                            if (j < YSIZE - 1 && m_Chunk(i, j + 1, k) == Block::EMPTY) { // U
                                 CreateUQuad(m_TransparentMesh, center + glm::vec3(i, j, k), textureCoords);
                             }
                             if (k > 0 && m_Chunk(i, j, k - 1) == Block::EMPTY) { // B
                                 CreateBQuad(m_TransparentMesh, center + glm::vec3(i, j, k), textureCoords);
                             }
-                            if (k < m_ZLength - 1 && m_Chunk(i, j, k + 1) == Block::EMPTY) { // F
+                            if (k < ZSIZE - 1 && m_Chunk(i, j, k + 1) == Block::EMPTY) { // F
                                 CreateFQuad(m_TransparentMesh, center + glm::vec3(i, j, k), textureCoords);
                             }
                             if (i > 0 && m_Chunk(i - 1, j, k) == Block::EMPTY) { // L
                                 CreateLQuad(m_TransparentMesh, center + glm::vec3(i, j, k), textureCoords);
                             }
-                            if (i < m_XLength - 1 && m_Chunk(i + 1, j, k) == Block::EMPTY) { // R
+                            if (i < XSIZE - 1 && m_Chunk(i + 1, j, k) == Block::EMPTY) { // R
                                 CreateRQuad(m_TransparentMesh, center + glm::vec3(i, j, k), textureCoords);
                             }
 //                            float distance = glm::length2(*m_PlayerPosition -
@@ -474,7 +473,7 @@ void Chunk::Render(const Renderer& renderer)
         renderer.Draw(*m_TransparentVAO, *m_TransparentIBO, GL_UNSIGNED_INT);
 }
 
-Matrix<Block> Chunk::GetMatrix() const
+Matrix3D<Block, XSIZE, YSIZE, ZSIZE> Chunk::GetMatrix() const
 {
     return m_Chunk;
 }
