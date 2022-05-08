@@ -1,7 +1,8 @@
 #include "Noise.h"
 #include <iostream>
 
-const unsigned int Noise::seed = time(NULL);
+/* const unsigned int Noise::seed = time(NULL); */
+const unsigned int Noise::seed = 1;
 
 Noise::Noise() {
     m_FastNoise.SetSeed(seed);

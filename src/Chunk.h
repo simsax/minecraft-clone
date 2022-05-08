@@ -72,7 +72,10 @@ public:
 private:
     static const std::unordered_map<Block, std::array<float, 24>> s_TextureMap;
     void UpdateMesh(unsigned int x, unsigned int y, unsigned int z, Block block);
-    void TerrainHeightGeneration();
+    void CreateHeightMap();
+    void FastFill();
+    void CreateSurfaceLayer();
+    void CreateSurfaceLayer2();
     float Continentalness(int x, int y);
 
     std::unique_ptr<VertexArray> m_VAO;
@@ -82,6 +85,7 @@ private:
     std::unique_ptr<VertexBuffer> m_VBO;
     std::unique_ptr<VertexBuffer> m_TransparentVBO;
 
+    std::array<int, XSIZE * ZSIZE> m_HeightMap;
     Noise m_Noise;
     glm::vec3 m_Position;
     Matrix3D<Block, XSIZE, YSIZE, ZSIZE> m_Chunk;
@@ -89,4 +93,6 @@ private:
     std::vector<Vertex> m_TransparentMesh;
     unsigned int m_MaxVertexCount;
     glm::vec3* m_PlayerPosition;
+    int m_MinHeight;
+    int m_MaxHeight;
 };

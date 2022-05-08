@@ -61,7 +61,6 @@ add_executable(${PROJECT_NAME}
 add_subdirectory(extern/glfw)
 add_subdirectory(extern/glew)
 add_subdirectory(extern/glm)
-#add_subdirectory(extern/fastnoise2)
 
 target_include_directories(${PROJECT_NAME}
         PUBLIC ${CMAKE_BINARY_DIR}
