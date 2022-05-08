@@ -75,7 +75,6 @@ private:
     void CreateHeightMap();
     void FastFill();
     void CreateSurfaceLayer();
-    void CreateSurfaceLayer2();
     float Continentalness(int x, int y);
 
     std::unique_ptr<VertexArray> m_VAO;

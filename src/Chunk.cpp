@@ -131,10 +131,9 @@ Chunk::Chunk(glm::vec3 position,
     m_TransparentVAO->AddBuffer(*m_TransparentVBO, layout);
 
     m_Mesh.reserve(m_MaxVertexCount);
-    //TerrainHeightGeneration();
     CreateHeightMap();
-    /* FastFill(); */
-    CreateSurfaceLayer2();
+    FastFill();
+    CreateSurfaceLayer();
 }
 
 float Chunk::Continentalness(int x, int y) {
@@ -191,56 +190,12 @@ void Chunk::CreateHeightMap() {
 
 void Chunk::FastFill() {
     int level_size = XSIZE * ZSIZE;
-    // lowest level is bedrock
     memset(m_Chunk.GetRawPtr(), (int)Block::BEDROCK, level_size);
     memset(m_Chunk.GetRawPtr() + level_size, (int)Block::STONE, level_size * (m_MinHeight - 1));
     memset(m_Chunk.GetRawPtr() + level_size * (m_MaxHeight + 1),
              (int)Block::EMPTY, level_size * (YSIZE - m_MaxHeight - 1));
 }
 
-void Chunk::CreateSurfaceLayer2() {
-    int water_level = 63;   
-    int snow_level = 120;
-    for (int j = 0; j < YSIZE; j++) {
-        int index = 0;
-        for (int i = 0; i < XSIZE; i++) {
-            for (int k = 0; k < ZSIZE; k++) {
-                int height = m_HeightMap[index++];
-                if (j < height) {
-                    int dirtThickness = static_cast<int>(
-                            (m_Noise.OctaveNoise(i + m_Position.x + 111, k + m_Position.z + 111, 8) + 1)/2 * 10) - j;
-                    if (dirtThickness > 0)
-                        m_Chunk(i, j, k) = Block::DIRT;
-                    else
-                        m_Chunk(i, j, k) = Block::STONE;
-                }
-                else if (j == height) {
-                    float noise_chance = m_Noise.OctaveNoise(i + m_Position.x, k + m_Position.z, 8);
-                    if (j == water_level && noise_chance >= 0) 
-                        m_Chunk(i, j, k) = Block::SAND;
-                    else if (j < water_level) {
-                        if (noise_chance >= 0.2)
-                            m_Chunk(i, j, k) = Block::GRAVEL;
-                        else
-                            m_Chunk(i, j, k) = Block::SAND;
-                    }
-                    else if (j >= snow_level)
-                        m_Chunk(i, j, k) = Block::SNOW;
-                    else if (j >= snow_level - 10 && noise_chance >= -0.2)
-                        m_Chunk(i, j, k) = Block::SNOWY_GRASS;
-                    else
-                        m_Chunk(i, j, k) = Block::GRASS;
-                }
-                else {
-                    if (j < water_level)
-                        m_Chunk(i, j, k) = Block::WATER;
-                    else
-                        m_Chunk(i, j, k) = Block::EMPTY;
-                }
-            }
-        }
-    }
-}
 void Chunk::CreateSurfaceLayer() {
     int water_level = 63;   
     int snow_level = 120;
@@ -287,30 +242,18 @@ void Chunk::CreateSurfaceLayer() {
     }
 }
 
-static std::vector<Vertex> GenerateTransVector(const std::multimap<float, std::vector<Vertex>,
-        std::greater<>>& transparentMeshMap) {
-    std::vector<Vertex> transparentMesh;
-    transparentMesh.reserve(transparentMeshMap.size() * 4);
-    for (const auto& [key, val] : transparentMeshMap) {
-        transparentMesh.insert(transparentMesh.end(), std::make_move_iterator(val.begin()),
-                               std::make_move_iterator(val.end()));
-    }
-    return transparentMesh;
-}
-
 void Chunk::GenerateMesh() {
     if (m_Mesh.empty() && m_TransparentMesh.empty()) {
         // I want to render it relative to the center of m_Position
         int xCoord = static_cast<int>(m_Position.x - XSIZE / 2);
-        //int yCoord = static_cast<int>(m_Position.y - YSIZE - 1);
         int yCoord = 0;
         int zCoord = static_cast<int>(m_Position.z - ZSIZE / 2);
         glm::vec3 center(xCoord, yCoord, zCoord);
-//        std::multimap<float, std::vector<Vertex>, std::greater<>> transparentMeshMap;
 
-        for (unsigned int i = 1; i < XSIZE - 1; i++) {
-            for (unsigned int k = 1; k < ZSIZE - 1; k++) {
-                for (unsigned int j = 1; j < YSIZE - 1; j++) {
+        int index = 0;
+        for (int j = m_MinHeight; j <= m_MaxHeight; j++) {
+            for (int i = 1; i < XSIZE - 1; i++) {
+                for (int k = 1; k < ZSIZE - 1; k++) {
                     if (m_Chunk(i, j, k) != Block::EMPTY) {
                         std::array<float, 24> textureCoords = s_TextureMap.at(m_Chunk(i, j, k));
                         if (m_Chunk(i,j,k) != Block::WATER) {
@@ -339,8 +282,6 @@ void Chunk::GenerateMesh() {
                                 CreateRQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
                             }
                         } else { // add to transparent buffer
-//                            std::vector<Vertex> mesh;
-//                            mesh.reserve(4);
                             if (j > 0 && m_Chunk(i, j - 1, k) == Block::EMPTY) { // D
                                 CreateDQuad(m_TransparentMesh, center + glm::vec3(i, j, k), textureCoords);
                             }
@@ -359,9 +300,6 @@ void Chunk::GenerateMesh() {
                             if (i < XSIZE - 1 && m_Chunk(i + 1, j, k) == Block::EMPTY) { // R
                                 CreateRQuad(m_TransparentMesh, center + glm::vec3(i, j, k), textureCoords);
                             }
-//                            float distance = glm::length2(*m_PlayerPosition -
-//                                    glm::vec3((float)i + m_Position.x, (float)j + m_Position.y, (float)k + m_Position.z));
-//                            transparentMeshMap.insert({ distance, std::move(mesh) });
                         }
                     }
                 }
@@ -372,8 +310,6 @@ void Chunk::GenerateMesh() {
         m_VBO->SendData(m_Mesh.size() * sizeof(Vertex), m_Mesh.data());
         m_IBO->SetCount(indexCount);
         // transparent mesh
-//        if (!transparentMeshMap.empty()) {
-            //m_TransparentMesh = GenerateTransVector(transparentMeshMap);
         if (!m_TransparentMesh.empty()) {
             indexCount = m_TransparentMesh.size() / 4 * 6;
             m_TransparentVBO->SendData(m_TransparentMesh.size() * sizeof(Vertex), m_TransparentMesh.data());
@@ -413,6 +349,10 @@ Matrix3D<Block, XSIZE, YSIZE, ZSIZE> Chunk::GetMatrix() const
 void Chunk::SetMatrix(unsigned int x, unsigned int y, unsigned int z, Block block)
 {
     m_Chunk(x, y, z) = block;
+    if (y < m_MinHeight)
+        m_MinHeight = y;
+    else if (y > m_MaxHeight)
+        m_MaxHeight = y;
     m_Mesh.clear();
     m_TransparentMesh.clear();
     //UpdateMesh(x,y,z,block);

@@ -19,14 +19,12 @@ public:
 	T& operator()(unsigned int i, unsigned int j, unsigned int k);
 	T operator()(unsigned int i, unsigned int j, unsigned int k) const;
 private:
-    /* unsigned int m_YZSize; */
     unsigned int m_XZSize;
 	T* m_Data;
 };
 
 template<typename T, size_t X, size_t Y, size_t Z>
 inline Matrix3D<T, X, Y, Z>::Matrix3D() :
-	/* m_YZSize(Y * Z) */
 	m_XZSize(X * Z)
 {
 	if (X == 0 || Y == 0 || Z == 0)
@@ -72,7 +70,7 @@ inline T& Matrix3D<T, X, Y, Z>::operator()(unsigned int i, unsigned int j, unsig
 {
 	if (i >= X || j >= Y || k >= Z)
 		throw std::logic_error("Matrix3D index out of bounds.");
-    return m_Data[j * m_XZSize + k * X + i];
+    return m_Data[j * m_XZSize + i * Z + k];
 }
 
 template<typename T, size_t X, size_t Y, size_t Z>
@@ -80,5 +78,5 @@ inline T Matrix3D<T, X, Y, Z>::operator()(unsigned int i, unsigned int j, unsign
 {
 	if (i >= X || j >= Y || k >= Z)
 		throw std::logic_error("Matrix3D index out of bounds.");
-    return m_Data[j * m_XZSize + k * X + i];
+    return m_Data[j * m_XZSize + i * Z + k];
 }
