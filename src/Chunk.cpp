@@ -2,43 +2,8 @@
 #include <iostream>
 #include <cstdlib>
 #include <map>
-#include "Noise.h"
 #include "Camera.h"
 #include <glm/gtx/norm.hpp>
-
-const float Chunk::s_TextureOffset = 0.0625f; // texture_size/atlas_size
-const std::vector<std::array<int, 2>> Chunk::n1_offsets = [](){
-    srand(time(NULL));
-    std::vector<std::array<int, 2>> octaveOffsets;
-    for (unsigned int i = 0; i < 8; i++) {
-        octaveOffsets.push_back({ rand() % 10000, rand() % 10000 });
-    }
-    return octaveOffsets;
-}();
-const std::vector<std::array<int, 2>> Chunk::n2_offsets = [](){
-    srand(time(NULL));
-    std::vector<std::array<int, 2>> octaveOffsets{};
-    for (unsigned int i = 0; i < 8; i++) {
-        octaveOffsets.push_back({ rand() % 10000, rand() % 10000 });
-    }
-    return octaveOffsets;
-}();
-const std::vector<std::array<int, 2>> Chunk::n3_offsets = [](){
-    srand(time(NULL));
-    std::vector<std::array<int, 2>> octaveOffsets{};
-    for (unsigned int i = 0; i < 6; i++) {
-        octaveOffsets.push_back({ rand() % 10000, rand() % 10000 });
-    }
-    return octaveOffsets;
-}();
-const std::vector<std::array<int, 2>> Chunk::n4_offsets = [](){
-    srand(time(NULL));
-    std::vector<std::array<int, 2>> octaveOffsets{};
-    for (unsigned int i = 0; i < 8; i++) {
-        octaveOffsets.push_back({ rand() % 10000, rand() % 10000 });
-    }
-    return octaveOffsets;
-}();
 
 bool operator==(const ChunkCoord& l, const ChunkCoord& r)
 {
@@ -145,56 +110,6 @@ static void CreateLQuad(std::vector<Vertex>& target, const glm::vec3& position,
                         glm::vec2(textureCoords[14], textureCoords[15]));
 }
 
-// values are precomputed for speed
-const std::unordered_map<Block, std::array<float, 24>> Chunk::s_TextureMap =
-    {
-        { Block::GRASS,{0.75, 0.1875, 0.8125, 0.1875, 0.8125, 0.25, 0.75, 0.25, // top
-                            0.1875, 0.9375, 0.25, 0.9375, 0.25, 1.0, 0.1875, 1.0, // side
-                            0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0 } }, //bottom
-        { Block::DIRT,{0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0,
-                       0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0,
-                       0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0 } },
-        { Block::STONE,{0.0625, 0.9375, 0.125, 0.9375, 0.125, 1.0, 0.0625, 1.0,
-                            0.0625, 0.9375, 0.125, 0.9375, 0.125, 1.0, 0.0625, 1.0,
-                            0.0625, 0.9375, 0.125, 0.9375, 0.125, 1.0, 0.0625, 1.0 } },
-        { Block::DIAMOND,{0.125, 0.75, 0.1875, 0.75, 0.1875, 0.8125, 0.125, 0.8125,
-                               0.125, 0.75, 0.1875, 0.75, 0.1875, 0.8125, 0.125, 0.8125,
-                               0.125, 0.75, 0.1875, 0.75, 0.1875, 0.8125, 0.125, 0.8125 } },
-        { Block::GOLD,	{0.0, 0.8125, 0.0625, 0.8125, 0.0625, 0.875, 0.0, 0.875,
-                                0.0, 0.8125, 0.0625, 0.8125, 0.0625, 0.875, 0.0, 0.875,
-                                0.0, 0.8125, 0.0625, 0.8125, 0.0625, 0.875, 0.0, 0.875 } },
-        { Block::COAL,	{0.125, 0.8125, 0.1875, 0.8125, 0.1875, 0.875, 0.125, 0.875,
-                                0.125, 0.8125, 0.1875, 0.8125, 0.1875, 0.875, 0.125, 0.875,
-                                0.125, 0.8125, 0.1875, 0.8125, 0.1875, 0.875, 0.125, 0.875 } },
-        { Block::STEEL,	{0.0625, 0.8125, 0.125, 0.8125, 0.125, 0.875, 0.0625, 0.875,
-                                0.0625, 0.8125, 0.125, 0.8125, 0.125, 0.875, 0.0625, 0.875,
-                                0.0625, 0.8125, 0.125, 0.8125, 0.125, 0.875, 0.0625, 0.875 } },
-        { Block::LEAVES,	{0.6875, 0.0625, 0.75, 0.0625, 0.75, 0.125, 0.6875, 0.125,
-                                0.6875, 0.0625, 0.75, 0.0625, 0.75, 0.125, 0.6875, 0.125,
-                                0.6875, 0.0625, 0.75, 0.0625, 0.75, 0.125, 0.6875, 0.125 } },
-        { Block::WOOD,	{0.3125, 0.875, 0.375, 0.875, 0.375, 0.9375, 0.3125, 0.9375,
-                                0.25, 0.875, 0.3125, 0.875, 0.3125, 0.9375, 0.25, 0.9375,
-                                0.3125, 0.875, 0.375, 0.875, 0.375, 0.9375, 0.3125, 0.9375 } },
-        { Block::SNOW,	{0.125, 0.6875, 0.1875, 0.6875, 0.1875, 0.75, 0.125, 0.75,
-                                0.125, 0.6875, 0.1875, 0.6875, 0.1875, 0.75, 0.125, 0.75,
-                                0.125, 0.6875, 0.1875, 0.6875, 0.1875, 0.75, 0.125, 0.75,} },
-        { Block::SNOWY_GRASS,{0.125, 0.6875, 0.1875, 0.6875, 0.1875, 0.75, 0.125, 0.75,
-                                  0.25, 0.6875, 0.3125, 0.6875, 0.3125, 0.75, 0.25, 0.75,
-                                  0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0 } },
-        { Block::WATER,	{0.9375, 0.125, 1.0, 0.125, 1.0, 0.1875, 0.9375, 0.1875,
-                                0.9375, 0.125, 1.0, 0.125, 1.0, 0.1875, 0.9375, 0.1875,
-                                0.9375, 0.125, 1.0, 0.125, 1.0, 0.1875, 0.9375, 0.1875 } },
-        { Block::SAND,	{0.125, 0.875, 0.1875, 0.875, 0.1875, 0.9375, 0.125, 0.9375,
-                                0.125, 0.875, 0.1875, 0.875, 0.1875, 0.9375, 0.125, 0.9375,
-                                0.125, 0.875, 0.1875, 0.875, 0.1875, 0.9375, 0.125, 0.9375 } },
-        { Block::GRAVEL,	{0.1875, 0.875, 0.25, 0.875, 0.25, 0.9375, 0.1875, 0.9375,
-                                0.1875, 0.875, 0.25, 0.875, 0.25, 0.9375, 0.1875, 0.9375,
-                                0.1875, 0.875, 0.25, 0.875, 0.25, 0.9375, 0.1875, 0.9375 } },
-        { Block::BEDROCK,   {0.0625, 0.875, 0.125, 0.875, 0.125, 0.9375, 0.0625, 0.9375,
-                            0.0625, 0.875, 0.125, 0.875, 0.125, 0.9375, 0.0625, 0.9375,
-                            0.0625, 0.875, 0.125, 0.875, 0.125, 0.9375, 0.0625, 0.9375} },
-    };
-
 // the chunk has a border so that I know what faces to cull between chunks
 // (I only generate the mesh of the part inside the border)
 Chunk::Chunk(glm::vec3 position,
@@ -220,13 +135,11 @@ Chunk::Chunk(glm::vec3 position,
 }
 
 // fine tune the values
-static float Continentalness(int x, int y) {
+float Chunk::Continentalness(int x, int y) {
     float scale = 256.0f;
-    float ampl = 1.0f;
-    float freq = 1.0f;
     float height = 0;
 
-    float noise = noise::Perlin2D(x, y, scale, freq, ampl, 8);
+    float noise = m_Noise.OctaveNoise(x, y, 8, 0.01f);
 
     if (noise < 0.3) {
         //height = (noise + 2.3f) / 0.026f;
@@ -247,40 +160,34 @@ static float Continentalness(int x, int y) {
 
 void Chunk::TerrainHeightGeneration() {
     int water_level = 63;
-    int snow_level = 100;
+    int snow_level = 130;
 
     for (unsigned int i = 0; i < XSIZE; i++) {
         for (unsigned int k = 0; k < ZSIZE; k++) {
-            float terrain_height = Continentalness(i + m_Position.x, k + m_Position.z);
-            if (terrain_height < water_level)
-                terrain_height = water_level;
-            float hHigh;
-            float hLow = noise::CombinedNoise((i + m_Position.x) * 1.3f,
-                                              (k + m_Position.z) * 1.3f,
-                                              1,1,1,8,
-                                              n1_offsets) / 6 - 4;
-            float height = hLow;
+            float a = (m_Noise.OctaveNoise(i + m_Position.x, k + m_Position.z, 6, 0.002f) + 1) / 2;
+            float m = (m_Noise.OctaveNoise(i + m_Position.x + 123, k + m_Position.z + 456, 8, 0.01f) + 1) / 2;
+            a *= a;
+            float terrain_height;
+            if (a < 0.5)
+                terrain_height = m * a * a * 2;
+            else
+                terrain_height = m * (1 - (1-a) * (1-a) * 2);
+            terrain_height *= 200.0f;
+            terrain_height = static_cast<int>(terrain_height + 50);
+            if (terrain_height < 40)
+                terrain_height = 40;
+            int height = static_cast<int>(m_Noise.OctaveNoise(i + m_Position.x, k + m_Position.z, 8) * 5.0f);
+            // I might change the multiplier based on the noise to have flat zones and hilly zones
+            // Or I can plain with spline points based on the noise, improving the continentalness
+            // finally add biomes, following that video (also remember the memset and the creation
+            /* of the heightmap to avoid iterating to create the mesh) */
 
-            if (noise::OctaveNoise(i + m_Position.x, k + m_Position.z,
-                                   1,1,1,6, n3_offsets) <= 0 ) {
-                hHigh = noise::CombinedNoise((i + m_Position.x) * 1.3f,
-                                             (k + m_Position.z) * 1.3f,
-                                             1,1,1,8,
-                                             n2_offsets) / 5 + 6;
-                height = std::max(hLow, hHigh);
-            }
-
-            height *= 0.5f;
-            if (height < 0)
-                height *= 0.8f;
-
-            auto maxHeight = static_cast<unsigned int>(height + terrain_height);
+            int maxHeight = height + terrain_height;
 
             int dirtThickness = static_cast<int>(
-                    noise::OctaveNoise(i + m_Position.x,
-                                       k + m_Position.z,
-                                       1, 1,1,8,
-                                       n4_offsets) / 6) ;
+                    (m_Noise.OctaveNoise(i + m_Position.x + 111,
+                                       k + m_Position.z + 111,
+                                       8) + 1)/2 * 10);
 
             for (unsigned int j = 0; j < YSIZE; j++) {
                 if (j <= 1)
@@ -305,56 +212,28 @@ void Chunk::TerrainHeightGeneration() {
             }
             // create surface layer
             if (maxHeight < YSIZE - 1) {
-                bool sandChance = noise::OctaveNoise(i + m_Position.x, k + m_Position.z,
-                                                   1, 1, 1, 8, n1_offsets) > 8;
-                bool gravelChance = noise::OctaveNoise(i + m_Position.x, k + m_Position.z,
-                                                   1, 1, 1, 8, n2_offsets) > 12;
-                bool snowChance = noise::OctaveNoise(i + m_Position.x, k + m_Position.z,
-                                                   1, 1, 1, 8, n2_offsets) > 8;
+                /* bool sandChance = m_Noise.OctaveNoise(i + m_Position.x, k + m_Position.z, */
+                /*                                    3, 0.5f, 2.0f) > 8; */
+                /* bool gravelChance = m_Noise.OctaveNoise(i + m_Position.x, k + m_Position.z, */
+                /*                                    3, 0.5f, 2.0f) > 12; */
+                bool chance = m_Noise.OctaveNoise(i + m_Position.x, k + m_Position.z,
+                                                   3) >= 0;
 
                 Block blockAbove = m_Chunk(i,maxHeight+1,k);
-                if (blockAbove == Block::WATER && gravelChance) {
+                if (blockAbove == Block::WATER && chance) {
                     m_Chunk(i, maxHeight, k) = Block::GRAVEL;
                 }
                 else if (blockAbove == Block::EMPTY) {
-                    if (maxHeight <= water_level && sandChance) {
+                    if (maxHeight <= water_level + 1 && chance) {
                         m_Chunk(i, maxHeight, k) = Block::SAND;
-                    } else if (maxHeight >= snow_level && maxHeight < snow_level + 5 && snowChance ||
+                    } else if (maxHeight >= snow_level && maxHeight < snow_level + 5 && chance ||
                                 maxHeight >= snow_level + 5) {
                         m_Chunk(i, maxHeight, k) = Block::SNOW;
-                    } else if (maxHeight >= snow_level - 5 && snowChance) {
+                    } else if (maxHeight >= snow_level - 5 && chance) {
                         m_Chunk(i, maxHeight, k) = Block::SNOWY_GRASS;
                     } else {
                         m_Chunk(i, maxHeight, k) = Block::GRASS;
                     }
-                }
-            }
-        }
-    }
-}
-
-void Chunk::Noise3DInit(unsigned int seed) {
-    srand(seed);
-    float freq = 0.5f;
-    float ampl = 20.0f;
-    float scale = 64.0f;
-    std::vector<std::vector<int>> octaveOffsets;
-    unsigned int n_octaves = 1;
-    for (unsigned int i = 0; i < n_octaves; i++) {
-        octaveOffsets.push_back({ rand() % 10000, rand() % 10000, rand() % 10000 });
-    }
-
-    for (int i = 0; i < XSIZE; i++) {
-        for (int k = 0; k < ZSIZE; k++) {
-            for (int j = 0; j < YSIZE; j++) {
-                float density = noise::Perlin3D(i + (int)m_Position.x,
-                                                j + (int)m_Position.y,
-                                                k + (int)m_Position.z, scale, 1, 1);
-                if (density <= 0 || j > 150) {
-                    m_Chunk(i, j, k) = Block::EMPTY;
-                }
-                else {
-                    m_Chunk(i, j, k) = Block::STONE;
                 }
             }
         }
@@ -388,22 +267,28 @@ void Chunk::GenerateMesh() {
                     if (m_Chunk(i, j, k) != Block::EMPTY) {
                         std::array<float, 24> textureCoords = s_TextureMap.at(m_Chunk(i, j, k));
                         if (m_Chunk(i,j,k) != Block::WATER) {
-                            if (j > 0 && (m_Chunk(i, j - 1, k) == Block::EMPTY || m_Chunk(i, j - 1, k) == Block::WATER)) { // D
+                            if (j > 0 && 
+                                (m_Chunk(i, j - 1, k) == Block::EMPTY || m_Chunk(i, j - 1, k) == Block::WATER)) { // D
                                 CreateDQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
                             }
-                            if (j < YSIZE - 1 && (m_Chunk(i, j + 1, k) == Block::EMPTY || m_Chunk(i, j + 1, k) == Block::WATER)) { // U
+                            if (j < YSIZE - 1 && 
+                                (m_Chunk(i, j + 1, k) == Block::EMPTY || m_Chunk(i, j + 1, k) == Block::WATER)) { // U
                                 CreateUQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
                             }
-                            if (k > 0 && (m_Chunk(i, j, k - 1) == Block::EMPTY || m_Chunk(i, j, k - 1) == Block::WATER)) { // B
+                            if (k > 0 && 
+                                (m_Chunk(i, j, k - 1) == Block::EMPTY || m_Chunk(i, j, k - 1) == Block::WATER)) { // B
                                 CreateBQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
                             }
-                            if (k < ZSIZE - 1 && (m_Chunk(i, j, k + 1) == Block::EMPTY || m_Chunk(i, j, k + 1) == Block::WATER)) { // F
+                            if (k < ZSIZE - 1 && 
+                                (m_Chunk(i, j, k + 1) == Block::EMPTY || m_Chunk(i, j, k + 1) == Block::WATER)) { // F
                                 CreateFQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
                             }
-                            if (i > 0 && (m_Chunk(i - 1, j, k) == Block::EMPTY || m_Chunk(i - 1, j, k) == Block::WATER)) { // L
+                            if (i > 0 && 
+                                (m_Chunk(i - 1, j, k) == Block::EMPTY || m_Chunk(i - 1, j, k) == Block::WATER)) { // L
                                 CreateLQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
                             }
-                            if (i < XSIZE - 1 && (m_Chunk(i + 1, j, k) == Block::EMPTY || m_Chunk(i + 1, j, k) == Block::WATER)) { // R
+                            if (i < XSIZE - 1 && 
+                                (m_Chunk(i + 1, j, k) == Block::EMPTY || m_Chunk(i + 1, j, k) == Block::WATER)) { // R
                                 CreateRQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
                             }
                         } else { // add to transparent buffer
@@ -490,4 +375,51 @@ glm::vec3 Chunk::GetPosition() const {
     return m_Position;
 }
 
-
+const std::unordered_map<Block, std::array<float, 24>> Chunk::s_TextureMap =
+    {
+        { Block::GRASS,{0.75, 0.1875, 0.8125, 0.1875, 0.8125, 0.25, 0.75, 0.25, // top
+                            0.1875, 0.9375, 0.25, 0.9375, 0.25, 1.0, 0.1875, 1.0, // side
+                            0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0 } }, //bottom
+        { Block::DIRT,{0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0,
+                       0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0,
+                       0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0 } },
+        { Block::STONE,{0.0625, 0.9375, 0.125, 0.9375, 0.125, 1.0, 0.0625, 1.0,
+                            0.0625, 0.9375, 0.125, 0.9375, 0.125, 1.0, 0.0625, 1.0,
+                            0.0625, 0.9375, 0.125, 0.9375, 0.125, 1.0, 0.0625, 1.0 } },
+        { Block::DIAMOND,{0.125, 0.75, 0.1875, 0.75, 0.1875, 0.8125, 0.125, 0.8125,
+                               0.125, 0.75, 0.1875, 0.75, 0.1875, 0.8125, 0.125, 0.8125,
+                               0.125, 0.75, 0.1875, 0.75, 0.1875, 0.8125, 0.125, 0.8125 } },
+        { Block::GOLD,	{0.0, 0.8125, 0.0625, 0.8125, 0.0625, 0.875, 0.0, 0.875,
+                                0.0, 0.8125, 0.0625, 0.8125, 0.0625, 0.875, 0.0, 0.875,
+                                0.0, 0.8125, 0.0625, 0.8125, 0.0625, 0.875, 0.0, 0.875 } },
+        { Block::COAL,	{0.125, 0.8125, 0.1875, 0.8125, 0.1875, 0.875, 0.125, 0.875,
+                                0.125, 0.8125, 0.1875, 0.8125, 0.1875, 0.875, 0.125, 0.875,
+                                0.125, 0.8125, 0.1875, 0.8125, 0.1875, 0.875, 0.125, 0.875 } },
+        { Block::STEEL,	{0.0625, 0.8125, 0.125, 0.8125, 0.125, 0.875, 0.0625, 0.875,
+                                0.0625, 0.8125, 0.125, 0.8125, 0.125, 0.875, 0.0625, 0.875,
+                                0.0625, 0.8125, 0.125, 0.8125, 0.125, 0.875, 0.0625, 0.875 } },
+        { Block::LEAVES,	{0.6875, 0.0625, 0.75, 0.0625, 0.75, 0.125, 0.6875, 0.125,
+                                0.6875, 0.0625, 0.75, 0.0625, 0.75, 0.125, 0.6875, 0.125,
+                                0.6875, 0.0625, 0.75, 0.0625, 0.75, 0.125, 0.6875, 0.125 } },
+        { Block::WOOD,	{0.3125, 0.875, 0.375, 0.875, 0.375, 0.9375, 0.3125, 0.9375,
+                                0.25, 0.875, 0.3125, 0.875, 0.3125, 0.9375, 0.25, 0.9375,
+                                0.3125, 0.875, 0.375, 0.875, 0.375, 0.9375, 0.3125, 0.9375 } },
+        { Block::SNOW,	{0.125, 0.6875, 0.1875, 0.6875, 0.1875, 0.75, 0.125, 0.75,
+                                0.125, 0.6875, 0.1875, 0.6875, 0.1875, 0.75, 0.125, 0.75,
+                                0.125, 0.6875, 0.1875, 0.6875, 0.1875, 0.75, 0.125, 0.75,} },
+        { Block::SNOWY_GRASS,{0.125, 0.6875, 0.1875, 0.6875, 0.1875, 0.75, 0.125, 0.75,
+                                  0.25, 0.6875, 0.3125, 0.6875, 0.3125, 0.75, 0.25, 0.75,
+                                  0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0 } },
+        { Block::WATER,	{0.9375, 0.125, 1.0, 0.125, 1.0, 0.1875, 0.9375, 0.1875,
+                                0.9375, 0.125, 1.0, 0.125, 1.0, 0.1875, 0.9375, 0.1875,
+                                0.9375, 0.125, 1.0, 0.125, 1.0, 0.1875, 0.9375, 0.1875 } },
+        { Block::SAND,	{0.125, 0.875, 0.1875, 0.875, 0.1875, 0.9375, 0.125, 0.9375,
+                                0.125, 0.875, 0.1875, 0.875, 0.1875, 0.9375, 0.125, 0.9375,
+                                0.125, 0.875, 0.1875, 0.875, 0.1875, 0.9375, 0.125, 0.9375 } },
+        { Block::GRAVEL,	{0.1875, 0.875, 0.25, 0.875, 0.25, 0.9375, 0.1875, 0.9375,
+                                0.1875, 0.875, 0.25, 0.875, 0.25, 0.9375, 0.1875, 0.9375,
+                                0.1875, 0.875, 0.25, 0.875, 0.25, 0.9375, 0.1875, 0.9375 } },
+        { Block::BEDROCK,   {0.0625, 0.875, 0.125, 0.875, 0.125, 0.9375, 0.0625, 0.9375,
+                            0.0625, 0.875, 0.125, 0.875, 0.125, 0.9375, 0.0625, 0.9375,
+                            0.0625, 0.875, 0.125, 0.875, 0.125, 0.9375, 0.0625, 0.9375} },
+    };

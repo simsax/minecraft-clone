@@ -1,15 +1,16 @@
 #pragma once
+#include "FastNoiseLite.h"
 
-#include <array>
-#include "vector"
+// REMEMBER TO CHECK SCALE THINGY
 
-namespace noise {
-	float CombinedNoise(int xCoord, int yCoord, float scale, float frequency, float amplitude,
-                        unsigned int octaves, const std::vector<std::array<int, 2>>& offsets);
-    float OctaveNoise(int xCoord, int yCoord, float scale, float frequency, float amplitude,
-                      unsigned int octaves, const std::vector<std::array<int, 2>>& offsets);
-    float Perlin2D(int xCoord, int yCoord, float scale, float frequency, float amplitude,
-                   unsigned int octaves, const std::vector<std::array<int, 2>> &offsets = {});
-	float Perlin3D(int xCoord, int yCoord, int zCoord, float scale, float frequency, float amplitude,
-                   int octaves = 1, const std::vector<std::array<int, 2>>& offsets = {});
-}
+class Noise {
+public:
+    Noise();
+    float CombinedNoise(int xCoord, int yCoord, unsigned int octaves, float frequency=0.01f,
+                         float lacunarity=2.0f, float amplitude=0.5f);
+    float OctaveNoise(int xCoord, int yCoord, unsigned int octaves, float frequency=0.01f,
+                         float lacunarity=2.0f, float amplitude=0.5f);
+private:
+    static const unsigned int seed;
+    FastNoiseLite m_FastNoise;
+};

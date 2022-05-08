@@ -16,7 +16,7 @@ namespace cam {
 
 	void Camera::ProcessKeyboard(const std::array<Key, static_cast<int>(Key::Key_MAX) + 1>& keyPressed) {
         m_CameraSpeed = glm::vec3(0.0f, 0.0f, 0.0f); // the velocity vector
-        float speed = 5.0f;
+        float speed = 25.0f;
 		for (const auto& key : keyPressed) {
 			if (key != Key::NONE) {
 				if (key == Key::LEFT_SHIFT) // sprint

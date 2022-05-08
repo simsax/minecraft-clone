@@ -7,7 +7,7 @@ using namespace std::chrono_literals;
 
 #define MAX_INDEX_COUNT 18432 // each cube has 6 faces, each face has 6 indexes
 #define MAX_VERTEX_COUNT 12228 // each cube has 6 faces, each face has 4 vertices 
-#define VIEW_DISTANCE 24 // how far the player sees
+#define VIEW_DISTANCE 18 // how far the player sees
 #define MAX_CHUNK_TO_LOAD 1
 
 ChunkManager::ChunkManager(glm::vec3* playerPosition):

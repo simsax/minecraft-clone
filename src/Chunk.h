@@ -13,6 +13,7 @@
 #include <vector>
 #include <array>
 #include "Matrix3D.hpp"
+#include "Noise.h"
 
 #define XSIZE 18
 #define YSIZE 258
@@ -72,7 +73,7 @@ private:
     static const std::unordered_map<Block, std::array<float, 24>> s_TextureMap;
     void UpdateMesh(unsigned int x, unsigned int y, unsigned int z, Block block);
     void TerrainHeightGeneration();
-    void Noise3DInit(unsigned int seed);
+    float Continentalness(int x, int y);
 
     std::unique_ptr<VertexArray> m_VAO;
     std::unique_ptr<VertexArray> m_TransparentVAO;
@@ -81,11 +82,7 @@ private:
     std::unique_ptr<VertexBuffer> m_VBO;
     std::unique_ptr<VertexBuffer> m_TransparentVBO;
 
-    static const float s_TextureOffset; // depends on the texture atlas
-    static const std::vector<std::array<int, 2>> n1_offsets;
-    static const std::vector<std::array<int, 2>> n2_offsets;
-    static const std::vector<std::array<int, 2>> n3_offsets;
-    static const std::vector<std::array<int, 2>> n4_offsets;
+    Noise m_Noise;
     glm::vec3 m_Position;
     Matrix3D<Block, XSIZE, YSIZE, ZSIZE> m_Chunk;
     std::vector<Vertex> m_Mesh;

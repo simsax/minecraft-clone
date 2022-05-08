@@ -5,6 +5,8 @@ project(minecraft-clone)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+configure_file(Config.h.in ${CMAKE_BINARY_DIR}/Config.h)
+
 # profiler
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
@@ -59,12 +61,16 @@ add_executable(${PROJECT_NAME}
 add_subdirectory(extern/glfw)
 add_subdirectory(extern/glew)
 add_subdirectory(extern/glm)
+#add_subdirectory(extern/fastnoise2)
 
 target_include_directories(${PROJECT_NAME}
+        PUBLIC ${CMAKE_BINARY_DIR}
         PUBLIC extern/glfw/include
         PUBLIC extern/glew/include
         PUBLIC extern/glm
-        PUBLIC extern/stb_image)
+        PUBLIC extern/stb_image
+        PUBLIC extern/fastnoise
+)
 
 target_link_libraries(${PROJECT_NAME} glfw libglew_static glm)
 

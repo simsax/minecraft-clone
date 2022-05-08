@@ -272,7 +272,7 @@ void Game::CheckRayCast() {
     ChunkCoord previousChunkCoord;
     glm::vec3 targetLocalVoxel;
     glm::vec3 previousLocalVoxel;
-    Chunk* targetChunk;
+    Chunk* targetChunk = nullptr;
     Chunk* previousChunk;
     glm::vec3 previousVoxel;
 	while (!voxelFound && distance < maxDistance) {
