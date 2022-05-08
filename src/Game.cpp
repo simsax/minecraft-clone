@@ -39,7 +39,7 @@ static std::pair<ChunkCoord, glm::vec3> GlobalToLocal(glm::vec3 playerPosition, 
 }
 
 Game::Game() :
-        m_Proj(glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 500.0f)),
+        m_Proj(glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 600.0f)),
         m_ChunkManager(camera.GetPlayerPosition()),
         m_VerticalVelocity(0.0f),
         m_LastChunk({0,0}),
