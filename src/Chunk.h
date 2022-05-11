@@ -16,7 +16,7 @@
 #include "Noise.h"
 
 #define XSIZE 18
-#define YSIZE 258
+#define YSIZE 256
 #define ZSIZE 18
 
 enum class Block : unsigned char {

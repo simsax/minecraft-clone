@@ -251,7 +251,9 @@ void Chunk::GenerateMesh() {
         glm::vec3 center(xCoord, yCoord, zCoord);
 
         int index = 0;
-        for (int j = m_MinHeight; j <= m_MaxHeight; j++) {
+        if (m_MinHeight < 1)
+            m_MinHeight = 1;
+        for (int j = m_MinHeight - 1; j <= m_MaxHeight; j++) {
             for (int i = 1; i < XSIZE - 1; i++) {
                 for (int k = 1; k < ZSIZE - 1; k++) {
                     if (m_Chunk(i, j, k) != Block::EMPTY) {

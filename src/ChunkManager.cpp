@@ -38,7 +38,7 @@ ChunkManager::ChunkManager(glm::vec3* playerPosition):
 		offset += 4;
 	}
 
-	m_ChunkSize = { XSIZE - 2, YSIZE - 2, ZSIZE - 2}; // -2 because each chunk has a border
+	m_ChunkSize = { XSIZE - 2, YSIZE, ZSIZE - 2}; // -2 because each chunk has a border
 /*
 	m_Thread = std::thread([this](){
 			while (true) {
