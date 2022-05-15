@@ -13,7 +13,7 @@ void Renderer::SetMVP(const glm::mat4& mvp)
 
 void Renderer::Init()
 {
-	m_Shader = std::make_unique<Shader>(std::string(SOURCE_DIR) + "/res/shaders/Basic.shader");
+	m_Shader = std::make_unique<Shader>(std::string(SOURCE_DIR) + "/res/shaders/");
 	m_Shader->Bind();
 
 	m_Texture = std::make_unique<Texture>(std::string(SOURCE_DIR) + "/res/textures/terrain.png");

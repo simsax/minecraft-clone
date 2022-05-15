@@ -1,4 +1,3 @@
-#shader vertex
 #version 330 core
 
 // this layout will change
@@ -23,19 +22,4 @@ void main() {
 						 (aTexCoord & 0x3Cu) >> 2u);
 	uint index = aTexCoord & 3u;
 	v_TexCoord = (texCoord + texCoords[index]) * offset;
-};
-
-
-#shader fragment
-#version 330 core
-
-layout(location = 0) out vec4 texColor;
-
-in vec2 v_TexCoord;
-
-uniform sampler2D u_Texture;
-
-void main() {
-	texColor = texture(u_Texture, v_TexCoord);
-	//texColor = vec4(0.0,0.0,0.0,1.0);
 };
