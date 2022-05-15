@@ -9,7 +9,7 @@
 class Renderer {
 public:
 	void Init();
-	void Draw(const VertexArray& vao, const IndexBuffer& ibo, GLenum type) const;
+	void Draw(const VertexArray& vao, const IndexBuffer& ibo, GLenum type, const glm::vec3& chunkPos) const;
 	void DrawInstanced(const VertexArray& vao, const IndexBuffer& ibo, GLenum type, GLsizei num_instances) const;
 	void Clear() const;
 	void SetMVP(const glm::mat4& mvp);

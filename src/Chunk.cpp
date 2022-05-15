@@ -26,91 +26,157 @@ std::size_t hash_fn::operator()(const ChunkCoord& coord) const
     return h1 ^ h2;
 }
 
-static void CreateUQuad(std::vector<Vertex>& target, const glm::vec3& position,
-                        const std::array<unsigned char, 6>& textureCoords) {
-    float size = 1.0f;
+static std::array<unsigned int, 4> GenerateTextCoords(const std::array<unsigned char, 2>& textureCoords) {
     unsigned int t0 = (textureCoords[0] << 4 | textureCoords[1]) << 2;
     unsigned int t1 = t0 | 1;
     unsigned int t2 = t0 | 2;
     unsigned int t3 = t0 | 3;
+    return { t0, t1, t2, t3 };
+}
+
+static void PushVertexPos(std::vector<unsigned int>& target, const std::array<unsigned int, 4>& v) {
+    target.emplace_back(v[0]);
+    target.emplace_back(v[1]);
+    target.emplace_back(v[2]);
+    target.emplace_back(v[3]);
+}
+
+static void CreateUQuad(std::vector<unsigned int>& target, const glm::vec3& position,
+                        const std::array<unsigned char, 6>& textureCoords) {
+    std::array<unsigned int, 4> t = GenerateTextCoords({ textureCoords[0], textureCoords[1] });
     
-    target.emplace_back(glm::vec3(position[0], position[1] + size, position[2] + size), t0);
-    target.emplace_back(glm::vec3(position[0] + size, position[1] + size, position[2] + size), t1);
-    target.emplace_back(glm::vec3(position[0] + size, position[1] + size, position[2]), t2);
-    target.emplace_back(glm::vec3(position[0], position[1] + size, position[2]), t3);
+    unsigned int v0 = ((int)position[0] + 0) << 25 |
+                      ((int)position[1] + 1) << 18 |
+                      ((int)position[2] + 1) << 11 | t[0];
+
+    unsigned int v1 = ((int)position[0] + 1) << 25 |
+                      ((int)position[1] + 1) << 18 |
+                      ((int)position[2] + 1) << 11 | t[1];
+
+    unsigned int v2 = ((int)position[0] + 1) << 25 |
+                      ((int)position[1] + 1) << 18 |
+                      ((int)position[2] + 0) << 11 | t[2];
+
+    unsigned int v3 = ((int)position[0] + 0) << 25 |
+                      ((int)position[1] + 1) << 18 |
+                      ((int)position[2] + 0) << 11 | t[3];
+
+    PushVertexPos(target, { v0, v1, v2, v3 });
 }
 
-static void CreateDQuad(std::vector<Vertex>& target, const glm::vec3& position,
+static void CreateDQuad(std::vector<unsigned int>& target, const glm::vec3& position,
                         const std::array<unsigned char, 6>& textureCoords) {
-    float size = 1.0f;
+    std::array<unsigned int, 4> t = GenerateTextCoords({ textureCoords[4], textureCoords[5] });
 
-    unsigned int t0 = (textureCoords[4] << 4 | textureCoords[5]) << 2;
-    unsigned int t1 = t0 | 1;
-    unsigned int t2 = t0 | 2;
-    unsigned int t3 = t0 | 3;
+    unsigned int v0 = ((int)position[0] + 0) << 25 |
+                      ((int)position[1] + 0) << 18 |
+                      ((int)position[2] + 1) << 11 | t[0];
 
-    target.emplace_back(glm::vec3(position[0], position[1], position[2] + size), t0);
-    target.emplace_back(glm::vec3(position[0], position[1], position[2]), t1);
-    target.emplace_back(glm::vec3(position[0] + size, position[1], position[2]), t2);
-    target.emplace_back(glm::vec3(position[0] + size, position[1], position[2] + size), t3);
+    unsigned int v1 = ((int)position[0] + 0) << 25 |
+                      ((int)position[1] + 0) << 18 |
+                      ((int)position[2] + 0) << 11 | t[1];
+
+    unsigned int v2 = ((int)position[0] + 1) << 25 |
+                      ((int)position[1] + 0) << 18 |
+                      ((int)position[2] + 0) << 11 | t[2];
+
+    unsigned int v3 = ((int)position[0] + 1) << 25 |
+                      ((int)position[1] + 0) << 18 |
+                      ((int)position[2] + 1) << 11 | t[3];
+
+    PushVertexPos(target, { v0, v1, v2, v3 });
 }
 
-static void CreateFQuad(std::vector<Vertex>& target, const glm::vec3& position,
+static void CreateFQuad(std::vector<unsigned int>& target, const glm::vec3& position,
                         const std::array<unsigned char, 6>& textureCoords) {
-    float size = 1.0f;
+    std::array<unsigned int, 4> t = GenerateTextCoords({ textureCoords[2], textureCoords[3] });
 
-    unsigned int t0 = (textureCoords[2] << 4 | textureCoords[3]) << 2;
-    unsigned int t1 = t0 | 1;
-    unsigned int t2 = t0 | 2;
-    unsigned int t3 = t0 | 3;
+    unsigned int v0 = ((int)position[0] + 0) << 25 |
+                      ((int)position[1] + 0) << 18 |
+                      ((int)position[2] + 1) << 11 | t[0];
 
-    target.emplace_back(glm::vec3(position[0], position[1], position[2] + size), t0);
-    target.emplace_back(glm::vec3(position[0] + size, position[1], position[2] + size), t1);
-    target.emplace_back(glm::vec3(position[0] + size, position[1] + size, position[2] + size), t2);
-    target.emplace_back(glm::vec3(position[0], position[1] + size, position[2] + size), t3);
+    unsigned int v1 = ((int)position[0] + 1) << 25 |
+                      ((int)position[1] + 0) << 18 |
+                      ((int)position[2] + 1) << 11 | t[1];
+
+    unsigned int v2 = ((int)position[0] + 1) << 25 |
+                      ((int)position[1] + 1) << 18 |
+                      ((int)position[2] + 1) << 11 | t[2];
+
+    unsigned int v3 = ((int)position[0] + 0) << 25 |
+                      ((int)position[1] + 1) << 18 |
+                      ((int)position[2] + 1) << 11 | t[3];
+
+    PushVertexPos(target, { v0, v1, v2, v3 });
 }
 
-static void CreateBQuad(std::vector<Vertex>& target, const glm::vec3& position,
+static void CreateBQuad(std::vector<unsigned int>& target, const glm::vec3& position,
                         const std::array<unsigned char, 6>& textureCoords) {
-    float size = 1.0f;
+    std::array<unsigned int, 4> t = GenerateTextCoords({ textureCoords[2], textureCoords[3] });
+    
+    unsigned int v0 = ((int)position[0] + 1) << 25 |
+                      ((int)position[1] + 0) << 18 |
+                      ((int)position[2] + 0) << 11 | t[0];
 
-    unsigned int t0 = (textureCoords[2] << 4 | textureCoords[3]) << 2;
-    unsigned int t1 = t0 | 1;
-    unsigned int t2 = t0 | 2;
-    unsigned int t3 = t0 | 3;
-    target.emplace_back(glm::vec3(position[0] + size, position[1], position[2]), t0);
-    target.emplace_back(glm::vec3(position[0], position[1], position[2]), t1);
-    target.emplace_back(glm::vec3(position[0], position[1] + size, position[2]), t2);
-    target.emplace_back(glm::vec3(position[0] + size, position[1] + size, position[2]), t3);
+    unsigned int v1 = ((int)position[0] + 0) << 25 |
+                      ((int)position[1] + 0) << 18 |
+                      ((int)position[2] + 0) << 11 | t[1];
+
+    unsigned int v2 = ((int)position[0] + 0) << 25 |
+                      ((int)position[1] + 1) << 18 |
+                      ((int)position[2] + 0) << 11 | t[2];
+
+    unsigned int v3 = ((int)position[0] + 1) << 25 |
+                      ((int)position[1] + 1) << 18 |
+                      ((int)position[2] + 0) << 11 | t[3];
+
+    PushVertexPos(target, { v0, v1, v2, v3 });
 }
 
-static void CreateRQuad(std::vector<Vertex>& target, const glm::vec3& position,
+static void CreateRQuad(std::vector<unsigned int>& target, const glm::vec3& position,
                         const std::array<unsigned char, 6>& textureCoords) {
-    float size = 1.0f;
+    std::array<unsigned int, 4> t = GenerateTextCoords({ textureCoords[2], textureCoords[3] });
 
-    unsigned int t0 = (textureCoords[2] << 4 | textureCoords[3]) << 2;
-    unsigned int t1 = t0 | 1;
-    unsigned int t2 = t0 | 2;
-    unsigned int t3 = t0 | 3;
-    target.emplace_back(glm::vec3(position[0] + size, position[1], position[2] + size), t0);
-    target.emplace_back(glm::vec3(position[0] + size, position[1], position[2]), t1);
-    target.emplace_back(glm::vec3(position[0] + size, position[1] + size, position[2]), t2);
-    target.emplace_back(glm::vec3(position[0] + size, position[1] + size, position[2] + size), t3);
+    unsigned int v0 = ((int)position[0] + 1) << 25 |
+                      ((int)position[1] + 0) << 18 |
+                      ((int)position[2] + 1) << 11 | t[0];
+
+    unsigned int v1 = ((int)position[0] + 1) << 25 |
+                      ((int)position[1] + 0) << 18 |
+                      ((int)position[2] + 0) << 11 | t[1];
+
+    unsigned int v2 = ((int)position[0] + 1) << 25 |
+                      ((int)position[1] + 1) << 18 |
+                      ((int)position[2] + 0) << 11 | t[2];
+
+    unsigned int v3 = ((int)position[0] + 1) << 25 |
+                      ((int)position[1] + 1) << 18 |
+                      ((int)position[2] + 1) << 11 | t[3];
+
+    PushVertexPos(target, { v0, v1, v2, v3 });
 }
 
-static void CreateLQuad(std::vector<Vertex>& target, const glm::vec3& position,
+static void CreateLQuad(std::vector<unsigned int>& target, const glm::vec3& position,
                         const std::array<unsigned char, 6>& textureCoords) {
-    float size = 1.0f;
+    std::array<unsigned int, 4> t = GenerateTextCoords({ textureCoords[2], textureCoords[3] });
 
-    unsigned int t0 = (textureCoords[2] << 4 | textureCoords[3]) << 2;
-    unsigned int t1 = t0 | 1;
-    unsigned int t2 = t0 | 2;
-    unsigned int t3 = t0 | 3;
+    unsigned int v0 = ((int)position[0] + 0) << 25 |
+                      ((int)position[1] + 0) << 18 |
+                      ((int)position[2] + 0) << 11 | t[0];
 
-    target.emplace_back(glm::vec3(position[0], position[1], position[2]), t0);
-    target.emplace_back(glm::vec3(position[0], position[1], position[2] + size), t1);
-    target.emplace_back(glm::vec3(position[0], position[1] + size, position[2] + size), t2);
-    target.emplace_back(glm::vec3(position[0], position[1] + size, position[2]), t3);
+    unsigned int v1 = ((int)position[0] + 0) << 25 |
+                      ((int)position[1] + 0) << 18 |
+                      ((int)position[2] + 1) << 11 | t[1];
+
+    unsigned int v2 = ((int)position[0] + 0) << 25 |
+                      ((int)position[1] + 1) << 18 |
+                      ((int)position[2] + 1) << 11 | t[2];
+
+    unsigned int v3 = ((int)position[0] + 0) << 25 |
+                      ((int)position[1] + 1) << 18 |
+                      ((int)position[2] + 0) << 11 | t[3];
+
+    PushVertexPos(target, { v0, v1, v2, v3 });
 }
 
 // the chunk has a border so that I know what faces to cull between chunks
@@ -118,7 +184,7 @@ static void CreateLQuad(std::vector<Vertex>& target, const glm::vec3& position,
 Chunk::Chunk(glm::vec3 position,
              const VertexBufferLayout& layout, unsigned int maxVertexCount, const std::vector<unsigned int>& indices,
              glm::vec3* playerPosition) :
-        m_Position(position), m_Chunk(Matrix3D<Block, XSIZE, YSIZE, ZSIZE>()), m_MaxVertexCount(maxVertexCount),
+        m_ChunkPosition(position), m_Chunk(Matrix3D<Block, XSIZE, YSIZE, ZSIZE>()), m_MaxVertexCount(maxVertexCount),
         m_PlayerPosition(playerPosition), m_MinHeight(YSIZE), m_MaxHeight(0)
 {
 
@@ -126,8 +192,8 @@ Chunk::Chunk(glm::vec3 position,
     m_TransparentIBO = std::make_unique<IndexBuffer>(indices.size() * sizeof(unsigned int), indices.data());
     m_VBO = std::make_unique<VertexBuffer>();
     m_TransparentVBO = std::make_unique<VertexBuffer>();
-    m_VBO->CreateDynamic(sizeof(Vertex) * maxVertexCount);
-    m_TransparentVBO->CreateDynamic(sizeof(Vertex) * maxVertexCount);
+    m_VBO->CreateDynamic(sizeof(unsigned int) * maxVertexCount);
+    m_TransparentVBO->CreateDynamic(sizeof(unsigned int) * maxVertexCount);
     m_VAO = std::make_unique<VertexArray>();
     m_TransparentVAO = std::make_unique<VertexArray>();
     m_VAO->AddBuffer(*m_VBO, layout);
@@ -167,8 +233,8 @@ void Chunk::CreateHeightMap() {
 
     for (int i = 0; i < XSIZE; i++) {
         for (int k = 0; k < ZSIZE; k++) {
-            float a = (m_Noise.OctaveNoise(i + m_Position.x, k + m_Position.z, 6, 0.002f) + 1) / 2;
-            float m = (m_Noise.OctaveNoise(i + m_Position.x + 123, k + m_Position.z + 456, 8, 0.01f) + 1) / 2;
+            float a = (m_Noise.OctaveNoise(i + m_ChunkPosition.x, k + m_ChunkPosition.z, 6, 0.002f) + 1) / 2;
+            float m = (m_Noise.OctaveNoise(i + m_ChunkPosition.x + 123, k + m_ChunkPosition.z + 456, 8, 0.01f) + 1) / 2;
             a *= a;
             float terrain_height;
             if (a < 0.5)
@@ -179,7 +245,7 @@ void Chunk::CreateHeightMap() {
             terrain_height = static_cast<int>(terrain_height + elevation);
             if (terrain_height < 40)
                 terrain_height = 40;
-            int height = static_cast<int>(m_Noise.OctaveNoise(i + m_Position.x, k + m_Position.z, 8) * 5.0f);
+            int height = static_cast<int>(m_Noise.OctaveNoise(i + m_ChunkPosition.x, k + m_ChunkPosition.z, 8) * 5.0f);
 
             int final_height = height + terrain_height;
             if (final_height > YSIZE)
@@ -211,14 +277,14 @@ void Chunk::CreateSurfaceLayer() {
                 int height = m_HeightMap[index++];
                 if (j < height) {
                     int dirtThickness = static_cast<int>(
-                            (m_Noise.OctaveNoise(i + m_Position.x + 111, k + m_Position.z + 111, 8) + 1)/2 * 10) - j;
+                            (m_Noise.OctaveNoise(i + m_ChunkPosition.x + 111, k + m_ChunkPosition.z + 111, 8) + 1)/2 * 10) - j;
                     if (dirtThickness > 0)
                         m_Chunk(i, j, k) = Block::DIRT;
                     else
                         m_Chunk(i, j, k) = Block::STONE;
                 }
                 else if (j == height) {
-                    float noise_chance = m_Noise.OctaveNoise(i + m_Position.x, k + m_Position.z, 8);
+                    float noise_chance = m_Noise.OctaveNoise(i + m_ChunkPosition.x, k + m_ChunkPosition.z, 8);
                     if (j == water_level && noise_chance >= 0) 
                         m_Chunk(i, j, k) = Block::SAND;
                     else if (j < water_level) {
@@ -247,13 +313,6 @@ void Chunk::CreateSurfaceLayer() {
 
 void Chunk::GenerateMesh() {
     if (m_Mesh.empty() && m_TransparentMesh.empty()) {
-        // I want to render it relative to the center of m_Position
-        int xCoord = static_cast<int>(m_Position.x - XSIZE / 2);
-        int yCoord = 0;
-        int zCoord = static_cast<int>(m_Position.z - ZSIZE / 2);
-        glm::vec3 center(xCoord, yCoord, zCoord);
-
-        int index = 0;
         if (m_MinHeight < 1)
             m_MinHeight = 1;
         for (int j = m_MinHeight - 1; j <= m_MaxHeight; j++) {
@@ -264,46 +323,46 @@ void Chunk::GenerateMesh() {
                         if (m_Chunk(i,j,k) != Block::WATER) {
                             if (j > 0 && 
                                 (m_Chunk(i, j - 1, k) == Block::EMPTY || m_Chunk(i, j - 1, k) == Block::WATER)) { // D
-                                CreateDQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
+                                CreateDQuad(m_Mesh, glm::vec3(i, j, k), textureCoords);
                             }
                             if (j < YSIZE - 1 && 
                                 (m_Chunk(i, j + 1, k) == Block::EMPTY || m_Chunk(i, j + 1, k) == Block::WATER)) { // U
-                                CreateUQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
+                                CreateUQuad(m_Mesh, glm::vec3(i, j, k), textureCoords);
                             }
                             if (k > 0 && 
                                 (m_Chunk(i, j, k - 1) == Block::EMPTY || m_Chunk(i, j, k - 1) == Block::WATER)) { // B
-                                CreateBQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
+                                CreateBQuad(m_Mesh, glm::vec3(i, j, k), textureCoords);
                             }
                             if (k < ZSIZE - 1 && 
                                 (m_Chunk(i, j, k + 1) == Block::EMPTY || m_Chunk(i, j, k + 1) == Block::WATER)) { // F
-                                CreateFQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
+                                CreateFQuad(m_Mesh, glm::vec3(i, j, k), textureCoords);
                             }
                             if (i > 0 && 
                                 (m_Chunk(i - 1, j, k) == Block::EMPTY || m_Chunk(i - 1, j, k) == Block::WATER)) { // L
-                                CreateLQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
+                                CreateLQuad(m_Mesh, glm::vec3(i, j, k), textureCoords);
                             }
                             if (i < XSIZE - 1 && 
                                 (m_Chunk(i + 1, j, k) == Block::EMPTY || m_Chunk(i + 1, j, k) == Block::WATER)) { // R
-                                CreateRQuad(m_Mesh, center + glm::vec3(i, j, k), textureCoords);
+                                CreateRQuad(m_Mesh, glm::vec3(i, j, k), textureCoords);
                             }
                         } else { // add to transparent buffer
                             if (j > 0 && m_Chunk(i, j - 1, k) == Block::EMPTY) { // D
-                                CreateDQuad(m_TransparentMesh, center + glm::vec3(i, j, k), textureCoords);
+                                CreateDQuad(m_TransparentMesh, glm::vec3(i, j, k), textureCoords);
                             }
                             if (j < YSIZE - 1 && m_Chunk(i, j + 1, k) == Block::EMPTY) { // U
-                                CreateUQuad(m_TransparentMesh, center + glm::vec3(i, j, k), textureCoords);
+                                CreateUQuad(m_TransparentMesh, glm::vec3(i, j, k), textureCoords);
                             }
                             if (k > 0 && m_Chunk(i, j, k - 1) == Block::EMPTY) { // B
-                                CreateBQuad(m_TransparentMesh, center + glm::vec3(i, j, k), textureCoords);
+                                CreateBQuad(m_TransparentMesh, glm::vec3(i, j, k), textureCoords);
                             }
                             if (k < ZSIZE - 1 && m_Chunk(i, j, k + 1) == Block::EMPTY) { // F
-                                CreateFQuad(m_TransparentMesh, center + glm::vec3(i, j, k), textureCoords);
+                                CreateFQuad(m_TransparentMesh, glm::vec3(i, j, k), textureCoords);
                             }
                             if (i > 0 && m_Chunk(i - 1, j, k) == Block::EMPTY) { // L
-                                CreateLQuad(m_TransparentMesh, center + glm::vec3(i, j, k), textureCoords);
+                                CreateLQuad(m_TransparentMesh, glm::vec3(i, j, k), textureCoords);
                             }
                             if (i < XSIZE - 1 && m_Chunk(i + 1, j, k) == Block::EMPTY) { // R
-                                CreateRQuad(m_TransparentMesh, center + glm::vec3(i, j, k), textureCoords);
+                                CreateRQuad(m_TransparentMesh, glm::vec3(i, j, k), textureCoords);
                             }
                         }
                     }
@@ -312,12 +371,12 @@ void Chunk::GenerateMesh() {
         }
         // solid mesh
         size_t indexCount = m_Mesh.size() / 4 * 6; // num faces * 6
-        m_VBO->SendData(m_Mesh.size() * sizeof(Vertex), m_Mesh.data());
+        m_VBO->SendData(m_Mesh.size() * sizeof(unsigned int), m_Mesh.data());
         m_IBO->SetCount(indexCount);
         // transparent mesh
         if (!m_TransparentMesh.empty()) {
             indexCount = m_TransparentMesh.size() / 4 * 6;
-            m_TransparentVBO->SendData(m_TransparentMesh.size() * sizeof(Vertex), m_TransparentMesh.data());
+            m_TransparentVBO->SendData(m_TransparentMesh.size() * sizeof(unsigned int), m_TransparentMesh.data());
             m_TransparentIBO->SetCount(indexCount);
         }
     }
@@ -340,9 +399,15 @@ void Chunk::GenerateMesh() {
 
 void Chunk::Render(const Renderer& renderer)
 {
-    renderer.Draw(*m_VAO, *m_IBO, GL_UNSIGNED_INT);
+    // I want to render it relative to the center of m_ChunkPosition
+    int xCoord = static_cast<int>(m_ChunkPosition.x - XSIZE / 2);
+    int yCoord = 0;
+    int zCoord = static_cast<int>(m_ChunkPosition.z - ZSIZE / 2);
+    glm::vec3 center(xCoord, yCoord, zCoord);
+
+    renderer.Draw(*m_VAO, *m_IBO, GL_UNSIGNED_INT, center);
     if (!m_TransparentMesh.empty())
-        renderer.Draw(*m_TransparentVAO, *m_TransparentIBO, GL_UNSIGNED_INT);
+        renderer.Draw(*m_TransparentVAO, *m_TransparentIBO, GL_UNSIGNED_INT, center);
 }
 
 Matrix3D<Block, XSIZE, YSIZE, ZSIZE> Chunk::GetMatrix() const
@@ -363,7 +428,7 @@ void Chunk::SetMatrix(unsigned int x, unsigned int y, unsigned int z, Block bloc
 }
 
 glm::vec3 Chunk::GetPosition() const {
-    return m_Position;
+    return m_ChunkPosition;
 }
 
 const std::unordered_map<Block, std::array<unsigned char, 6>> Chunk::s_TextureMap =

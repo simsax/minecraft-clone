@@ -51,14 +51,6 @@ bool operator==(const ChunkCoord& l, const ChunkCoord& r);
 bool operator!=(const ChunkCoord& l, const ChunkCoord& r);
 int operator-(const ChunkCoord& l, const ChunkCoord& r);
 
-struct Vertex {
-    Vertex(glm::vec3 position, unsigned int texCoords) :
-        Position(position), TexCoords(texCoords) {}
-
-    glm::vec3 Position;
-    unsigned int TexCoords;
-};
-
 class Chunk
 {
 public:
@@ -86,10 +78,10 @@ private:
 
     std::array<int, XSIZE * ZSIZE> m_HeightMap;
     Noise m_Noise;
-    glm::vec3 m_Position;
+    glm::vec3 m_ChunkPosition;
     Matrix3D<Block, XSIZE, YSIZE, ZSIZE> m_Chunk;
-    std::vector<Vertex> m_Mesh;
-    std::vector<Vertex> m_TransparentMesh;
+    std::vector<unsigned int> m_Mesh;
+    std::vector<unsigned int> m_TransparentMesh;
     unsigned int m_MaxVertexCount;
     glm::vec3* m_PlayerPosition;
     int m_MinHeight;

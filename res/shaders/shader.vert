@@ -1,11 +1,11 @@
 #version 330 core
 
-// this layout will change
-layout(location = 0) in vec4 aPos;
-layout(location = 1) in uint aTexCoord;
+layout(location = 0) in uint in_VertexCoord;
 
 out vec2 v_TexCoord;
+
 uniform mat4 u_MVP; 
+uniform vec3 u_ChunkPos;
 
 const float offset = 0.0625f;
 
@@ -17,9 +17,13 @@ vec2 texCoords[4] = vec2[4](
 );
 
 void main() {
-	gl_Position = u_MVP * aPos;
-	vec2 texCoord = vec2((aTexCoord & 0x3C0u) >> 6u,
-						 (aTexCoord & 0x3Cu) >> 2u);
-	uint index = aTexCoord & 3u;
+	float x = float((in_VertexCoord & 0xFE000000u) >> 25) + u_ChunkPos.x;
+	float y = float((in_VertexCoord & 0x1FC0000u) >> 18) + u_ChunkPos.y;
+	float z = float((in_VertexCoord & 0x3F800u) >> 11) + u_ChunkPos.z;
+	gl_Position = u_MVP * vec4(x, y, z, 1.0f);
+
+	vec2 texCoord = vec2((in_VertexCoord & 0x3C0u) >> 6u,
+						 (in_VertexCoord & 0x3Cu) >> 2u);
+	uint index = in_VertexCoord & 3u;
 	v_TexCoord = (texCoord + texCoords[index]) * offset;
 };
