@@ -7,7 +7,7 @@ using namespace std::chrono_literals;
 
 #define MAX_INDEX_COUNT 18432 // each cube has 6 faces, each face has 6 indexes
 #define MAX_VERTEX_COUNT 12228 // each cube has 6 faces, each face has 4 vertices 
-#define VIEW_DISTANCE 24 // how far the player sees
+#define VIEW_DISTANCE 6 // how far the player sees
 #define MAX_CHUNK_TO_LOAD 1
 
 ChunkManager::ChunkManager(glm::vec3* playerPosition):
@@ -19,7 +19,7 @@ ChunkManager::ChunkManager(glm::vec3* playerPosition):
 //	m_ThreadPool(ctpl::thread_pool(std::thread::hardware_concurrency()))
 {
 	m_VertexLayout.Push<float>(3); // position
-	m_VertexLayout.Push<float>(2); // texture coords
+	m_VertexLayout.Push<unsigned int>(1); // texture coords
 		
 	m_ChunksToRender.reserve(static_cast<const unsigned int>((m_ViewDistance * 2 + 1) * (m_ViewDistance * 2 + 1)));
 

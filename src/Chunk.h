@@ -28,7 +28,7 @@ enum class Block : unsigned char {
     DIAMOND,
     GOLD,
     COAL,
-    STEEL,
+    IRON,
     LEAVES,
     WOOD,
     WATER,
@@ -52,11 +52,11 @@ bool operator!=(const ChunkCoord& l, const ChunkCoord& r);
 int operator-(const ChunkCoord& l, const ChunkCoord& r);
 
 struct Vertex {
-    Vertex(glm::vec3 position, glm::vec2 texCoords) :
+    Vertex(glm::vec3 position, unsigned int texCoords) :
         Position(position), TexCoords(texCoords) {}
 
     glm::vec3 Position;
-    glm::vec2 TexCoords;
+    unsigned int TexCoords;
 };
 
 class Chunk
@@ -70,8 +70,8 @@ public:
     void Render(const Renderer& renderer);
     glm::vec3 GetPosition() const;
 private:
-    static const std::unordered_map<Block, std::array<float, 24>> s_TextureMap;
-    void UpdateMesh(unsigned int x, unsigned int y, unsigned int z, Block block);
+    static const std::unordered_map<Block, std::array<unsigned char, 6>> s_TextureMap;
+    /* void UpdateMesh(unsigned int x, unsigned int y, unsigned int z, Block block); */
     void CreateHeightMap();
     void FastFill();
     void CreateSurfaceLayer();

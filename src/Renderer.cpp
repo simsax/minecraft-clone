@@ -27,7 +27,6 @@ void Renderer::Draw(const VertexArray& vao, const IndexBuffer& ibo, GLenum type)
 	m_Shader->Bind();
 	vao.Bind();
 	ibo.Bind();
-	// primitive, num of indices, type of indices
 	glDrawElements(GL_TRIANGLES, ibo.GetCount(), type, nullptr);
 }
 

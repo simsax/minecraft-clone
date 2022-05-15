@@ -25,7 +25,26 @@ void VertexArray::AddBuffer(const VertexBuffer& vbo, const VertexBufferLayout& l
 	for (unsigned int i = m_NumElements; i < m_NumElements + elements.size(); i++) {
 		const auto& element = elements[i - m_NumElements];
 		glEnableVertexAttribArray(i);
-		glVertexAttribPointer(i, element.count, element.type, element.normalized, layout.GetStride(), (const void*)offset);
+		switch (element.type)
+		{
+		case GL_DOUBLE:
+			glVertexAttribLPointer(i, element.count, element.type,
+							 layout.GetStride(), (const void*)offset);
+			break;
+		case GL_BYTE:
+		case GL_UNSIGNED_BYTE:
+		case GL_SHORT:
+		case GL_UNSIGNED_SHORT:
+		case GL_INT:
+		case GL_UNSIGNED_INT:
+			glVertexAttribIPointer(i, element.count, element.type,
+							 layout.GetStride(), (const void*)offset);
+			break;
+		default:
+			glVertexAttribPointer(i, element.count, element.type, element.normalized,
+							 layout.GetStride(), (const void*)offset);
+			break;
+		}
 		offset += element.count * VertexBufferElement::GetSizeOfType(element.type);
 	}
 	m_NumElements += elements.size();
@@ -40,7 +59,26 @@ void VertexArray::AddInstanceBuffer(const VertexBuffer& vbo, const VertexBufferL
 	for (unsigned int i = m_NumElements; i < m_NumElements + elements.size(); i++) {
 		const auto& element = elements[i - m_NumElements];
 		glEnableVertexAttribArray(i);
-		glVertexAttribPointer(i, element.count, element.type, element.normalized, layout.GetStride(), (const void*)offset);
+		switch (element.type)
+		{
+		case GL_DOUBLE:
+			glVertexAttribLPointer(i, element.count, element.type,
+							 layout.GetStride(), (const void*)offset);
+			break;
+		case GL_BYTE:
+		case GL_UNSIGNED_BYTE:
+		case GL_SHORT:
+		case GL_UNSIGNED_SHORT:
+		case GL_INT:
+		case GL_UNSIGNED_INT:
+			glVertexAttribIPointer(i, element.count, element.type,
+							 layout.GetStride(), (const void*)offset);
+			break;
+		default:
+			glVertexAttribPointer(i, element.count, element.type, element.normalized,
+							 layout.GetStride(), (const void*)offset);
+			break;
+		}
 		glVertexAttribDivisor(i, divisor);
 		offset += element.count * VertexBufferElement::GetSizeOfType(element.type);
 	}

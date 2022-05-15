@@ -27,87 +27,90 @@ std::size_t hash_fn::operator()(const ChunkCoord& coord) const
 }
 
 static void CreateUQuad(std::vector<Vertex>& target, const glm::vec3& position,
-                        const std::array<float, 24>& textureCoords) {
+                        const std::array<unsigned char, 6>& textureCoords) {
     float size = 1.0f;
-
-    target.emplace_back(glm::vec3(position[0], position[1] + size, position[2] + size),
-                        glm::vec2(textureCoords[0], textureCoords[1]));
-    target.emplace_back(glm::vec3(position[0] + size, position[1] + size, position[2] + size),
-                        glm::vec2(textureCoords[2], textureCoords[3]));
-    target.emplace_back(glm::vec3(position[0] + size, position[1] + size, position[2]),
-                        glm::vec2(textureCoords[4], textureCoords[5]));
-    target.emplace_back(glm::vec3(position[0], position[1] + size, position[2]),
-                        glm::vec2(textureCoords[6], textureCoords[7]));
+    unsigned int t0 = (textureCoords[0] << 4 | textureCoords[1]) << 2;
+    unsigned int t1 = t0 | 1;
+    unsigned int t2 = t0 | 2;
+    unsigned int t3 = t0 | 3;
+    
+    target.emplace_back(glm::vec3(position[0], position[1] + size, position[2] + size), t0);
+    target.emplace_back(glm::vec3(position[0] + size, position[1] + size, position[2] + size), t1);
+    target.emplace_back(glm::vec3(position[0] + size, position[1] + size, position[2]), t2);
+    target.emplace_back(glm::vec3(position[0], position[1] + size, position[2]), t3);
 }
 
 static void CreateDQuad(std::vector<Vertex>& target, const glm::vec3& position,
-                        const std::array<float, 24>& textureCoords) {
+                        const std::array<unsigned char, 6>& textureCoords) {
     float size = 1.0f;
 
-    target.emplace_back(glm::vec3(position[0], position[1], position[2] + size),
-                        glm::vec2(textureCoords[16], textureCoords[17]));
-    target.emplace_back(glm::vec3(position[0], position[1], position[2]),
-                        glm::vec2(textureCoords[18], textureCoords[19]));
-    target.emplace_back(glm::vec3(position[0] + size, position[1], position[2]),
-                        glm::vec2(textureCoords[20], textureCoords[21]));
-    target.emplace_back(glm::vec3(position[0] + size, position[1], position[2] + size),
-                        glm::vec2(textureCoords[22], textureCoords[23]));
+    unsigned int t0 = (textureCoords[4] << 4 | textureCoords[5]) << 2;
+    unsigned int t1 = t0 | 1;
+    unsigned int t2 = t0 | 2;
+    unsigned int t3 = t0 | 3;
+
+    target.emplace_back(glm::vec3(position[0], position[1], position[2] + size), t0);
+    target.emplace_back(glm::vec3(position[0], position[1], position[2]), t1);
+    target.emplace_back(glm::vec3(position[0] + size, position[1], position[2]), t2);
+    target.emplace_back(glm::vec3(position[0] + size, position[1], position[2] + size), t3);
 }
 
 static void CreateFQuad(std::vector<Vertex>& target, const glm::vec3& position,
-                        const std::array<float, 24>& textureCoords) {
+                        const std::array<unsigned char, 6>& textureCoords) {
     float size = 1.0f;
 
-    target.emplace_back(glm::vec3(position[0], position[1], position[2] + size),
-                        glm::vec2(textureCoords[8], textureCoords[9]));
-    target.emplace_back(glm::vec3(position[0] + size, position[1], position[2] + size),
-                        glm::vec2(textureCoords[10], textureCoords[11]));
-    target.emplace_back(glm::vec3(position[0] + size, position[1] + size, position[2] + size),
-                        glm::vec2(textureCoords[12], textureCoords[13]));
-    target.emplace_back(glm::vec3(position[0], position[1] + size, position[2] + size),
-                        glm::vec2(textureCoords[14], textureCoords[15]));
+    unsigned int t0 = (textureCoords[2] << 4 | textureCoords[3]) << 2;
+    unsigned int t1 = t0 | 1;
+    unsigned int t2 = t0 | 2;
+    unsigned int t3 = t0 | 3;
+
+    target.emplace_back(glm::vec3(position[0], position[1], position[2] + size), t0);
+    target.emplace_back(glm::vec3(position[0] + size, position[1], position[2] + size), t1);
+    target.emplace_back(glm::vec3(position[0] + size, position[1] + size, position[2] + size), t2);
+    target.emplace_back(glm::vec3(position[0], position[1] + size, position[2] + size), t3);
 }
 
 static void CreateBQuad(std::vector<Vertex>& target, const glm::vec3& position,
-                        const std::array<float, 24>& textureCoords) {
+                        const std::array<unsigned char, 6>& textureCoords) {
     float size = 1.0f;
 
-    target.emplace_back(glm::vec3(position[0] + size, position[1], position[2]),
-                        glm::vec2(textureCoords[8], textureCoords[9]));
-    target.emplace_back(glm::vec3(position[0], position[1], position[2]),
-                        glm::vec2(textureCoords[10], textureCoords[11]));
-    target.emplace_back(glm::vec3(position[0], position[1] + size, position[2]),
-                        glm::vec2(textureCoords[12], textureCoords[13]));
-    target.emplace_back(glm::vec3(position[0] + size, position[1] + size, position[2]),
-                        glm::vec2(textureCoords[14], textureCoords[15]));
+    unsigned int t0 = (textureCoords[2] << 4 | textureCoords[3]) << 2;
+    unsigned int t1 = t0 | 1;
+    unsigned int t2 = t0 | 2;
+    unsigned int t3 = t0 | 3;
+    target.emplace_back(glm::vec3(position[0] + size, position[1], position[2]), t0);
+    target.emplace_back(glm::vec3(position[0], position[1], position[2]), t1);
+    target.emplace_back(glm::vec3(position[0], position[1] + size, position[2]), t2);
+    target.emplace_back(glm::vec3(position[0] + size, position[1] + size, position[2]), t3);
 }
 
 static void CreateRQuad(std::vector<Vertex>& target, const glm::vec3& position,
-                        const std::array<float, 24>& textureCoords) {
+                        const std::array<unsigned char, 6>& textureCoords) {
     float size = 1.0f;
 
-    target.emplace_back(glm::vec3(position[0] + size, position[1], position[2] + size),
-                        glm::vec2(textureCoords[8], textureCoords[9]));
-    target.emplace_back(glm::vec3(position[0] + size, position[1], position[2]),
-                        glm::vec2(textureCoords[10], textureCoords[11]));
-    target.emplace_back(glm::vec3(position[0] + size, position[1] + size, position[2]),
-                        glm::vec2(textureCoords[12], textureCoords[13]));
-    target.emplace_back(glm::vec3(position[0] + size, position[1] + size, position[2] + size),
-                        glm::vec2(textureCoords[14], textureCoords[15]));
+    unsigned int t0 = (textureCoords[2] << 4 | textureCoords[3]) << 2;
+    unsigned int t1 = t0 | 1;
+    unsigned int t2 = t0 | 2;
+    unsigned int t3 = t0 | 3;
+    target.emplace_back(glm::vec3(position[0] + size, position[1], position[2] + size), t0);
+    target.emplace_back(glm::vec3(position[0] + size, position[1], position[2]), t1);
+    target.emplace_back(glm::vec3(position[0] + size, position[1] + size, position[2]), t2);
+    target.emplace_back(glm::vec3(position[0] + size, position[1] + size, position[2] + size), t3);
 }
 
 static void CreateLQuad(std::vector<Vertex>& target, const glm::vec3& position,
-                        const std::array<float, 24>& textureCoords) {
+                        const std::array<unsigned char, 6>& textureCoords) {
     float size = 1.0f;
 
-    target.emplace_back(glm::vec3(position[0], position[1], position[2]),
-                        glm::vec2(textureCoords[8], textureCoords[9]));
-    target.emplace_back(glm::vec3(position[0], position[1], position[2] + size),
-                        glm::vec2(textureCoords[10], textureCoords[11]));
-    target.emplace_back(glm::vec3(position[0], position[1] + size, position[2] + size),
-                        glm::vec2(textureCoords[12], textureCoords[13]));
-    target.emplace_back(glm::vec3(position[0], position[1] + size, position[2]),
-                        glm::vec2(textureCoords[14], textureCoords[15]));
+    unsigned int t0 = (textureCoords[2] << 4 | textureCoords[3]) << 2;
+    unsigned int t1 = t0 | 1;
+    unsigned int t2 = t0 | 2;
+    unsigned int t3 = t0 | 3;
+
+    target.emplace_back(glm::vec3(position[0], position[1], position[2]), t0);
+    target.emplace_back(glm::vec3(position[0], position[1], position[2] + size), t1);
+    target.emplace_back(glm::vec3(position[0], position[1] + size, position[2] + size), t2);
+    target.emplace_back(glm::vec3(position[0], position[1] + size, position[2]), t3);
 }
 
 // the chunk has a border so that I know what faces to cull between chunks
@@ -257,7 +260,7 @@ void Chunk::GenerateMesh() {
             for (int i = 1; i < XSIZE - 1; i++) {
                 for (int k = 1; k < ZSIZE - 1; k++) {
                     if (m_Chunk(i, j, k) != Block::EMPTY) {
-                        std::array<float, 24> textureCoords = s_TextureMap.at(m_Chunk(i, j, k));
+                        std::array<unsigned char, 6> textureCoords = s_TextureMap.at(m_Chunk(i, j, k));
                         if (m_Chunk(i,j,k) != Block::WATER) {
                             if (j > 0 && 
                                 (m_Chunk(i, j - 1, k) == Block::EMPTY || m_Chunk(i, j - 1, k) == Block::WATER)) { // D
@@ -320,21 +323,20 @@ void Chunk::GenerateMesh() {
     }
 }
 
-// can be called with multithreading if slow
-void Chunk::UpdateMesh(unsigned int x, unsigned int y, unsigned int z, Block block)
-{
-    // take care of border (I think, maybe I also have to do for y or not do this at all)
-    x += 1;
-    z += 1;
-    // check the blocks surrounding the modified block and figure out a way to edit the m_Mesh accordingly
-    for (unsigned int i = x - 1; i <= x + 1; i++) {
-        for (unsigned int k = z - 1; k <= z + 1; k++) {
-            for (unsigned int j = y - 1; j <= y + 1; j++) {
-                // to figure out
-            }
-        }
-    }
-}
+/* void Chunk::UpdateMesh(unsigned int x, unsigned int y, unsigned int z, Block block) */
+/* { */
+/*     // take care of border (I think, maybe I also have to do for y or not do this at all) */
+/*     x += 1; */
+/*     z += 1; */
+/*     // check the blocks surrounding the modified block and figure out a way to edit the m_Mesh accordingly */
+/*     for (unsigned int i = x - 1; i <= x + 1; i++) { */
+/*         for (unsigned int k = z - 1; k <= z + 1; k++) { */
+/*             for (unsigned int j = y - 1; j <= y + 1; j++) { */
+/*                 // to figure out */
+/*             } */
+/*         } */
+/*     } */
+/* } */
 
 void Chunk::Render(const Renderer& renderer)
 {
@@ -364,51 +366,21 @@ glm::vec3 Chunk::GetPosition() const {
     return m_Position;
 }
 
-const std::unordered_map<Block, std::array<float, 24>> Chunk::s_TextureMap =
-    {
-        { Block::GRASS,{0.75, 0.1875, 0.8125, 0.1875, 0.8125, 0.25, 0.75, 0.25, // top
-                            0.1875, 0.9375, 0.25, 0.9375, 0.25, 1.0, 0.1875, 1.0, // side
-                            0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0 } }, //bottom
-        { Block::DIRT,{0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0,
-                       0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0,
-                       0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0 } },
-        { Block::STONE,{0.0625, 0.9375, 0.125, 0.9375, 0.125, 1.0, 0.0625, 1.0,
-                            0.0625, 0.9375, 0.125, 0.9375, 0.125, 1.0, 0.0625, 1.0,
-                            0.0625, 0.9375, 0.125, 0.9375, 0.125, 1.0, 0.0625, 1.0 } },
-        { Block::DIAMOND,{0.125, 0.75, 0.1875, 0.75, 0.1875, 0.8125, 0.125, 0.8125,
-                               0.125, 0.75, 0.1875, 0.75, 0.1875, 0.8125, 0.125, 0.8125,
-                               0.125, 0.75, 0.1875, 0.75, 0.1875, 0.8125, 0.125, 0.8125 } },
-        { Block::GOLD,	{0.0, 0.8125, 0.0625, 0.8125, 0.0625, 0.875, 0.0, 0.875,
-                                0.0, 0.8125, 0.0625, 0.8125, 0.0625, 0.875, 0.0, 0.875,
-                                0.0, 0.8125, 0.0625, 0.8125, 0.0625, 0.875, 0.0, 0.875 } },
-        { Block::COAL,	{0.125, 0.8125, 0.1875, 0.8125, 0.1875, 0.875, 0.125, 0.875,
-                                0.125, 0.8125, 0.1875, 0.8125, 0.1875, 0.875, 0.125, 0.875,
-                                0.125, 0.8125, 0.1875, 0.8125, 0.1875, 0.875, 0.125, 0.875 } },
-        { Block::STEEL,	{0.0625, 0.8125, 0.125, 0.8125, 0.125, 0.875, 0.0625, 0.875,
-                                0.0625, 0.8125, 0.125, 0.8125, 0.125, 0.875, 0.0625, 0.875,
-                                0.0625, 0.8125, 0.125, 0.8125, 0.125, 0.875, 0.0625, 0.875 } },
-        { Block::LEAVES,	{0.6875, 0.0625, 0.75, 0.0625, 0.75, 0.125, 0.6875, 0.125,
-                                0.6875, 0.0625, 0.75, 0.0625, 0.75, 0.125, 0.6875, 0.125,
-                                0.6875, 0.0625, 0.75, 0.0625, 0.75, 0.125, 0.6875, 0.125 } },
-        { Block::WOOD,	{0.3125, 0.875, 0.375, 0.875, 0.375, 0.9375, 0.3125, 0.9375,
-                                0.25, 0.875, 0.3125, 0.875, 0.3125, 0.9375, 0.25, 0.9375,
-                                0.3125, 0.875, 0.375, 0.875, 0.375, 0.9375, 0.3125, 0.9375 } },
-        { Block::SNOW,	{0.125, 0.6875, 0.1875, 0.6875, 0.1875, 0.75, 0.125, 0.75,
-                                0.125, 0.6875, 0.1875, 0.6875, 0.1875, 0.75, 0.125, 0.75,
-                                0.125, 0.6875, 0.1875, 0.6875, 0.1875, 0.75, 0.125, 0.75,} },
-        { Block::SNOWY_GRASS,{0.125, 0.6875, 0.1875, 0.6875, 0.1875, 0.75, 0.125, 0.75,
-                                  0.25, 0.6875, 0.3125, 0.6875, 0.3125, 0.75, 0.25, 0.75,
-                                  0.125, 0.9375, 0.1875, 0.9375, 0.1875, 1.0, 0.125, 1.0 } },
-        { Block::WATER,	{0.9375, 0.125, 1.0, 0.125, 1.0, 0.1875, 0.9375, 0.1875,
-                                0.9375, 0.125, 1.0, 0.125, 1.0, 0.1875, 0.9375, 0.1875,
-                                0.9375, 0.125, 1.0, 0.125, 1.0, 0.1875, 0.9375, 0.1875 } },
-        { Block::SAND,	{0.125, 0.875, 0.1875, 0.875, 0.1875, 0.9375, 0.125, 0.9375,
-                                0.125, 0.875, 0.1875, 0.875, 0.1875, 0.9375, 0.125, 0.9375,
-                                0.125, 0.875, 0.1875, 0.875, 0.1875, 0.9375, 0.125, 0.9375 } },
-        { Block::GRAVEL,	{0.1875, 0.875, 0.25, 0.875, 0.25, 0.9375, 0.1875, 0.9375,
-                                0.1875, 0.875, 0.25, 0.875, 0.25, 0.9375, 0.1875, 0.9375,
-                                0.1875, 0.875, 0.25, 0.875, 0.25, 0.9375, 0.1875, 0.9375 } },
-        { Block::BEDROCK,   {0.0625, 0.875, 0.125, 0.875, 0.125, 0.9375, 0.0625, 0.9375,
-                            0.0625, 0.875, 0.125, 0.875, 0.125, 0.9375, 0.0625, 0.9375,
-                            0.0625, 0.875, 0.125, 0.875, 0.125, 0.9375, 0.0625, 0.9375} },
+const std::unordered_map<Block, std::array<unsigned char, 6>> Chunk::s_TextureMap =
+    {                           // top, side, bottom
+        { Block::GRASS,         { 12, 3, 3, 15, 2, 15 }},
+        { Block::DIRT,          { 2, 15, 2, 15, 2, 15 }},
+        { Block::STONE,         { 1, 15, 1, 15, 1, 15 }},
+        { Block::DIAMOND,       { 2, 12, 2, 12, 2, 12 }},
+        { Block::GOLD,          { 0, 13, 0, 13, 0, 13 }},
+        { Block::COAL,          { 2, 13, 2, 13, 2, 13 }},
+        { Block::IRON,          { 1, 13, 1, 13, 1, 13 }}, 
+        { Block::LEAVES,        { 11, 1, 11, 1, 11, 1 }},
+        { Block::WOOD,          { 5, 14, 4, 14, 5, 14 }},
+        { Block::SNOW,          { 2, 11, 2, 11, 2, 11 }},
+        { Block::SNOWY_GRASS,   { 2, 11, 4, 11, 2, 15 }},
+        { Block::WATER,	        { 15, 3, 15, 3, 15, 3 }},
+        { Block::SAND,	        { 2, 14, 2, 14, 2, 14 }},
+        { Block::GRAVEL,	    { 3, 14, 3, 14, 3, 14 }},
+        { Block::BEDROCK,       { 1, 14, 1, 14, 1, 14 }}    
     };
