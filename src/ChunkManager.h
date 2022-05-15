@@ -11,6 +11,7 @@ public:
 	void InitWorld();
     int SpawnHeight();
 	void GenerateChunks();
+	ChunkCoord CalculateChunkCoord(const glm::vec3& position);
 	//void UpdateChunksToRender();
 	void Render(const Renderer& renderer);
 	void UpdateChunk(ChunkCoord chunk);

@@ -23,6 +23,7 @@ private:
     void UpdateChunks();
     void Move(float deltaTime);
     bool CalculateCollision(glm::vec3* currentPosition, const glm::vec3& playerSpeed, unsigned int chunkSize);
+    std::pair<ChunkCoord, std::array<unsigned int, 3>> GlobalToLocal(const glm::vec3& playerPosition);
 
 	static bool s_FlyMode;
 	static bool s_Ground;
@@ -34,6 +35,7 @@ private:
 	Renderer m_Renderer;
 	ChunkManager m_ChunkManager;
 	ChunkCoord m_LastChunk;
+	ChunkCoord m_SortedChunk;
 	float m_VerticalVelocity;
 	Block m_HoldingBlock;
 };

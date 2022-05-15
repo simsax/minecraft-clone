@@ -45,20 +45,20 @@ static void CreateUQuad(std::vector<unsigned int>& target, const glm::vec3& posi
                         const std::array<unsigned char, 6>& textureCoords) {
     std::array<unsigned int, 4> t = GenerateTextCoords({ textureCoords[0], textureCoords[1] });
     
-    unsigned int v0 = ((int)position[0] + 0) << 25 |
-                      ((int)position[1] + 1) << 18 |
+    unsigned int v0 = ((int)position[0] + 0) << 23 |
+                      ((int)position[1] + 1) << 15 |
                       ((int)position[2] + 1) << 11 | t[0];
 
-    unsigned int v1 = ((int)position[0] + 1) << 25 |
-                      ((int)position[1] + 1) << 18 |
+    unsigned int v1 = ((int)position[0] + 1) << 23 |
+                      ((int)position[1] + 1) << 15 |
                       ((int)position[2] + 1) << 11 | t[1];
 
-    unsigned int v2 = ((int)position[0] + 1) << 25 |
-                      ((int)position[1] + 1) << 18 |
+    unsigned int v2 = ((int)position[0] + 1) << 23 |
+                      ((int)position[1] + 1) << 15 |
                       ((int)position[2] + 0) << 11 | t[2];
 
-    unsigned int v3 = ((int)position[0] + 0) << 25 |
-                      ((int)position[1] + 1) << 18 |
+    unsigned int v3 = ((int)position[0] + 0) << 23 |
+                      ((int)position[1] + 1) << 15 |
                       ((int)position[2] + 0) << 11 | t[3];
 
     PushVertexPos(target, { v0, v1, v2, v3 });
@@ -68,20 +68,20 @@ static void CreateDQuad(std::vector<unsigned int>& target, const glm::vec3& posi
                         const std::array<unsigned char, 6>& textureCoords) {
     std::array<unsigned int, 4> t = GenerateTextCoords({ textureCoords[4], textureCoords[5] });
 
-    unsigned int v0 = ((int)position[0] + 0) << 25 |
-                      ((int)position[1] + 0) << 18 |
+    unsigned int v0 = ((int)position[0] + 0) << 23 |
+                      ((int)position[1] + 0) << 15 |
                       ((int)position[2] + 1) << 11 | t[0];
 
-    unsigned int v1 = ((int)position[0] + 0) << 25 |
-                      ((int)position[1] + 0) << 18 |
+    unsigned int v1 = ((int)position[0] + 0) << 23 |
+                      ((int)position[1] + 0) << 15 |
                       ((int)position[2] + 0) << 11 | t[1];
 
-    unsigned int v2 = ((int)position[0] + 1) << 25 |
-                      ((int)position[1] + 0) << 18 |
+    unsigned int v2 = ((int)position[0] + 1) << 23 |
+                      ((int)position[1] + 0) << 15 |
                       ((int)position[2] + 0) << 11 | t[2];
 
-    unsigned int v3 = ((int)position[0] + 1) << 25 |
-                      ((int)position[1] + 0) << 18 |
+    unsigned int v3 = ((int)position[0] + 1) << 23 |
+                      ((int)position[1] + 0) << 15 |
                       ((int)position[2] + 1) << 11 | t[3];
 
     PushVertexPos(target, { v0, v1, v2, v3 });
@@ -91,20 +91,20 @@ static void CreateFQuad(std::vector<unsigned int>& target, const glm::vec3& posi
                         const std::array<unsigned char, 6>& textureCoords) {
     std::array<unsigned int, 4> t = GenerateTextCoords({ textureCoords[2], textureCoords[3] });
 
-    unsigned int v0 = ((int)position[0] + 0) << 25 |
-                      ((int)position[1] + 0) << 18 |
+    unsigned int v0 = ((int)position[0] + 0) << 23 |
+                      ((int)position[1] + 0) << 15 |
                       ((int)position[2] + 1) << 11 | t[0];
 
-    unsigned int v1 = ((int)position[0] + 1) << 25 |
-                      ((int)position[1] + 0) << 18 |
+    unsigned int v1 = ((int)position[0] + 1) << 23 |
+                      ((int)position[1] + 0) << 15 |
                       ((int)position[2] + 1) << 11 | t[1];
 
-    unsigned int v2 = ((int)position[0] + 1) << 25 |
-                      ((int)position[1] + 1) << 18 |
+    unsigned int v2 = ((int)position[0] + 1) << 23 |
+                      ((int)position[1] + 1) << 15 |
                       ((int)position[2] + 1) << 11 | t[2];
 
-    unsigned int v3 = ((int)position[0] + 0) << 25 |
-                      ((int)position[1] + 1) << 18 |
+    unsigned int v3 = ((int)position[0] + 0) << 23 |
+                      ((int)position[1] + 1) << 15 |
                       ((int)position[2] + 1) << 11 | t[3];
 
     PushVertexPos(target, { v0, v1, v2, v3 });
@@ -114,20 +114,20 @@ static void CreateBQuad(std::vector<unsigned int>& target, const glm::vec3& posi
                         const std::array<unsigned char, 6>& textureCoords) {
     std::array<unsigned int, 4> t = GenerateTextCoords({ textureCoords[2], textureCoords[3] });
     
-    unsigned int v0 = ((int)position[0] + 1) << 25 |
-                      ((int)position[1] + 0) << 18 |
+    unsigned int v0 = ((int)position[0] + 1) << 23 |
+                      ((int)position[1] + 0) << 15 |
                       ((int)position[2] + 0) << 11 | t[0];
 
-    unsigned int v1 = ((int)position[0] + 0) << 25 |
-                      ((int)position[1] + 0) << 18 |
+    unsigned int v1 = ((int)position[0] + 0) << 23 |
+                      ((int)position[1] + 0) << 15 |
                       ((int)position[2] + 0) << 11 | t[1];
 
-    unsigned int v2 = ((int)position[0] + 0) << 25 |
-                      ((int)position[1] + 1) << 18 |
+    unsigned int v2 = ((int)position[0] + 0) << 23 |
+                      ((int)position[1] + 1) << 15 |
                       ((int)position[2] + 0) << 11 | t[2];
 
-    unsigned int v3 = ((int)position[0] + 1) << 25 |
-                      ((int)position[1] + 1) << 18 |
+    unsigned int v3 = ((int)position[0] + 1) << 23 |
+                      ((int)position[1] + 1) << 15 |
                       ((int)position[2] + 0) << 11 | t[3];
 
     PushVertexPos(target, { v0, v1, v2, v3 });
@@ -137,20 +137,20 @@ static void CreateRQuad(std::vector<unsigned int>& target, const glm::vec3& posi
                         const std::array<unsigned char, 6>& textureCoords) {
     std::array<unsigned int, 4> t = GenerateTextCoords({ textureCoords[2], textureCoords[3] });
 
-    unsigned int v0 = ((int)position[0] + 1) << 25 |
-                      ((int)position[1] + 0) << 18 |
+    unsigned int v0 = ((int)position[0] + 1) << 23 |
+                      ((int)position[1] + 0) << 15 |
                       ((int)position[2] + 1) << 11 | t[0];
 
-    unsigned int v1 = ((int)position[0] + 1) << 25 |
-                      ((int)position[1] + 0) << 18 |
+    unsigned int v1 = ((int)position[0] + 1) << 23 |
+                      ((int)position[1] + 0) << 15 |
                       ((int)position[2] + 0) << 11 | t[1];
 
-    unsigned int v2 = ((int)position[0] + 1) << 25 |
-                      ((int)position[1] + 1) << 18 |
+    unsigned int v2 = ((int)position[0] + 1) << 23 |
+                      ((int)position[1] + 1) << 15 |
                       ((int)position[2] + 0) << 11 | t[2];
 
-    unsigned int v3 = ((int)position[0] + 1) << 25 |
-                      ((int)position[1] + 1) << 18 |
+    unsigned int v3 = ((int)position[0] + 1) << 23 |
+                      ((int)position[1] + 1) << 15 |
                       ((int)position[2] + 1) << 11 | t[3];
 
     PushVertexPos(target, { v0, v1, v2, v3 });
@@ -160,20 +160,20 @@ static void CreateLQuad(std::vector<unsigned int>& target, const glm::vec3& posi
                         const std::array<unsigned char, 6>& textureCoords) {
     std::array<unsigned int, 4> t = GenerateTextCoords({ textureCoords[2], textureCoords[3] });
 
-    unsigned int v0 = ((int)position[0] + 0) << 25 |
-                      ((int)position[1] + 0) << 18 |
+    unsigned int v0 = ((int)position[0] + 0) << 23 |
+                      ((int)position[1] + 0) << 15 |
                       ((int)position[2] + 0) << 11 | t[0];
 
-    unsigned int v1 = ((int)position[0] + 0) << 25 |
-                      ((int)position[1] + 0) << 18 |
+    unsigned int v1 = ((int)position[0] + 0) << 23 |
+                      ((int)position[1] + 0) << 15 |
                       ((int)position[2] + 1) << 11 | t[1];
 
-    unsigned int v2 = ((int)position[0] + 0) << 25 |
-                      ((int)position[1] + 1) << 18 |
+    unsigned int v2 = ((int)position[0] + 0) << 23 |
+                      ((int)position[1] + 1) << 15 |
                       ((int)position[2] + 1) << 11 | t[2];
 
-    unsigned int v3 = ((int)position[0] + 0) << 25 |
-                      ((int)position[1] + 1) << 18 |
+    unsigned int v3 = ((int)position[0] + 0) << 23 |
+                      ((int)position[1] + 1) << 15 |
                       ((int)position[2] + 0) << 11 | t[3];
 
     PushVertexPos(target, { v0, v1, v2, v3 });
@@ -399,15 +399,9 @@ void Chunk::GenerateMesh() {
 
 void Chunk::Render(const Renderer& renderer)
 {
-    // I want to render it relative to the center of m_ChunkPosition
-    int xCoord = static_cast<int>(m_ChunkPosition.x - XSIZE / 2);
-    int yCoord = 0;
-    int zCoord = static_cast<int>(m_ChunkPosition.z - ZSIZE / 2);
-    glm::vec3 center(xCoord, yCoord, zCoord);
-
-    renderer.Draw(*m_VAO, *m_IBO, GL_UNSIGNED_INT, center);
+    renderer.Draw(*m_VAO, *m_IBO, GL_UNSIGNED_INT, m_ChunkPosition);
     if (!m_TransparentMesh.empty())
-        renderer.Draw(*m_TransparentVAO, *m_TransparentIBO, GL_UNSIGNED_INT, center);
+        renderer.Draw(*m_TransparentVAO, *m_TransparentIBO, GL_UNSIGNED_INT, m_ChunkPosition);
 }
 
 Matrix3D<Block, XSIZE, YSIZE, ZSIZE> Chunk::GetMatrix() const
@@ -429,6 +423,10 @@ void Chunk::SetMatrix(unsigned int x, unsigned int y, unsigned int z, Block bloc
 
 glm::vec3 Chunk::GetPosition() const {
     return m_ChunkPosition;
+}
+
+glm::vec3 Chunk::GetCenterPosition() const {
+    return glm::vec3(m_ChunkPosition.x + XSIZE/2, m_ChunkPosition.y, m_ChunkPosition.z + ZSIZE/2);
 }
 
 const std::unordered_map<Block, std::array<unsigned char, 6>> Chunk::s_TextureMap =

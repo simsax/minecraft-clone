@@ -17,9 +17,9 @@ vec2 texCoords[4] = vec2[4](
 );
 
 void main() {
-	float x = float((in_VertexCoord & 0xFE000000u) >> 25) + u_ChunkPos.x;
-	float y = float((in_VertexCoord & 0x1FC0000u) >> 18) + u_ChunkPos.y;
-	float z = float((in_VertexCoord & 0x3F800u) >> 11) + u_ChunkPos.z;
+	float x = float((in_VertexCoord & 0x7800000u) >> 23) + u_ChunkPos.x;
+	float y = float((in_VertexCoord & 0x7F8000u) >> 15) + u_ChunkPos.y;
+	float z = float((in_VertexCoord & 0x7800u) >> 11) + u_ChunkPos.z;
 	gl_Position = u_MVP * vec4(x, y, z, 1.0f);
 
 	vec2 texCoord = vec2((in_VertexCoord & 0x3C0u) >> 6u,

@@ -102,6 +102,12 @@ std::array<unsigned int, 3> ChunkManager::GetChunkSize() const
 	return m_ChunkSize;
 }
 
+ChunkCoord ChunkManager::CalculateChunkCoord(const glm::vec3& position) {
+    int chunkPosX = static_cast<int>(std::floor((position.x - 1) / m_ChunkSize[0]));
+    int chunkPosZ = static_cast<int>(std::floor((position.z - 1) / m_ChunkSize[2]));
+	return { chunkPosX, chunkPosZ };
+}
+
 void ChunkManager::LoadChunks()
 {
 //	auto meshFun = [this](ChunkCoord coords) {
@@ -154,15 +160,13 @@ void ChunkManager::LoadChunks()
 
 void ChunkManager::GenerateChunks()
 {
-    int playerPosX = static_cast<int>(std::round(m_PlayerPosition->x / m_ChunkSize[0]));
-    int playerPosZ = static_cast<int>(std::round(m_PlayerPosition->z / m_ChunkSize[2]));
-
+	ChunkCoord chunkCoord = CalculateChunkCoord(*m_PlayerPosition);
     m_ChunksToRender.clear();
 
 //	std::unique_lock<std::mutex> lk(m_Mtx);
     // load chunks
-    for (int i = -m_ViewDistance + playerPosX; i <= m_ViewDistance + playerPosX; i++) {
-        for (int j = -m_ViewDistance + playerPosZ; j <= m_ViewDistance + playerPosZ; j++) {
+    for (int i = -m_ViewDistance + chunkCoord.x; i <= m_ViewDistance + chunkCoord.x; i++) {
+        for (int j = -m_ViewDistance + chunkCoord.z; j <= m_ViewDistance + chunkCoord.z; j++) {
             ChunkCoord coords = { i, j };
             // check if this chunk hasn't already been generated
             if (m_ChunkMap.find(coords) == m_ChunkMap.end()) {
@@ -182,7 +186,7 @@ int ChunkManager::SpawnHeight() {
    int water_level = 63;
    int i;
    for (i = water_level; i < YSIZE; i++) {
-        if (chunk->GetMatrix()(XSIZE / 2, i, ZSIZE / 2) == Block::EMPTY)
+        if (chunk->GetMatrix()(0, i, 0) == Block::EMPTY)
             break;
    }
    return i;
@@ -191,7 +195,7 @@ int ChunkManager::SpawnHeight() {
 void ChunkManager::SortChunks() {
     glm::vec3 playerPos = glm::vec3(m_PlayerPosition->x, 0, m_PlayerPosition->z);
     std::sort(m_ChunksToRender.begin(), m_ChunksToRender.end(), [&playerPos](Chunk* a, Chunk* b) {
-        return glm::length2(playerPos - a->GetPosition()) > glm::length2(playerPos - b->GetPosition());
+        return glm::length2(playerPos - a->GetCenterPosition()) > glm::length2(playerPos - b->GetCenterPosition());
     });
 }
 

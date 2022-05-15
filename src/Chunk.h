@@ -15,9 +15,9 @@
 #include "Matrix3D.hpp"
 #include "Noise.h"
 
-#define XSIZE 18
+#define XSIZE 16
 #define YSIZE 256
-#define ZSIZE 18
+#define ZSIZE 16
 
 enum class Block : unsigned char {
     EMPTY,
@@ -61,6 +61,7 @@ public:
     void SetMatrix(unsigned int x, unsigned int y, unsigned int z, Block block);
     void Render(const Renderer& renderer);
     glm::vec3 GetPosition() const;
+    glm::vec3 GetCenterPosition() const;
 private:
     static const std::unordered_map<Block, std::array<unsigned char, 6>> s_TextureMap;
     /* void UpdateMesh(unsigned int x, unsigned int y, unsigned int z, Block block); */
