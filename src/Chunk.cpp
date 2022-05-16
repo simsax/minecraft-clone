@@ -329,20 +329,16 @@ void Chunk::GenerateMesh() {
                                 (m_Chunk(i, j + 1, k) == Block::EMPTY || m_Chunk(i, j + 1, k) == Block::WATER)) { // U
                                 CreateUQuad(m_Mesh, glm::vec3(i, j, k), textureCoords);
                             }
-                            if (k > 0 && 
-                                (m_Chunk(i, j, k - 1) == Block::EMPTY || m_Chunk(i, j, k - 1) == Block::WATER)) { // B
+                            if (m_Chunk(i, j, k - 1) == Block::EMPTY || m_Chunk(i, j, k - 1) == Block::WATER) { // B
                                 CreateBQuad(m_Mesh, glm::vec3(i, j, k), textureCoords);
                             }
-                            if (k < ZSIZE - 1 && 
-                                (m_Chunk(i, j, k + 1) == Block::EMPTY || m_Chunk(i, j, k + 1) == Block::WATER)) { // F
+                            if (m_Chunk(i, j, k + 1) == Block::EMPTY || m_Chunk(i, j, k + 1) == Block::WATER) { // F
                                 CreateFQuad(m_Mesh, glm::vec3(i, j, k), textureCoords);
                             }
-                            if (i > 0 && 
-                                (m_Chunk(i - 1, j, k) == Block::EMPTY || m_Chunk(i - 1, j, k) == Block::WATER)) { // L
+                            if (m_Chunk(i - 1, j, k) == Block::EMPTY || m_Chunk(i - 1, j, k) == Block::WATER) { // L
                                 CreateLQuad(m_Mesh, glm::vec3(i, j, k), textureCoords);
                             }
-                            if (i < XSIZE - 1 && 
-                                (m_Chunk(i + 1, j, k) == Block::EMPTY || m_Chunk(i + 1, j, k) == Block::WATER)) { // R
+                            if (m_Chunk(i + 1, j, k) == Block::EMPTY || m_Chunk(i + 1, j, k) == Block::WATER) { // R
                                 CreateRQuad(m_Mesh, glm::vec3(i, j, k), textureCoords);
                             }
                         } else { // add to transparent buffer
@@ -352,16 +348,16 @@ void Chunk::GenerateMesh() {
                             if (j < YSIZE - 1 && m_Chunk(i, j + 1, k) == Block::EMPTY) { // U
                                 CreateUQuad(m_TransparentMesh, glm::vec3(i, j, k), textureCoords);
                             }
-                            if (k > 0 && m_Chunk(i, j, k - 1) == Block::EMPTY) { // B
+                            if (m_Chunk(i, j, k - 1) == Block::EMPTY) { // B
                                 CreateBQuad(m_TransparentMesh, glm::vec3(i, j, k), textureCoords);
                             }
-                            if (k < ZSIZE - 1 && m_Chunk(i, j, k + 1) == Block::EMPTY) { // F
+                            if (m_Chunk(i, j, k + 1) == Block::EMPTY) { // F
                                 CreateFQuad(m_TransparentMesh, glm::vec3(i, j, k), textureCoords);
                             }
-                            if (i > 0 && m_Chunk(i - 1, j, k) == Block::EMPTY) { // L
+                            if (m_Chunk(i - 1, j, k) == Block::EMPTY) { // L
                                 CreateLQuad(m_TransparentMesh, glm::vec3(i, j, k), textureCoords);
                             }
-                            if (i < XSIZE - 1 && m_Chunk(i + 1, j, k) == Block::EMPTY) { // R
+                            if (m_Chunk(i + 1, j, k) == Block::EMPTY) { // R
                                 CreateRQuad(m_TransparentMesh, glm::vec3(i, j, k), textureCoords);
                             }
                         }
