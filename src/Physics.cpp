@@ -8,9 +8,10 @@ Aabb physics::CreateBlockAabb(glm::vec3 position) {
 }
 
 Aabb physics::CreatePlayerAabb(glm::vec3 position) {
-    Aabb bbox = { position.x - 0.3f, position.x + 0.3f,
-                  position.y - 1.6f, position.y + 0.2f,
-                  position.z - 0.3f, position.z + 0.3f};
+    float eps = 0.0001f;
+    Aabb bbox = { position.x - 0.3f - eps, position.x + 0.3f + eps,
+                  position.y - 1.6f - eps, position.y + 0.2f + eps,
+                  position.z - 0.3f - eps, position.z + 0.3f + eps};
     return bbox;
 }
 
@@ -21,19 +22,18 @@ bool physics::Intersect(Aabb a, Aabb b) {
 }
 
 void physics::SnapAabb(Aabb player, Aabb block, const glm::vec3& playerSpeed, glm::vec3* currentPosition) {
-    float epsilon = 0.0001f;
     if (playerSpeed.x > 0)
-        currentPosition->x += block.minX - player.maxX - epsilon;
+        currentPosition->x += block.minX - player.maxX;
     else if (playerSpeed.x < 0)
-        currentPosition->x += block.maxX - player.minX + epsilon;
+        currentPosition->x += block.maxX - player.minX;
     if (playerSpeed.y > 0)
-        currentPosition->y += block.minY - player.maxY - epsilon;
+        currentPosition->y += block.minY - player.maxY;
     else if (playerSpeed.y < 0)
-        currentPosition->y += block.maxY - player.minY + epsilon;
+        currentPosition->y += block.maxY - player.minY;
     if (playerSpeed.z > 0)
-        currentPosition->z += block.minZ - player.maxZ - epsilon;
+        currentPosition->z += block.minZ - player.maxZ;
     else if (playerSpeed.z < 0)
-        currentPosition->z += block.maxZ - player.minZ + epsilon;
+        currentPosition->z += block.maxZ - player.minZ;
 }
 
 float physics::AabbDistance(Aabb a, Aabb b) {

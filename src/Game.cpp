@@ -18,7 +18,7 @@ bool Game::s_Ground = false;
 bool Game::s_RightButton = false;
 bool Game::s_LeftButton = false;
 
-static const float GRAVITY = 35.0f;
+static const float GRAVITY = 37.0f;
 
 static int mod(int a, int b) {
     int res = a % b; 
@@ -188,23 +188,19 @@ void Game::Move(float deltaTime) {
 
     if (collidedx)
         playerSpeed.x = 0;
-    if (collidedy)
+    if (collidedy) {
+        if (!s_FlyMode && playerSpeed.y < 0) {
+            s_Ground = true;
+        }
         playerSpeed.y = 0;
+    } else {
+        s_Ground = false;
+    }
     if (collidedz)
         playerSpeed.z = 0;
 
     *currentPosition += playerSpeed;
 
-    if (!s_FlyMode) {
-        // check if block below me is solid
-        std::pair<ChunkCoord, std::array<unsigned int, 3>> localPos = GlobalToLocal(*currentPosition);
-        Chunk *chunk = &m_ChunkManager.m_ChunkMap.find(localPos.first)->second;
-        if (chunk->GetMatrix()(localPos.second[0], localPos.second[1] - 1.61, localPos.second[2]) != Block::EMPTY) {
-            s_Ground = true;
-        } else {
-            s_Ground = false;
-        }
-    }
     if (currentPosition->y < 0)
         currentPosition->y = 0;
     else if (currentPosition->y > m_ChunkManager.GetChunkSize()[1] - 1)
@@ -217,7 +213,7 @@ void Game::ApplyGravity(float deltaTime)
         if (!s_Ground)
             m_VerticalVelocity += -GRAVITY * deltaTime;
         else
-            m_VerticalVelocity = 0;
+            m_VerticalVelocity = -GRAVITY * deltaTime;
         glm::vec3 velocity = camera.GetCameraSpeed();
         camera.SetCameraSpeed(glm::vec3(velocity.x, velocity.y + m_VerticalVelocity, velocity.z));
     }
@@ -325,10 +321,12 @@ void Game::CheckRayCast() {
                     UpdateNeighbor(currentVoxel, chunkSize, targetLocalCoord, Block::EMPTY);
                 }
             }
-        } else if (s_RightButton &&
-                !(previousVoxel.x == std::floor(playerPos->x) && previousVoxel.y == std::floor(playerPos->y) &&
-                  previousVoxel.z == std::floor(playerPos->z)) && !(previousVoxel.x == std::floor(playerPos->x) &&
-                  previousVoxel.y == std::floor(playerPos->y - 1.5) && previousVoxel.z == std::floor(playerPos->z))) {
+        } else if (s_RightButton && 
+                    !physics::Intersect(
+                        physics::CreatePlayerAabb(*playerPos),
+                        physics::CreateBlockAabb(previousVoxel)
+                    )
+                ) {
             previousChunk->SetMatrix(previousLocalVoxel[0], previousLocalVoxel[1], previousLocalVoxel[2], m_HoldingBlock);
             m_ChunkManager.UpdateChunk(previousChunkCoord);
             // check if the target is in the chunk border
@@ -346,7 +344,7 @@ void Game::CheckRayCast() {
 void Game::CheckJump()
 {
     if (s_Jump) {
-        m_VerticalVelocity += 9.0f;
+        m_VerticalVelocity += 10.0f;
         s_Jump = false;
         s_Ground = false;
     }
