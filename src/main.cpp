@@ -1,7 +1,8 @@
 #include "Window.h"
 #include "Game.h"
 
-int main() {
+int main()
+{
 	Game game;
 	Window window(&game, 1920, 1080, "Minecraft 2");
 	window.WindowLoop();

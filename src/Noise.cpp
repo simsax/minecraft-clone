@@ -4,13 +4,14 @@
 /* const unsigned int Noise::seed = time(NULL); */
 const unsigned int Noise::seed = 1;
 
-Noise::Noise() {
+Noise::Noise()
+{
     m_FastNoise.SetSeed(seed);
     m_FastNoise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
 }
 
 float Noise::CombinedNoise(int xCoord, int yCoord, unsigned int octaves, float frequency,
-                         float lacunarity, float amplitude)
+                           float lacunarity, float amplitude)
 {
     int offset = static_cast<int>(OctaveNoise(xCoord, yCoord, octaves, frequency, lacunarity, amplitude));
     return OctaveNoise(xCoord + offset, yCoord, octaves, frequency, lacunarity, amplitude);

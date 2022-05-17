@@ -8,11 +8,11 @@ float Window::lastY = 540.0f;
 float Window::mouseSensitivity = 0.1f;
 bool Window::wireframe = false;
 
-Window::Window(Game* game, int width, int height, std::string name) :
-	m_Game(game), m_Width(width), m_Height(height), m_Name(std::move(name))
+Window::Window(Game *game, int width, int height, std::string name) : m_Game(game), m_Width(width), m_Height(height), m_Name(std::move(name))
 {
 	// initialize GLFW
-	if (!glfwInit()) {
+	if (!glfwInit())
+	{
 		throw std::runtime_error("Failed to initialize GLFW");
 	}
 
@@ -25,7 +25,8 @@ Window::Window(Game* game, int width, int height, std::string name) :
 #endif
 
 	m_Window = glfwCreateWindow(width, height, m_Name.c_str(), NULL, NULL);
-	if (!m_Window) {
+	if (!m_Window)
+	{
 		throw std::runtime_error("Failed to open GLFW window");
 	}
 	glfwMakeContextCurrent(m_Window);
@@ -33,7 +34,8 @@ Window::Window(Game* game, int width, int height, std::string name) :
 	glfwSwapInterval(0); // enables v-sync
 
 	// initialize glew
-	if (glewInit() != GLEW_OK) {
+	if (glewInit() != GLEW_OK)
+	{
 		throw std::runtime_error("Failed to initialize GLEW");
 	}
 	std::cout << glGetString(GL_VERSION) << std::endl;
@@ -55,33 +57,36 @@ Window::Window(Game* game, int width, int height, std::string name) :
 	m_Game->Init();
 }
 
-void Window::WindowLoop() {
+void Window::WindowLoop()
+{
 	float currentFrame = 0.0f, deltaTime = 0.0f, lastFrame = 0.0f;
-//#ifndef NDEBUG
+	//#ifndef NDEBUG
 	float prevTime = 0.0f, crntTime = 0.0f;
 	unsigned int nFrames = 0;
-//#endif
-	while (!glfwWindowShouldClose(m_Window)) {
+	//#endif
+	while (!glfwWindowShouldClose(m_Window))
+	{
 		currentFrame = static_cast<float>(glfwGetTime());
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
-//#ifndef NDEBUG
+		//#ifndef NDEBUG
 		crntTime = static_cast<float>(glfwGetTime());
 		nFrames++;
-		if (crntTime - prevTime >= 1.0) {
+		if (crntTime - prevTime >= 1.0)
+		{
 			std::string fps = std::to_string(nFrames);
-			std::string ms = std::to_string(1000.0/nFrames);
+			std::string ms = std::to_string(1000.0 / nFrames);
 			glm::vec3 playerPos = m_Game->GetPlayerPosition();
 			std::string newTitle = "Minecraft 2 - " + fps + "FPS / " + ms + "ms" +
-					"  -  PlayerPos: " + std::to_string(playerPos.x) +
-					"," + std::to_string(playerPos.y) +
-					"," + std::to_string(playerPos.z);
+								   "  -  PlayerPos: " + std::to_string(playerPos.x) +
+								   "," + std::to_string(playerPos.y) +
+								   "," + std::to_string(playerPos.z);
 			glfwSetWindowTitle(m_Window, newTitle.c_str());
 			prevTime = crntTime;
 			nFrames = 0;
 		}
-//#endif
+		//#endif
 
 		glfwPollEvents();
 
@@ -94,11 +99,12 @@ void Window::WindowLoop() {
 }
 
 // camera input
-void Window::MouseCallback(GLFWwindow* window, double xpos, double ypos)
+void Window::MouseCallback(GLFWwindow *window, double xpos, double ypos)
 {
-	Game* game;
-    game = (Game *)glfwGetWindowUserPointer(window);
-	if (firstMouse) {
+	Game *game;
+	game = (Game *)glfwGetWindowUserPointer(window);
+	if (firstMouse)
+	{
 		lastX = static_cast<float>(xpos);
 		lastY = static_cast<float>(ypos);
 		firstMouse = false;
@@ -113,43 +119,44 @@ void Window::MouseCallback(GLFWwindow* window, double xpos, double ypos)
 	game->ProcessMouse(xoffset, yoffset);
 }
 
-void Window::MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+void Window::MouseButtonCallback(GLFWwindow *window, int button, int action, int mods)
 {
-	Game* game;
-    game = (Game *)glfwGetWindowUserPointer(window);
+	Game *game;
+	game = (Game *)glfwGetWindowUserPointer(window);
 
-    if (action == GLFW_PRESS)
-        game->KeyPressed[button] = true;
-    else if (action == GLFW_RELEASE)
-        game->KeyPressed[button] = false;
+	if (action == GLFW_PRESS)
+		game->KeyPressed[button] = true;
+	else if (action == GLFW_RELEASE)
+		game->KeyPressed[button] = false;
 }
 
-void Window::KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+void Window::KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
-	Game* game;
-    game = (Game *)glfwGetWindowUserPointer(window);
+	Game *game;
+	game = (Game *)glfwGetWindowUserPointer(window);
 
-    if (key == GLFW_KEY_CAPS_LOCK && action == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-	if (key == GLFW_KEY_Z && action == GLFW_PRESS) { // toggle wireframe mode
+	if (key == GLFW_KEY_CAPS_LOCK && action == GLFW_PRESS)
+		glfwSetWindowShouldClose(window, true);
+	if (key == GLFW_KEY_Z && action == GLFW_PRESS)
+	{ // toggle wireframe mode
 		wireframe = !wireframe;
 		if (wireframe)
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		else
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
-    if(key == GLFW_KEY_UNKNOWN)
+	if (key == GLFW_KEY_UNKNOWN)
 		return;
-    if (action == GLFW_PRESS)
-        game->KeyPressed[key] = true;
-    else if (action == GLFW_RELEASE)
-        game->KeyPressed[key] = false;
+	if (action == GLFW_PRESS)
+		game->KeyPressed[key] = true;
+	else if (action == GLFW_RELEASE)
+		game->KeyPressed[key] = false;
 }
 
 void GLAPIENTRY Window::MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity,
-                                              GLsizei length, const GLchar* message, const void* userParam)
+										GLsizei length, const GLchar *message, const void *userParam)
 {
 	fprintf(stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
-		(type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
-		type, severity, message);
+			(type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
+			type, severity, message);
 }

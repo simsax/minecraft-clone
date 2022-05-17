@@ -1,4 +1,5 @@
 # minecraft-clone
+
 Hi everyone!
 
 Since spending several hours a day in front of a computer doing university stuff is not enough, I decided to spend even more hours trying to figure out how OpenGL works.

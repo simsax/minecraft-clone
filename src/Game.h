@@ -13,20 +13,20 @@ public:
 	void ProcessMouse(float xoffset, float yoffset);
 	std::array<bool, GLFW_KEY_LAST> KeyPressed;
 
-/* #ifndef  NDEBUG */
+	/* #ifndef  NDEBUG */
 	glm::vec3 GetPlayerPosition();
-/* #endif */
+	/* #endif */
 
 private:
 	void CheckRayCast();
 	void ApplyGravity(float deltaTime);
 	void CheckJump();
-    void UpdateNeighbor(glm::vec3 currentVoxel, unsigned int chunkSize, ChunkCoord targetLocalCoord, Block block);
-    void UpdateChunks();
-    void Move(float deltaTime);
+	void UpdateNeighbor(glm::vec3 currentVoxel, unsigned int chunkSize, ChunkCoord targetLocalCoord, Block block);
+	void UpdateChunks();
+	void Move(float deltaTime);
 	void HandleInput();
-    bool CalculateCollision(glm::vec3* currentPosition, const glm::vec3& playerSpeed, unsigned int chunkSize);
-    std::pair<ChunkCoord, std::array<unsigned int, 3>> GlobalToLocal(const glm::vec3& playerPosition);
+	bool CalculateCollision(glm::vec3 *currentPosition, const glm::vec3 &playerSpeed, unsigned int chunkSize);
+	std::pair<ChunkCoord, std::array<unsigned int, 3>> GlobalToLocal(const glm::vec3 &playerPosition);
 
 	bool m_Ground;
 	bool m_Jump;
