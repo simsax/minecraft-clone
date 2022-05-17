@@ -7,13 +7,15 @@ class Game
 {
 public:
 	Game();
+	void Init();
 	void OnUpdate(float deltaTime);
 	void OnRender();
-	static void ProcessKey(cam::Key key);
-	static void ProcessLeftMouseButton();
-	static void ProcessRightMouseButton();
-	static cam::Camera camera; // to refactor
-    static void ProcessKeyboard(const std::array<cam::Key, static_cast<int>(cam::Key::Key_MAX) + 1>& keyPressed);
+	void ProcessMouse(float xoffset, float yoffset);
+	std::array<bool, GLFW_KEY_LAST> KeyPressed;
+	
+/* #ifndef  NDEBUG */
+	glm::vec3 GetPlayerPosition();
+/* #endif */
 
 private:
 	void CheckRayCast();
@@ -22,16 +24,14 @@ private:
     void UpdateNeighbor(glm::vec3 currentVoxel, unsigned int chunkSize, ChunkCoord targetLocalCoord, Block block);
     void UpdateChunks();
     void Move(float deltaTime);
+	void HandleInput();
     bool CalculateCollision(glm::vec3* currentPosition, const glm::vec3& playerSpeed, unsigned int chunkSize);
     std::pair<ChunkCoord, std::array<unsigned int, 3>> GlobalToLocal(const glm::vec3& playerPosition);
 
-	static bool s_FlyMode;
-	static bool s_Ground;
-	static bool s_Jump;
-	static bool s_RightButton;
-	static bool s_LeftButton;
-
+	bool m_Ground;
+	bool m_Jump;
 	glm::mat4 m_Proj;
+	Camera m_Camera;
 	Renderer m_Renderer;
 	ChunkManager m_ChunkManager;
 	ChunkCoord m_LastChunk;

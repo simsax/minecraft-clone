@@ -82,9 +82,17 @@ void ChunkManager::Render(const Renderer& renderer)
         m_NewChunks = false;
         SortChunks();
     }
-	for (auto& chunk : m_ChunksToRender) {
-		chunk->Render(renderer);
+	for (Chunk* chunk : m_ChunksToRender) {
+		if (IsInFrustum(chunk))
+			chunk->Render(renderer);
 	}
+}
+
+bool ChunkManager::IsInFrustum(Chunk* chunk) {
+	if (chunk->GetCenterPosition().z <= 0)
+		return true;
+	else
+		return false;
 }
 
 void ChunkManager::UpdateChunk(ChunkCoord chunk)

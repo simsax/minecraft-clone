@@ -23,6 +23,7 @@ public:
 private:
     void SortChunks();
 	void LoadChunks();
+	bool IsInFrustum(Chunk* chunk);
 	std::array<unsigned int, 3> m_ChunkSize;
 	std::future<std::vector<std::pair<ChunkCoord, Chunk>>> m_FutureChunks;
 	VertexBufferLayout m_VertexLayout;

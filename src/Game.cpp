@@ -11,13 +11,6 @@
 
 using namespace std::chrono_literals;
 
-cam::Camera Game::camera = glm::vec3(0.0f, 0.0f, 0.0f);
-bool Game::s_FlyMode = true;
-bool Game::s_Jump = false;
-bool Game::s_Ground = false;
-bool Game::s_RightButton = false;
-bool Game::s_LeftButton = false;
-
 static const float GRAVITY = 37.0f;
 
 static int mod(int a, int b) {
@@ -36,13 +29,19 @@ std::pair<ChunkCoord, std::array<unsigned int, 3>> Game::GlobalToLocal(const glm
 }
 
 Game::Game() :
-        m_Proj(glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 600.0f)),
-        m_ChunkManager(camera.GetPlayerPosition()),
-        m_VerticalVelocity(0.0f),
-        m_LastChunk({0,0}),
-        m_SortedChunk({0,0}),
-        m_HoldingBlock(Block::STONE)
-{
+    KeyPressed({}),
+    m_Ground(false),
+    m_Jump(false),
+    m_Proj(glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 600.0f)),
+    m_Camera(glm::vec3(0.0f, 0.0f, 0.0f)),
+    m_ChunkManager(m_Camera.GetPlayerPosition()),
+    m_VerticalVelocity(0.0f),
+    m_LastChunk({0,0}),
+    m_SortedChunk({0,0}),
+    m_HoldingBlock(Block::STONE)
+{}
+
+void Game::Init() {
     // depth testing
     glEnable(GL_DEPTH_TEST);
 
@@ -58,11 +57,12 @@ Game::Game() :
     m_Renderer.Init();
     m_ChunkManager.InitWorld();
     // spawn player over a block
-    camera.GetPlayerPosition()->y += static_cast<float>(m_ChunkManager.SpawnHeight() + 1.6 + 3);
+    m_Camera.GetPlayerPosition()->y += static_cast<float>(m_ChunkManager.SpawnHeight() + 1.6 + 3);
 }
 
 void Game::OnUpdate(float deltaTime)
 {
+    HandleInput();
     CheckJump();
     CheckRayCast();
     ApplyGravity(deltaTime);
@@ -75,63 +75,51 @@ void Game::OnRender()
     glClearColor(173.0f / 255.0f, 223.0f / 255.0f, 230.0f / 255.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glm::mat4 mvp = m_Proj * camera.GetViewMatrix() * glm::mat4(1.0f);
+    glm::mat4 mvp = m_Proj * m_Camera.GetViewMatrix() * glm::mat4(1.0f);
     m_Renderer.SetMVP(mvp);
 
     m_ChunkManager.Render(m_Renderer);
 }
 
-void Game::ProcessKey(cam::Key key)
-{
-    switch (key)
-    {
-        case cam::Key::F:
-            s_FlyMode = !s_FlyMode;
-            camera.SetFlyMode(s_FlyMode);
-            break;
-        case cam::Key::SPACE:
-            if (s_Ground && !s_FlyMode && !s_Jump) {
-                s_Jump = true;
-            }
-            break;
-        default:
-            break;
-    }
+void Game::HandleInput() {
+    m_Camera.HandleInput(KeyPressed);
+    if (KeyPressed[GLFW_KEY_F])
+        m_Camera.ToggleFlyMode();
+    if (KeyPressed[GLFW_KEY_SPACE] && m_Ground && !m_Camera.GetFlyMode() && !m_Jump)
+        m_Jump = true;
 }
 
-void Game::ProcessLeftMouseButton()
-{
-    s_LeftButton = true;
+void Game::ProcessMouse(float xoffset, float yoffset) {
+    m_Camera.ProcessMouse(xoffset, yoffset);
 }
 
-void Game::ProcessRightMouseButton()
-{
-    s_RightButton = true;
+glm::vec3 Game::GetPlayerPosition() {
+    return *m_Camera.GetPlayerPosition();
 }
 
 bool Game::CalculateCollision(glm::vec3* currentPosition, const glm::vec3& playerSpeed, unsigned int chunkSize) {
     glm::vec3 finalPosition = *currentPosition + playerSpeed;
     int startX, endX, startY, endY, startZ, endZ;
     if (finalPosition.x >= currentPosition->x) {
-        startX = std::floor(currentPosition->x - 0.3);
-        endX = std::floor(finalPosition.x + 0.3);
+        startX = std::floor(currentPosition->x - 0.3f);
+        endX = std::floor(finalPosition.x + 0.3f);
     } else {
-        startX = std::floor(finalPosition.x - 0.3);
-        endX = std::floor(currentPosition->x + 0.3);
+        startX = std::floor(finalPosition.x - 0.3f);
+        endX = std::floor(currentPosition->x + 0.3f);
     }
     if (finalPosition.y >= currentPosition->y) {
-        startY = std::floor(currentPosition->y - 1.6);
-        endY = std::floor(finalPosition.y + 0.2);
+        startY = std::floor(currentPosition->y - 1.6f);
+        endY = std::floor(finalPosition.y + 0.2f);
     } else {
-        startY = std::floor(finalPosition.y - 1.6);
-        endY = std::floor(currentPosition->y + 0.2);
+        startY = std::floor(finalPosition.y - 1.6f);
+        endY = std::floor(currentPosition->y + 0.2f);
     }
     if (finalPosition.z >= currentPosition->z) {
-        startZ = std::floor(currentPosition->z - 0.3);
-        endZ = std::floor(finalPosition.z + 0.3);
+        startZ = std::floor(currentPosition->z - 0.3f);
+        endZ = std::floor(finalPosition.z + 0.3f);
     } else {
-        startZ = std::floor(finalPosition.z - 0.3);
-        endZ = std::floor(currentPosition->z + 0.3);
+        startZ = std::floor(finalPosition.z - 0.3f);
+        endZ = std::floor(currentPosition->z + 0.3f);
     }
 
     Aabb playerBbox = physics::CreatePlayerAabb(*currentPosition);
@@ -152,9 +140,9 @@ bool Game::CalculateCollision(glm::vec3* currentPosition, const glm::vec3& playe
 }
 
 void Game::Move(float deltaTime) {
-    glm::vec3 *currentPosition = camera.GetPlayerPosition();
+    glm::vec3 *currentPosition = m_Camera.GetPlayerPosition();
     unsigned int chunkSize = m_ChunkManager.GetChunkSize()[0];
-    glm::vec3 playerSpeed = camera.GetCameraSpeed() * deltaTime; // the destination in the next frame
+    glm::vec3 playerSpeed = m_Camera.GetCameraSpeed() * deltaTime; // the destination in the next frame
 
     bool collidedx, collidedy, collidedz;
     if (playerSpeed.x < playerSpeed.y && playerSpeed.x < playerSpeed.z) {
@@ -189,12 +177,12 @@ void Game::Move(float deltaTime) {
     if (collidedx)
         playerSpeed.x = 0;
     if (collidedy) {
-        if (!s_FlyMode && playerSpeed.y < 0) {
-            s_Ground = true;
+        if (!m_Camera.GetFlyMode() && playerSpeed.y < 0) {
+            m_Ground = true;
         }
         playerSpeed.y = 0;
     } else {
-        s_Ground = false;
+        m_Ground = false;
     }
     if (collidedz)
         playerSpeed.z = 0;
@@ -209,20 +197,20 @@ void Game::Move(float deltaTime) {
 
 void Game::ApplyGravity(float deltaTime)
 {
-    if (!s_FlyMode) {
-        if (!s_Ground)
+    if (!m_Camera.GetFlyMode()) {
+        if (!m_Ground)
             m_VerticalVelocity += -GRAVITY * deltaTime;
         else
             m_VerticalVelocity = -GRAVITY * deltaTime;
-        glm::vec3 velocity = camera.GetCameraSpeed();
-        camera.SetCameraSpeed(glm::vec3(velocity.x, velocity.y + m_VerticalVelocity, velocity.z));
+        glm::vec3 velocity = m_Camera.GetCameraSpeed();
+        m_Camera.SetCameraSpeed(glm::vec3(velocity.x, velocity.y + m_VerticalVelocity, velocity.z));
     }
 }
 
 void Game::CheckRayCast() {
-    glm::vec3* playerPos = camera.GetPlayerPosition();
+    glm::vec3* playerPos = m_Camera.GetPlayerPosition();
 	unsigned int chunkSize = m_ChunkManager.GetChunkSize()[0];
-	glm::vec3 playerDir = camera.GetPlayerDirection();
+	glm::vec3 playerDir = m_Camera.GetPlayerDirection();
 	float Sx = std::abs(1 / playerDir.x);
 	float Sy = std::abs(1 / playerDir.y);
 	float Sz = std::abs(1 / playerDir.z);
@@ -307,8 +295,9 @@ void Game::CheckRayCast() {
 		}
 	}
 
+    // TODO: split this method here
     if (voxelFound) {
-        if (s_LeftButton) {
+        if (KeyPressed[GLFW_MOUSE_BUTTON_LEFT]) {
             m_HoldingBlock = targetChunk->GetMatrix()(targetLocalVoxel[0], targetLocalVoxel[1], targetLocalVoxel[2]);
             if (m_HoldingBlock == Block::BEDROCK) {
                 m_HoldingBlock = Block::EMPTY;
@@ -321,7 +310,7 @@ void Game::CheckRayCast() {
                     UpdateNeighbor(currentVoxel, chunkSize, targetLocalCoord, Block::EMPTY);
                 }
             }
-        } else if (s_RightButton && 
+        } else if (KeyPressed[GLFW_MOUSE_BUTTON_RIGHT] && 
                     !physics::Intersect(
                         physics::CreatePlayerAabb(*playerPos),
                         physics::CreateBlockAabb(previousVoxel)
@@ -336,22 +325,22 @@ void Game::CheckRayCast() {
             }
         }
     }
-    s_LeftButton = false;
-    s_RightButton = false;
+    KeyPressed[GLFW_MOUSE_BUTTON_LEFT] = false;
+    KeyPressed[GLFW_MOUSE_BUTTON_RIGHT] = false;
 }
 
 
 void Game::CheckJump()
 {
-    if (s_Jump) {
+    if (m_Jump) {
         m_VerticalVelocity += 10.0f;
-        s_Jump = false;
-        s_Ground = false;
+        m_Jump = false;
+        m_Ground = false;
     }
 }
 
 void Game::UpdateChunks() {
-    ChunkCoord currentChunk = m_ChunkManager.CalculateChunkCoord(*camera.GetPlayerPosition());
+    ChunkCoord currentChunk = m_ChunkManager.CalculateChunkCoord(*m_Camera.GetPlayerPosition());
     if (m_SortedChunk != currentChunk) {
         m_SortedChunk = currentChunk;
         m_ChunkManager.SetNewChunks();
@@ -399,8 +388,4 @@ void Game::UpdateNeighbor(glm::vec3 currentVoxel, unsigned int chunkSize, ChunkC
         }
         currentVoxel.z += 1;
     }
-}
-
-void Game::ProcessKeyboard(const std::array<cam::Key, (int) cam::Key::Key_MAX + 1> &keyPressed) {
-    camera.ProcessKeyboard(keyPressed);
 }
