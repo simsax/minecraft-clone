@@ -21,7 +21,7 @@ public:
 	T operator()(unsigned int i, unsigned int j, unsigned int k) const;
 private:
     unsigned int m_Log2XZSize;
-	unsigned int m_Log2Z;	
+	unsigned int m_Log2Z;
 	T* m_Data;
 };
 

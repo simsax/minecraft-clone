@@ -22,7 +22,7 @@ Window::Window(Game* game, int width, int height, std::string name) :
 #ifndef NDEBUG
 	// During init, enable debug output
 	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
-#endif		
+#endif
 
 	m_Window = glfwCreateWindow(width, height, m_Name.c_str(), NULL, NULL);
 	if (!m_Window) {
@@ -51,7 +51,7 @@ Window::Window(Game* game, int width, int height, std::string name) :
 //	glDebugMessageCallback(Window::MessageCallback, 0);
 //	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
 #endif
-	
+
 	m_Game->Init();
 }
 
@@ -138,8 +138,8 @@ void Window::KeyCallback(GLFWwindow* window, int key, int scancode, int action, 
 		else
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
-    if(key == GLFW_KEY_UNKNOWN) 
-		return; 
+    if(key == GLFW_KEY_UNKNOWN)
+		return;
     if (action == GLFW_PRESS)
         game->KeyPressed[key] = true;
     else if (action == GLFW_RELEASE)

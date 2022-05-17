@@ -19,7 +19,7 @@ float Noise::CombinedNoise(int xCoord, int yCoord, unsigned int octaves, float f
 float Noise::OctaveNoise(int xCoord, int yCoord, unsigned int octaves, float frequency,
                          float lacunarity, float amplitude)
 {
-    m_FastNoise.SetFrequency(frequency); 
+    m_FastNoise.SetFrequency(frequency);
     m_FastNoise.SetFractalType(FastNoiseLite::FractalType_FBm);
     m_FastNoise.SetFractalOctaves(octaves);
     m_FastNoise.SetFractalLacunarity(lacunarity);

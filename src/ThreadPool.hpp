@@ -20,7 +20,7 @@ private:
 	std::condition_variable m_Cv;
 };
 
-ThreadPool::ThreadPool() : 
+ThreadPool::ThreadPool() :
 	m_Shutdown(false)
 {
 	int nThreads = std::thread::hardware_concurrency();

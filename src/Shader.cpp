@@ -8,7 +8,7 @@
 
 Shader::Shader(const std::string& folderPath)
 {
-	ShaderProgramSource source = ParseShader(folderPath);	
+	ShaderProgramSource source = ParseShader(folderPath);
 	m_RendererID = CreateShader(source.VertexSource, source.FragmentSource);
 }
 
@@ -123,7 +123,7 @@ static std::string ReadFile(const std::string& filePath) {
 	while (getline(stream, line)) {
 		ss << line << "\n";
 	}
-	
+
 	return ss.str();
 }
 

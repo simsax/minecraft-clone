@@ -44,7 +44,7 @@ static void PushVertexPos(std::vector<unsigned int>& target, const std::array<un
 static void CreateUQuad(std::vector<unsigned int>& target, const glm::vec3& position,
                         const std::array<unsigned char, 6>& textureCoords) {
     std::array<unsigned int, 4> t = GenerateTextCoords({ textureCoords[0], textureCoords[1] });
-    
+
     unsigned int v0 = ((int)position[0] + 0) << 23 |
                       ((int)position[1] + 1) << 15 |
                       ((int)position[2] + 1) << 11 | t[0];
@@ -113,7 +113,7 @@ static void CreateFQuad(std::vector<unsigned int>& target, const glm::vec3& posi
 static void CreateBQuad(std::vector<unsigned int>& target, const glm::vec3& position,
                         const std::array<unsigned char, 6>& textureCoords) {
     std::array<unsigned int, 4> t = GenerateTextCoords({ textureCoords[2], textureCoords[3] });
-    
+
     unsigned int v0 = ((int)position[0] + 1) << 23 |
                       ((int)position[1] + 0) << 15 |
                       ((int)position[2] + 0) << 11 | t[0];
@@ -266,7 +266,7 @@ void Chunk::FastFill() {
 }
 
 void Chunk::CreateSurfaceLayer() {
-    int water_level = 63;   
+    int water_level = 63;
     int snow_level = 120;
     if (m_MaxHeight < water_level)
         m_MaxHeight = water_level;
@@ -285,7 +285,7 @@ void Chunk::CreateSurfaceLayer() {
                 }
                 else if (j == height) {
                     float noise_chance = m_Noise.OctaveNoise(i + m_ChunkPosition.x, k + m_ChunkPosition.z, 8);
-                    if (j == water_level && noise_chance >= 0) 
+                    if (j == water_level && noise_chance >= 0)
                         m_Chunk(i, j, k) = Block::SAND;
                     else if (j < water_level) {
                         if (noise_chance >= 0.2)
@@ -321,11 +321,11 @@ void Chunk::GenerateMesh() {
                     if (m_Chunk(i, j, k) != Block::EMPTY) {
                         std::array<unsigned char, 6> textureCoords = s_TextureMap.at(m_Chunk(i, j, k));
                         if (m_Chunk(i,j,k) != Block::WATER) {
-                            if (j > 0 && 
+                            if (j > 0 &&
                                 (m_Chunk(i, j - 1, k) == Block::EMPTY || m_Chunk(i, j - 1, k) == Block::WATER)) { // D
                                 CreateDQuad(m_Mesh, glm::vec3(i, j, k), textureCoords);
                             }
-                            if (j < YSIZE - 1 && 
+                            if (j < YSIZE - 1 &&
                                 (m_Chunk(i, j + 1, k) == Block::EMPTY || m_Chunk(i, j + 1, k) == Block::WATER)) { // U
                                 CreateUQuad(m_Mesh, glm::vec3(i, j, k), textureCoords);
                             }
@@ -433,7 +433,7 @@ const std::unordered_map<Block, std::array<unsigned char, 6>> Chunk::s_TextureMa
         { Block::DIAMOND,       { 2, 12, 2, 12, 2, 12 }},
         { Block::GOLD,          { 0, 13, 0, 13, 0, 13 }},
         { Block::COAL,          { 2, 13, 2, 13, 2, 13 }},
-        { Block::IRON,          { 1, 13, 1, 13, 1, 13 }}, 
+        { Block::IRON,          { 1, 13, 1, 13, 1, 13 }},
         { Block::LEAVES,        { 11, 1, 11, 1, 11, 1 }},
         { Block::WOOD,          { 5, 14, 4, 14, 5, 14 }},
         { Block::SNOW,          { 2, 11, 2, 11, 2, 11 }},
@@ -441,5 +441,5 @@ const std::unordered_map<Block, std::array<unsigned char, 6>> Chunk::s_TextureMa
         { Block::WATER,	        { 15, 3, 15, 3, 15, 3 }},
         { Block::SAND,	        { 2, 14, 2, 14, 2, 14 }},
         { Block::GRAVEL,	    { 3, 14, 3, 14, 3, 14 }},
-        { Block::BEDROCK,       { 1, 14, 1, 14, 1, 14 }}    
+        { Block::BEDROCK,       { 1, 14, 1, 14, 1, 14 }}
     };

@@ -6,7 +6,7 @@
 using namespace std::chrono_literals;
 
 #define MAX_INDEX_COUNT 18432 // each cube has 6 faces, each face has 6 indexes
-#define MAX_VERTEX_COUNT 12228 // each cube has 6 faces, each face has 4 vertices 
+#define MAX_VERTEX_COUNT 12228 // each cube has 6 faces, each face has 4 vertices
 #define VIEW_DISTANCE 24 // how far the player sees
 #define MAX_CHUNK_TO_LOAD 1
 
@@ -19,12 +19,12 @@ ChunkManager::ChunkManager(glm::vec3* playerPosition):
 //	m_ThreadPool(ctpl::thread_pool(std::thread::hardware_concurrency()))
 {
 	m_VertexLayout.Push<unsigned int>(1); // position + texture coords
-		
+
 	m_ChunksToRender.reserve(static_cast<const unsigned int>((m_ViewDistance * 2 + 1) * (m_ViewDistance * 2 + 1)));
 
 	m_Indices.reserve(MAX_INDEX_COUNT);
 	unsigned int offset = 0;
-	
+
 	for (size_t i = 0; i < MAX_INDEX_COUNT * 2; i += 6) {
 		m_Indices.push_back(0 + offset);
 		m_Indices.push_back(1 + offset);
@@ -97,7 +97,7 @@ bool ChunkManager::IsInFrustum(Chunk* chunk) {
 
 void ChunkManager::UpdateChunk(ChunkCoord chunk)
 {
-	m_ChunksToLoad.push(chunk);
+	m_ChunksToUpload.push(chunk);
 }
 
 int ChunkManager::GetViewDistance() const
@@ -147,7 +147,16 @@ void ChunkManager::LoadChunks()
 //		}
 //		m_ChunksToLoad = {};
 //	}
-    for (int n = 0; n < MAX_CHUNK_TO_LOAD && !m_ChunksToLoad.empty(); n++) {
+
+	bool uploaded = false;
+	while(!m_ChunksToUpload.empty()) {
+        ChunkCoord coords = m_ChunksToUpload.front();
+        m_ChunksToUpload.pop();
+		m_ChunkMap.find(coords)->second.GenerateMesh();
+		uploaded = true;
+	}
+
+    for (int n = 0; n < MAX_CHUNK_TO_LOAD && !m_ChunksToLoad.empty() && !uploaded; n++) {
         ChunkCoord coords = m_ChunksToLoad.front();
         m_ChunksToLoad.pop();
         if (m_ChunkMap.find(coords) != m_ChunkMap.end())

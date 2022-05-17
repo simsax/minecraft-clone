@@ -12,7 +12,7 @@ public:
 	void OnRender();
 	void ProcessMouse(float xoffset, float yoffset);
 	std::array<bool, GLFW_KEY_LAST> KeyPressed;
-	
+
 /* #ifndef  NDEBUG */
 	glm::vec3 GetPlayerPosition();
 /* #endif */

@@ -30,6 +30,7 @@ private:
 	std::vector<unsigned int> m_Indices;
 	std::vector<Chunk*> m_ChunksToRender;
 	std::queue<ChunkCoord> m_ChunksToLoad;
+	std::queue<ChunkCoord> m_ChunksToUpload;
 	int m_ViewDistance;
 	//std::vector<std::future<Chunk>> m_ChunksLoaded;
 	//std::thread m_Thread;

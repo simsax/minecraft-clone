@@ -10,9 +10,9 @@ struct VertexBufferElement
 	static unsigned int GetSizeOfType(unsigned int type) {
 		switch (type)
 		{
-		case GL_DOUBLE: 
+		case GL_DOUBLE:
 			return 8;
-		case GL_FLOAT:			
+		case GL_FLOAT:
 		case GL_UNSIGNED_INT:
 		case GL_INT:
 			return 4;

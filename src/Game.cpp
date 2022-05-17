@@ -14,8 +14,8 @@ using namespace std::chrono_literals;
 static const float GRAVITY = 37.0f;
 
 static int mod(int a, int b) {
-    int res = a % b; 
-    return res >= 0? res: res + b; 
+    int res = a % b;
+    return res >= 0? res: res + b;
 }
 
 std::pair<ChunkCoord, std::array<unsigned int, 3>> Game::GlobalToLocal(const glm::vec3& playerPosition) {
@@ -310,7 +310,7 @@ void Game::CheckRayCast() {
                     UpdateNeighbor(currentVoxel, chunkSize, targetLocalCoord, Block::EMPTY);
                 }
             }
-        } else if (KeyPressed[GLFW_MOUSE_BUTTON_RIGHT] && 
+        } else if (KeyPressed[GLFW_MOUSE_BUTTON_RIGHT] &&
                     !physics::Intersect(
                         physics::CreatePlayerAabb(*playerPos),
                         physics::CreateBlockAabb(previousVoxel)
