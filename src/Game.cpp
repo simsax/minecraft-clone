@@ -9,6 +9,10 @@
 #include <set>
 #include "Physics.h"
 
+#define PLAYER_HALF_WIDTH 0.3f
+#define PLAYER_TOP_HEIGHT 0.2f
+#define PLAYER_BOTTOM_HEIGHT 1.6f
+
 using namespace std::chrono_literals;
 
 static const float GRAVITY = 37.0f;
@@ -33,9 +37,8 @@ std::pair<ChunkCoord, std::array<unsigned int, 3>> Game::GlobalToLocal(const glm
 Game::Game() : KeyPressed({}),
                m_Ground(false),
                m_Jump(false),
-               m_Proj(glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 600.0f)),
                m_Camera(glm::vec3(0.0f, 0.0f, 0.0f)),
-               m_ChunkManager(m_Camera.GetPlayerPosition()),
+               m_ChunkManager(&m_Camera),
                m_VerticalVelocity(0.0f),
                m_LastChunk({0, 0}),
                m_SortedChunk({0, 0}),
@@ -60,7 +63,7 @@ void Game::Init()
     m_Renderer.Init();
     m_ChunkManager.InitWorld();
     // spawn player over a block
-    m_Camera.GetPlayerPosition()->y += static_cast<float>(m_ChunkManager.SpawnHeight() + 1.6 + 3);
+    m_Camera.GetPlayerPosition()->y += static_cast<float>(m_ChunkManager.SpawnHeight() + PLAYER_BOTTOM_HEIGHT + 3);
 }
 
 void Game::OnUpdate(float deltaTime)
@@ -78,9 +81,7 @@ void Game::OnRender()
     glClearColor(173.0f / 255.0f, 223.0f / 255.0f, 230.0f / 255.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glm::mat4 mvp = m_Proj * m_Camera.GetViewMatrix() * glm::mat4(1.0f);
-    m_Renderer.SetMVP(mvp);
-
+    m_Renderer.SetMVP(m_Camera.GetMVP());
     m_ChunkManager.Render(m_Renderer);
 }
 
@@ -88,9 +89,15 @@ void Game::HandleInput()
 {
     m_Camera.HandleInput(KeyPressed);
     if (KeyPressed[GLFW_KEY_F])
+    {
         m_Camera.ToggleFlyMode();
+        KeyPressed[GLFW_KEY_F] = false;
+    }
     if (KeyPressed[GLFW_KEY_SPACE] && m_Ground && !m_Camera.GetFlyMode() && !m_Jump)
+    {
         m_Jump = true;
+        KeyPressed[GLFW_KEY_SPACE] = false;
+    }
 }
 
 void Game::ProcessMouse(float xoffset, float yoffset)
@@ -109,33 +116,33 @@ bool Game::CalculateCollision(glm::vec3 *currentPosition, const glm::vec3 &playe
     int startX, endX, startY, endY, startZ, endZ;
     if (finalPosition.x >= currentPosition->x)
     {
-        startX = std::floor(currentPosition->x - 0.3f);
-        endX = std::floor(finalPosition.x + 0.3f);
+        startX = std::floor(currentPosition->x - PLAYER_HALF_WIDTH);
+        endX = std::floor(finalPosition.x + PLAYER_HALF_WIDTH);
     }
     else
     {
-        startX = std::floor(finalPosition.x - 0.3f);
-        endX = std::floor(currentPosition->x + 0.3f);
+        startX = std::floor(finalPosition.x - PLAYER_HALF_WIDTH);
+        endX = std::floor(currentPosition->x + PLAYER_HALF_WIDTH);
     }
     if (finalPosition.y >= currentPosition->y)
     {
-        startY = std::floor(currentPosition->y - 1.6f);
-        endY = std::floor(finalPosition.y + 0.2f);
+        startY = std::floor(currentPosition->y - PLAYER_BOTTOM_HEIGHT);
+        endY = std::floor(finalPosition.y + PLAYER_TOP_HEIGHT);
     }
     else
     {
-        startY = std::floor(finalPosition.y - 1.6f);
-        endY = std::floor(currentPosition->y + 0.2f);
+        startY = std::floor(finalPosition.y - PLAYER_BOTTOM_HEIGHT);
+        endY = std::floor(currentPosition->y + PLAYER_TOP_HEIGHT);
     }
     if (finalPosition.z >= currentPosition->z)
     {
-        startZ = std::floor(currentPosition->z - 0.3f);
-        endZ = std::floor(finalPosition.z + 0.3f);
+        startZ = std::floor(currentPosition->z - PLAYER_HALF_WIDTH);
+        endZ = std::floor(finalPosition.z + PLAYER_HALF_WIDTH);
     }
     else
     {
-        startZ = std::floor(finalPosition.z - 0.3f);
-        endZ = std::floor(currentPosition->z + 0.3f);
+        startZ = std::floor(finalPosition.z - PLAYER_HALF_WIDTH);
+        endZ = std::floor(currentPosition->z + PLAYER_HALF_WIDTH);
     }
 
     Aabb playerBbox = physics::CreatePlayerAabb(*currentPosition);

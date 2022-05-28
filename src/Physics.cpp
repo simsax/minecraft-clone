@@ -1,19 +1,24 @@
 #include "Physics.h"
 
+#define BLOCK_SIZE 1.0f
+#define PLAYER_HALF_WIDTH 0.3f
+#define PLAYER_TOP_HEIGHT 0.2f
+#define PLAYER_BOTTOM_HEIGHT 1.6f
+
 Aabb physics::CreateBlockAabb(glm::vec3 position)
 {
-    Aabb bbox = {position.x, position.x + 1.0f,
-                 position.y, position.y + 1.0f,
-                 position.z, position.z + 1.0f};
+    Aabb bbox = {position.x, position.x + BLOCK_SIZE,
+                 position.y, position.y + BLOCK_SIZE,
+                 position.z, position.z + BLOCK_SIZE};
     return bbox;
 }
 
 Aabb physics::CreatePlayerAabb(glm::vec3 position)
 {
-    float eps = 0.0001f;
-    Aabb bbox = {position.x - 0.3f - eps, position.x + 0.3f + eps,
-                 position.y - 1.6f - eps, position.y + 0.2f + eps,
-                 position.z - 0.3f - eps, position.z + 0.3f + eps};
+    const float eps = 0.0001f;
+    Aabb bbox = {position.x - PLAYER_HALF_WIDTH - eps, position.x + PLAYER_HALF_WIDTH + eps,
+                 position.y - PLAYER_BOTTOM_HEIGHT - eps, position.y + PLAYER_TOP_HEIGHT + eps,
+                 position.z - PLAYER_HALF_WIDTH - eps, position.z + PLAYER_HALF_WIDTH + eps};
     return bbox;
 }
 

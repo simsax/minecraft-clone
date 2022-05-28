@@ -192,8 +192,9 @@ static void CreateLQuad(std::vector<unsigned int> &target, const glm::vec3 &posi
 // (I only generate the mesh of the part inside the border)
 Chunk::Chunk(glm::vec3 position,
              const VertexBufferLayout &layout, unsigned int maxVertexCount, const std::vector<unsigned int> &indices,
-             glm::vec3 *playerPosition) : m_ChunkPosition(position), m_Chunk(Matrix3D<Block, XSIZE, YSIZE, ZSIZE>()), m_MaxVertexCount(maxVertexCount),
-                                          m_PlayerPosition(playerPosition), m_MinHeight(YSIZE), m_MaxHeight(0)
+             glm::vec3 *playerPosition) : m_ChunkPosition(position), m_Chunk(Matrix3D<Block, XSIZE, YSIZE, ZSIZE>()),
+                                          m_MaxVertexCount(maxVertexCount), m_PlayerPosition(playerPosition),
+                                          m_MinHeight(YSIZE), m_MaxHeight(0)
 {
 
     m_IBO = std::make_unique<IndexBuffer>(indices.size() * sizeof(unsigned int), indices.data());
@@ -298,7 +299,10 @@ void Chunk::CreateSurfaceLayer()
                 if (j < height)
                 {
                     int dirtThickness = static_cast<int>(
-                                            (m_Noise.OctaveNoise(i + m_ChunkPosition.x + 111, k + m_ChunkPosition.z + 111, 8) + 1) / 2 * 10) -
+                                            (m_Noise.OctaveNoise(i + m_ChunkPosition.x + 111,
+                                                                 k + m_ChunkPosition.z + 111, 8) +
+                                             1) /
+                                            2 * 10) -
                                         j;
                     if (dirtThickness > 0)
                         m_Chunk(i, j, k) = Block::DIRT;

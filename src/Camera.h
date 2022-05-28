@@ -3,6 +3,12 @@
 #include "Keycodes.h"
 #include <array>
 
+struct Plane
+{
+	glm::vec2 point;
+	glm::vec3 normal;
+};
+
 class Camera
 {
 public:
@@ -14,13 +20,15 @@ public:
 	bool GetFlyMode() const;
 	void SetCameraSpeed(glm::vec3 speed);
 	void Move(float deltaTime);
-	glm::mat4 GetViewMatrix() const;
+	glm::mat4 GetMVP() const;
 	glm::vec3 *GetPlayerPosition();
 	glm::vec3 GetPreviousPlayerPosition() const;
 	glm::vec3 GetPlayerDirection() const;
 	glm::vec3 GetCameraSpeed() const;
+	bool IsInFrustum(const glm::vec3 &point);
 
 private:
+	glm::mat4 m_Proj;
 	glm::vec3 m_CameraPos;
 	glm::vec3 m_CameraPreviousPos;
 	glm::vec3 m_CameraFront;
@@ -29,4 +37,6 @@ private:
 	float yaw;
 	float pitch;
 	bool m_FlyMode;
+	float m_TanFOV;
+	float m_Ratio;
 };

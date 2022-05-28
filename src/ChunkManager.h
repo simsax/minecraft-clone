@@ -1,12 +1,13 @@
 #pragma once
 #include "Chunk.h"
+#include "Camera.h"
 #include <queue>
 #include <future>
 
 class ChunkManager
 {
 public:
-	ChunkManager(glm::vec3 *playerPosition);
+	ChunkManager(Camera *camera);
 	~ChunkManager();
 	void InitWorld();
 	int SpawnHeight();
@@ -23,7 +24,6 @@ public:
 private:
 	void SortChunks();
 	void LoadChunks();
-	bool IsInFrustum(Chunk *chunk);
 	std::array<unsigned int, 3> m_ChunkSize;
 	std::future<std::vector<std::pair<ChunkCoord, Chunk>>> m_FutureChunks;
 	VertexBufferLayout m_VertexLayout;
@@ -38,6 +38,7 @@ private:
 	// std::condition_variable m_Cv;
 	bool m_Shutdown;
 	bool m_LoadingChunks;
-	glm::vec3 *m_PlayerPosition;
+	Camera *m_Camera;
 	bool m_NewChunks;
+	float m_HalfChunkDiag;
 };

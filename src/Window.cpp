@@ -10,6 +10,7 @@ bool Window::wireframe = false;
 
 Window::Window(Game *game, int width, int height, std::string name) : m_Game(game), m_Width(width), m_Height(height), m_Name(std::move(name))
 {
+	glfwSetErrorCallback(ErrorCallback);
 	// initialize GLFW
 	if (!glfwInit())
 	{
@@ -159,4 +160,11 @@ void GLAPIENTRY Window::MessageCallback(GLenum source, GLenum type, GLuint id, G
 	fprintf(stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
 			(type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
 			type, severity, message);
+}
+
+void Window::ErrorCallback(int error, const char *msg)
+{
+	std::string s;
+	s = " [" + std::to_string(error) + "] " + msg + '\n';
+	std::cerr << s << std::endl;
 }

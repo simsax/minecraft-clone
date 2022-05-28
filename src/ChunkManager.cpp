@@ -10,11 +10,13 @@ using namespace std::chrono_literals;
 #define VIEW_DISTANCE 24       // how far the player sees
 #define MAX_CHUNK_TO_LOAD 1
 
-ChunkManager::ChunkManager(glm::vec3 *playerPosition) : m_ViewDistance(VIEW_DISTANCE),
-                                                        m_Shutdown(false),
-                                                        m_LoadingChunks(false),
-                                                        m_PlayerPosition(playerPosition),
-                                                        m_NewChunks(false)
+ChunkManager::ChunkManager(Camera *camera) : m_ChunkSize({XSIZE - 2, YSIZE, ZSIZE - 2}),
+                                             m_ViewDistance(VIEW_DISTANCE),
+                                             m_Shutdown(false),
+                                             m_LoadingChunks(false),
+                                             m_Camera(camera),
+                                             m_NewChunks(false),
+                                             m_HalfChunkDiag(m_ChunkSize[0] / std::sqrt(2))
 //	m_ThreadPool(ctpl::thread_pool(std::thread::hardware_concurrency()))
 {
     m_VertexLayout.Push<unsigned int>(1); // position + texture coords
@@ -37,7 +39,6 @@ ChunkManager::ChunkManager(glm::vec3 *playerPosition) : m_ViewDistance(VIEW_DIST
         offset += 4;
     }
 
-    m_ChunkSize = {XSIZE - 2, YSIZE, ZSIZE - 2}; // -2 because each chunk has a border
     /*
         m_Thread = std::thread([this](){
                 while (true) {
@@ -83,19 +84,14 @@ void ChunkManager::Render(const Renderer &renderer)
         m_NewChunks = false;
         SortChunks();
     }
+
     for (Chunk *chunk : m_ChunksToRender)
     {
-        if (IsInFrustum(chunk))
+        glm::vec3 center = chunk->GetCenterPosition();
+        center.y = m_Camera->GetPlayerPosition()->y;
+        if (m_Camera->IsInFrustum(center, m_HalfChunkDiag))
             chunk->Render(renderer);
     }
-}
-
-bool ChunkManager::IsInFrustum(Chunk *chunk)
-{
-    if (chunk->GetCenterPosition().z <= 0)
-        return true;
-    else
-        return false;
 }
 
 void ChunkManager::UpdateChunk(ChunkCoord chunk)
@@ -174,7 +170,7 @@ void ChunkManager::LoadChunks()
             //  create new chunk and cache it
             Chunk chunk(glm::vec3(coords.x * static_cast<int>(m_ChunkSize[0]), 0.0f,
                                   coords.z * static_cast<int>(m_ChunkSize[2])),
-                        m_VertexLayout, MAX_VERTEX_COUNT, m_Indices, m_PlayerPosition);
+                        m_VertexLayout, MAX_VERTEX_COUNT, m_Indices, m_Camera->GetPlayerPosition());
             chunk.GenerateMesh();
             m_ChunkMap.insert({coords, std::move(chunk)});
             m_ChunksToRender.emplace_back(&m_ChunkMap.find(coords)->second);
@@ -184,7 +180,7 @@ void ChunkManager::LoadChunks()
 
 void ChunkManager::GenerateChunks()
 {
-    ChunkCoord chunkCoord = CalculateChunkCoord(*m_PlayerPosition);
+    ChunkCoord chunkCoord = CalculateChunkCoord(*m_Camera->GetPlayerPosition());
     m_ChunksToRender.clear();
 
     //	std::unique_lock<std::mutex> lk(m_Mtx);
@@ -224,9 +220,10 @@ int ChunkManager::SpawnHeight()
 
 void ChunkManager::SortChunks()
 {
-    glm::vec3 playerPos = glm::vec3(m_PlayerPosition->x, 0, m_PlayerPosition->z);
+    glm::vec3 playerPos = *m_Camera->GetPlayerPosition() * glm::vec3(1.0f, 0, 1.0f);
     std::sort(m_ChunksToRender.begin(), m_ChunksToRender.end(), [&playerPos](Chunk *a, Chunk *b)
-              { return glm::length2(playerPos - a->GetCenterPosition()) > glm::length2(playerPos - b->GetCenterPosition()); });
+              { return glm::length2(playerPos - a->GetCenterPosition()) >
+                       glm::length2(playerPos - b->GetCenterPosition()); });
 }
 
 void ChunkManager::SetNewChunks()
