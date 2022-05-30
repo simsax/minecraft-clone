@@ -19,10 +19,12 @@ public:
     glm::vec3 GetPreviousPlayerPosition() const;
     glm::vec3 GetPlayerDirection() const;
     glm::vec3 GetCameraSpeed() const;
+    void UpdateFrustum();
     bool IsInFrustum(const glm::vec3& point);
 
 private:
     frustum::Frustum m_Frustum;
+    std::array<frustum::Plane, 6> m_FrustumPlanes;
     glm::mat4 m_Proj;
     glm::vec3 m_CameraPos;
     glm::vec3 m_CameraPreviousPos;

@@ -3,7 +3,7 @@
 #include "glm/gtc/matrix_transform.hpp"
 
 #define ZNEAR 0.1f
-#define ZFAR 600.0f
+#define ZFAR 1000.0f
 #define FOV 45.0f
 #define HEIGHT 1080.0f
 #define WIDTH 1920.0f
@@ -79,37 +79,13 @@ void Camera::ToggleFlyMode() { m_FlyMode = !m_FlyMode; }
 
 bool Camera::GetFlyMode() const { return m_FlyMode; }
 
+void Camera::UpdateFrustum() { m_FrustumPlanes = m_Frustum.GeneratePlanes(m_CameraPos, m_CameraFront, m_CameraUp); }
+
 bool Camera::IsInFrustum(const glm::vec3& point)
 {
-    // still use this as a first check since it is fast
-    // (forse, nel dubbio testare entrambi gli approcci)
-    // glm::vec3 v = point - m_CameraPos;
-    /* float projZ = glm::dot(v, m_CameraFront); */
-    /* if (projZ < 0 || projZ > ZFAR) */
-    /* 	return false; */
-
-    /* glm::vec3 rightV = glm::normalize(glm::cross(m_CameraFront, m_CameraUp)); */
-    /* glm::vec3 front = glm::vec3(m_CameraFront.x, 0.0f, m_CameraFront.z); */
-    /* float scale = 1.0f / glm::dot(m_CameraFront, front); */
-    /* std::cout << scale << std::endl; */
-    /* float h = projZ * m_TanFOV; */
-
-    /* // with the current implementation it's impossible to cull vertically */
-    /* // because there is only one chunk in the Y axis */
-    /* /1* glm::vec3 upV = glm::normalize(glm::cross(rightV, m_CameraFront)); *1/ */
-    /* /1* float projY = glm::dot(v, upV); *1/ */
-    /* /1* if (-h > projY || h < projY) *1/ */
-    /* /1* 	return false; *1/ */
-    /* float projX = glm::dot(v, rightV); */
-    /* float w = h * m_Ratio * scale; */
-    /* if (-w - margin > projX || w + margin < projX) */
-    /* 	return false; */
-    /* return true; */
-
-    std::array<frustum::Plane, 6> frustumPlanes = m_Frustum.GeneratePlanes(m_CameraPos, m_CameraFront, m_CameraUp);
     physics::Aabb chunkAabb = physics::CreateChunkAabb(point);
     for (int i = 0; i < 6; i++) {
-        if (frustumPlanes[i].Distance(chunkAabb.GetPositiveVertex(frustumPlanes[i].normal)) < 0)
+        if (m_FrustumPlanes[i].Distance(chunkAabb.GetPositiveVertex(m_FrustumPlanes[i].normal)) < 0)
             return false;
     }
     return true;
