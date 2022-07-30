@@ -46,11 +46,8 @@ static void CreateUQuad(
     std::array<unsigned int, 4> t = GenerateTextCoords({ textureCoords[0], textureCoords[1] });
 
     unsigned int v0 = ((int)position[0] + 0) << 23 | ((int)position[1] + 1) << 15 | ((int)position[2] + 1) << 11 | t[0];
-
     unsigned int v1 = ((int)position[0] + 1) << 23 | ((int)position[1] + 1) << 15 | ((int)position[2] + 1) << 11 | t[1];
-
     unsigned int v2 = ((int)position[0] + 1) << 23 | ((int)position[1] + 1) << 15 | ((int)position[2] + 0) << 11 | t[2];
-
     unsigned int v3 = ((int)position[0] + 0) << 23 | ((int)position[1] + 1) << 15 | ((int)position[2] + 0) << 11 | t[3];
 
     PushVertexPos(target, { v0, v1, v2, v3 });
@@ -62,11 +59,8 @@ static void CreateDQuad(
     std::array<unsigned int, 4> t = GenerateTextCoords({ textureCoords[4], textureCoords[5] });
 
     unsigned int v0 = ((int)position[0] + 0) << 23 | ((int)position[1] + 0) << 15 | ((int)position[2] + 1) << 11 | t[0];
-
     unsigned int v1 = ((int)position[0] + 0) << 23 | ((int)position[1] + 0) << 15 | ((int)position[2] + 0) << 11 | t[1];
-
     unsigned int v2 = ((int)position[0] + 1) << 23 | ((int)position[1] + 0) << 15 | ((int)position[2] + 0) << 11 | t[2];
-
     unsigned int v3 = ((int)position[0] + 1) << 23 | ((int)position[1] + 0) << 15 | ((int)position[2] + 1) << 11 | t[3];
 
     PushVertexPos(target, { v0, v1, v2, v3 });
@@ -78,11 +72,8 @@ static void CreateFQuad(
     std::array<unsigned int, 4> t = GenerateTextCoords({ textureCoords[2], textureCoords[3] });
 
     unsigned int v0 = ((int)position[0] + 0) << 23 | ((int)position[1] + 0) << 15 | ((int)position[2] + 1) << 11 | t[0];
-
     unsigned int v1 = ((int)position[0] + 1) << 23 | ((int)position[1] + 0) << 15 | ((int)position[2] + 1) << 11 | t[1];
-
     unsigned int v2 = ((int)position[0] + 1) << 23 | ((int)position[1] + 1) << 15 | ((int)position[2] + 1) << 11 | t[2];
-
     unsigned int v3 = ((int)position[0] + 0) << 23 | ((int)position[1] + 1) << 15 | ((int)position[2] + 1) << 11 | t[3];
 
     PushVertexPos(target, { v0, v1, v2, v3 });
@@ -94,11 +85,8 @@ static void CreateBQuad(
     std::array<unsigned int, 4> t = GenerateTextCoords({ textureCoords[2], textureCoords[3] });
 
     unsigned int v0 = ((int)position[0] + 1) << 23 | ((int)position[1] + 0) << 15 | ((int)position[2] + 0) << 11 | t[0];
-
     unsigned int v1 = ((int)position[0] + 0) << 23 | ((int)position[1] + 0) << 15 | ((int)position[2] + 0) << 11 | t[1];
-
     unsigned int v2 = ((int)position[0] + 0) << 23 | ((int)position[1] + 1) << 15 | ((int)position[2] + 0) << 11 | t[2];
-
     unsigned int v3 = ((int)position[0] + 1) << 23 | ((int)position[1] + 1) << 15 | ((int)position[2] + 0) << 11 | t[3];
 
     PushVertexPos(target, { v0, v1, v2, v3 });
@@ -110,11 +98,8 @@ static void CreateRQuad(
     std::array<unsigned int, 4> t = GenerateTextCoords({ textureCoords[2], textureCoords[3] });
 
     unsigned int v0 = ((int)position[0] + 1) << 23 | ((int)position[1] + 0) << 15 | ((int)position[2] + 1) << 11 | t[0];
-
     unsigned int v1 = ((int)position[0] + 1) << 23 | ((int)position[1] + 0) << 15 | ((int)position[2] + 0) << 11 | t[1];
-
     unsigned int v2 = ((int)position[0] + 1) << 23 | ((int)position[1] + 1) << 15 | ((int)position[2] + 0) << 11 | t[2];
-
     unsigned int v3 = ((int)position[0] + 1) << 23 | ((int)position[1] + 1) << 15 | ((int)position[2] + 1) << 11 | t[3];
 
     PushVertexPos(target, { v0, v1, v2, v3 });
@@ -126,11 +111,8 @@ static void CreateLQuad(
     std::array<unsigned int, 4> t = GenerateTextCoords({ textureCoords[2], textureCoords[3] });
 
     unsigned int v0 = ((int)position[0] + 0) << 23 | ((int)position[1] + 0) << 15 | ((int)position[2] + 0) << 11 | t[0];
-
     unsigned int v1 = ((int)position[0] + 0) << 23 | ((int)position[1] + 0) << 15 | ((int)position[2] + 1) << 11 | t[1];
-
     unsigned int v2 = ((int)position[0] + 0) << 23 | ((int)position[1] + 1) << 15 | ((int)position[2] + 1) << 11 | t[2];
-
     unsigned int v3 = ((int)position[0] + 0) << 23 | ((int)position[1] + 1) << 15 | ((int)position[2] + 0) << 11 | t[3];
 
     PushVertexPos(target, { v0, v1, v2, v3 });

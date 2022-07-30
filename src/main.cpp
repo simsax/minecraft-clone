@@ -3,9 +3,10 @@
 
 int main()
 {
-    Game game;
-    Window window(&game, 1920, 1080, "Minecraft 2");
+    Game* game = new Game;
+    Window window(game, 1920, 1080, "Minecraft 2");
     window.WindowLoop();
+    delete game;
 
     return 0;
 }

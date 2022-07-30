@@ -46,7 +46,10 @@ void Camera::HandleInput(const std::array<bool, GLFW_KEY_LAST>& keyPressed)
 
 void Camera::Move(float deltaTime) { m_CameraPos += m_CameraSpeed * deltaTime; }
 
-glm::mat4 Camera::GetMVP() const { return m_Proj * glm::lookAt(m_CameraPos, m_CameraPos + m_CameraFront, m_CameraUp); }
+glm::mat4 Camera::GetMVP() const
+{
+    return m_Proj * glm::lookAt(m_CameraPos, m_CameraPos + m_CameraFront, m_CameraUp);
+}
 
 glm::vec3* Camera::GetPlayerPosition() { return &m_CameraPos; }
 
@@ -79,7 +82,10 @@ void Camera::ToggleFlyMode() { m_FlyMode = !m_FlyMode; }
 
 bool Camera::GetFlyMode() const { return m_FlyMode; }
 
-void Camera::UpdateFrustum() { m_FrustumPlanes = m_Frustum.GeneratePlanes(m_CameraPos, m_CameraFront, m_CameraUp); }
+void Camera::UpdateFrustum()
+{
+    m_FrustumPlanes = m_Frustum.GeneratePlanes(m_CameraPos, m_CameraFront, m_CameraUp);
+}
 
 bool Camera::IsInFrustum(const glm::vec3& point)
 {
