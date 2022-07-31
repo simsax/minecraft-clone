@@ -8,7 +8,7 @@ struct Plane {
     glm::vec3 point;
     glm::vec3 normal;
 
-    inline float Distance(glm::vec3 other_point)
+    inline float Distance(const glm::vec3& other_point)
     {
         glm::vec3 v = other_point - point;
         return glm::dot(v, normal);
@@ -18,7 +18,8 @@ struct Plane {
 class Frustum {
 public:
     Frustum(float znear, float zfar, float fov, float height, float width);
-    std::array<Plane, 6> GeneratePlanes(glm::vec3 cameraPos, glm::vec3 cameraFront, glm::vec3 cameraUp);
+    std::array<Plane, 6> GeneratePlanes(
+        const glm::vec3& cameraPos, const glm::vec3& cameraFront, const glm::vec3& cameraUp);
 
 private:
     enum P { TOP, BOTTOM, LEFT, RIGHT, NEARP, FARP };

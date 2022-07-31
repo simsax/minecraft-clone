@@ -57,7 +57,7 @@ glm::vec3 Camera::GetPreviousPlayerPosition() const { return m_CameraPreviousPos
 
 glm::vec3 Camera::GetCameraSpeed() const { return m_CameraSpeed; }
 
-void Camera::SetCameraSpeed(glm::vec3 speed) { m_CameraSpeed = speed; }
+void Camera::SetCameraSpeed(const glm::vec3& speed) { m_CameraSpeed = speed; }
 
 glm::vec3 Camera::GetPlayerDirection() const { return m_CameraFront; }
 

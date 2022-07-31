@@ -14,12 +14,12 @@ struct Aabb {
 
     // debug
     std::string Print() const;
-    glm::vec3 GetPositiveVertex(glm::vec3 normal) const;
+    glm::vec3 GetPositiveVertex(const glm::vec3& normal) const;
 };
 
-Aabb CreateBlockAabb(glm::vec3 position);
-Aabb CreatePlayerAabb(glm::vec3 position);
-Aabb CreateChunkAabb(glm::vec3 position);
+Aabb CreateBlockAabb(const glm::vec3& position);
+Aabb CreatePlayerAabb(const glm::vec3& position);
+Aabb CreateChunkAabb(const glm::vec3& position);
 bool Intersect(Aabb a, Aabb b);
 void SnapAabb(Aabb player, Aabb block, const glm::vec3& playerSpeed, glm::vec3* currentPosition);
 float AabbDistance(Aabb a, Aabb b);

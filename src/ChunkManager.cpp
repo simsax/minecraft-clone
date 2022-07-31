@@ -20,12 +20,13 @@ ChunkManager::ChunkManager(Camera* camera)
     , m_HalfChunkDiag(m_ChunkSize[0] / std::sqrt(2))
 //	m_ThreadPool(ctpl::thread_pool(std::thread::hardware_concurrency()))
 {
-    m_VertexLayout.Push<unsigned int>(1); // position + texture coords
+    m_VertexLayout.Push<uint32_t>(1); // position + texture coords
 
-    m_ChunksToRender.reserve(static_cast<const unsigned int>((m_ViewDistance * 2 + 1) * (m_ViewDistance * 2 + 1)));
+    m_ChunksToRender.reserve(
+        static_cast<uint32_t>((m_ViewDistance * 2 + 1) * (m_ViewDistance * 2 + 1)));
 
     m_Indices.reserve(MAX_INDEX_COUNT);
-    unsigned int offset = 0;
+    uint32_t offset = 0;
 
     for (size_t i = 0; i < MAX_INDEX_COUNT * 2; i += 6) {
         m_Indices.push_back(0 + offset);
@@ -50,9 +51,9 @@ ChunkManager::ChunkManager(Camera* camera)
                     ChunkCoord coords = m_ChunksToLoad.front();
                     m_ChunksToLoad.pop();
                     Chunk chunk(m_ChunkSize[0], m_ChunkSize[1], m_ChunkSize[2], glm::vec3(coords.x *
-       static_cast<int>(m_ChunkSize[0]), 0.0, coords.z * static_cast<int>(m_ChunkSize[2])), m_Seed, m_VertexLayout,
-       MAX_VERTEX_COUNT, m_Indices); chunk.GenerateMesh(); m_ChunkMap.insert({ coords, std::move(chunk) });
-                    m_ChunksToRender.emplace_back(&m_ChunkMap.find(coords)->second);
+       static_cast<int>(m_ChunkSize[0]), 0.0, coords.z * static_cast<int>(m_ChunkSize[2])), m_Seed,
+       m_VertexLayout, MAX_VERTEX_COUNT, m_Indices); chunk.GenerateMesh(); m_ChunkMap.insert({
+       coords, std::move(chunk) }); m_ChunksToRender.emplace_back(&m_ChunkMap.find(coords)->second);
                 }
             });*/
 }
@@ -84,6 +85,7 @@ void ChunkManager::Render(const Renderer& renderer)
         SortChunks();
     }
 
+    // frustum culling
     m_Camera->UpdateFrustum();
     for (Chunk* chunk : m_ChunksToRender) {
         glm::vec3 center = chunk->GetCenterPosition();
@@ -96,7 +98,7 @@ void ChunkManager::UpdateChunk(ChunkCoord chunk) { m_ChunksToUpload.push(chunk);
 
 int ChunkManager::GetViewDistance() const { return m_ViewDistance; }
 
-std::array<unsigned int, 3> ChunkManager::GetChunkSize() const { return m_ChunkSize; }
+std::array<uint32_t, 3> ChunkManager::GetChunkSize() const { return m_ChunkSize; }
 
 ChunkCoord ChunkManager::CalculateChunkCoord(const glm::vec3& position)
 {
@@ -109,17 +111,21 @@ void ChunkManager::LoadChunks()
 {
     //	auto meshFun = [this](ChunkCoord coords) {
     //		Chunk chunk(m_ChunkSize[0], m_ChunkSize[1], m_ChunkSize[2], glm::vec3(coords.x *
-    // static_cast<int>(m_ChunkSize[0]), 0.0, coords.z * static_cast<int>(m_ChunkSize[2])), m_Seed, m_VertexLayout,
-    // MAX_VERTEX_COUNT, m_Indices, coords); 		chunk.GenerateMesh(); 		return chunk;
+    // static_cast<int>(m_ChunkSize[0]), 0.0, coords.z * static_cast<int>(m_ChunkSize[2])), m_Seed,
+    // m_VertexLayout,
+    // MAX_VERTEX_COUNT, m_Indices, coords); 		chunk.GenerateMesh(); 		return
+    // chunk;
     //	};
     //	auto meshFun2 = [this](const std::queue<ChunkCoord>& chunksToLoad) {
     //		std::vector<std::pair<ChunkCoord, Chunk>> chunks;
     //		while (!chunksToLoad.empty()) {
     //			ChunkCoord coords = m_ChunksToLoad.front();
     //			m_ChunksToLoad.pop();
-    //			Chunk chunk(m_ChunkSize[0], m_ChunkSize[1], m_ChunkSize[2], glm::vec3(coords.x *
-    // static_cast<int>(m_ChunkSize[0]), 0.0, coords.z * static_cast<int>(m_ChunkSize[2])), m_Seed, m_VertexLayout,
-    // MAX_VERTEX_COUNT, m_Indices, coords); 			chunk.GenerateMesh();
+    //			Chunk chunk(m_ChunkSize[0], m_ChunkSize[1], m_ChunkSize[2],
+    // glm::vec3(coords.x
+    //*
+    // static_cast<int>(m_ChunkSize[0]), 0.0, coords.z * static_cast<int>(m_ChunkSize[2])), m_Seed,
+    // m_VertexLayout, MAX_VERTEX_COUNT, m_Indices, coords); chunk.GenerateMesh();
     // chunks.emplace_back(std::make_pair(coords, std::move(chunk)));
     //		}
     //		return chunks;
@@ -149,19 +155,15 @@ void ChunkManager::LoadChunks()
     for (int n = 0; n < MAX_CHUNK_TO_LOAD && !m_ChunksToLoad.empty() && !uploaded; n++) {
         ChunkCoord coords = m_ChunksToLoad.front();
         m_ChunksToLoad.pop();
-        if (m_ChunkMap.find(coords) != m_ChunkMap.end())
-            m_ChunkMap.find(coords)->second.GenerateMesh();
-        else {
-            m_NewChunks = true;
-            // m_ChunksLoaded.push_back(m_ThreadPool.push(meshFun, coords));
-            //  create new chunk and cache it
-            Chunk chunk(glm::vec3(coords.x * static_cast<int>(m_ChunkSize[0]), 0.0f,
-                            coords.z * static_cast<int>(m_ChunkSize[2])),
-                m_VertexLayout, MAX_VERTEX_COUNT, m_Indices, m_Camera->GetPlayerPosition());
-            chunk.GenerateMesh();
-            m_ChunkMap.insert({ coords, std::move(chunk) });
-            m_ChunksToRender.emplace_back(&m_ChunkMap.find(coords)->second);
-        }
+        m_NewChunks = true;
+        // m_ChunksLoaded.push_back(m_ThreadPool.push(meshFun, coords));
+        //  create new chunk and cache it
+        Chunk chunk(glm::vec3(coords.x * static_cast<int>(m_ChunkSize[0]), 0.0f,
+                        coords.z * static_cast<int>(m_ChunkSize[2])),
+            m_VertexLayout, MAX_VERTEX_COUNT, m_Indices, m_Camera->GetPlayerPosition());
+        chunk.GenerateMesh();
+        m_ChunkMap.insert({ coords, std::move(chunk) });
+        m_ChunksToRender.emplace_back(&m_ChunkMap.find(coords)->second);
     }
 }
 
@@ -203,7 +205,8 @@ void ChunkManager::SortChunks()
 {
     glm::vec3 playerPos = *m_Camera->GetPlayerPosition() * glm::vec3(1.0f, 0, 1.0f);
     std::sort(m_ChunksToRender.begin(), m_ChunksToRender.end(), [&playerPos](Chunk* a, Chunk* b) {
-        return glm::length2(playerPos - a->GetCenterPosition()) > glm::length2(playerPos - b->GetCenterPosition());
+        return glm::length2(playerPos - a->GetCenterPosition())
+            > glm::length2(playerPos - b->GetCenterPosition());
     });
 }
 

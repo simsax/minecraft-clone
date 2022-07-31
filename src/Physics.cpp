@@ -16,7 +16,7 @@ std::string Aabb::Print() const
         + "minZ: " + std::to_string(minZ) + ", maxZ: " + std::to_string(maxZ) + "\n";
 }
 
-glm::vec3 Aabb::GetPositiveVertex(glm::vec3 normal) const
+glm::vec3 Aabb::GetPositiveVertex(const glm::vec3& normal) const
 {
     glm::vec3 p = { minX, minY, minZ };
     if (normal.x >= 0)
@@ -28,14 +28,14 @@ glm::vec3 Aabb::GetPositiveVertex(glm::vec3 normal) const
     return p;
 }
 
-Aabb CreateBlockAabb(glm::vec3 position)
+Aabb CreateBlockAabb(const glm::vec3& position)
 {
     Aabb bbox = { position.x, position.x + BLOCK_SIZE, position.y, position.y + BLOCK_SIZE,
         position.z, position.z + BLOCK_SIZE };
     return bbox;
 }
 
-Aabb CreatePlayerAabb(glm::vec3 position)
+Aabb CreatePlayerAabb(const glm::vec3& position)
 {
     const float eps = 0.0001f;
     Aabb bbox = { position.x - PLAYER_HALF_WIDTH - eps, position.x + PLAYER_HALF_WIDTH + eps,
@@ -44,7 +44,7 @@ Aabb CreatePlayerAabb(glm::vec3 position)
     return bbox;
 }
 
-Aabb CreateChunkAabb(glm::vec3 position)
+Aabb CreateChunkAabb(const glm::vec3& position)
 {
     Aabb bbox = { position.x - CHUNK_HALF_WIDTH, position.x + CHUNK_HALF_WIDTH, position.y,
         position.y + CHUNK_HEIGHT, position.z - CHUNK_HALF_WIDTH, position.z + CHUNK_HALF_WIDTH };

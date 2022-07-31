@@ -12,7 +12,7 @@ public:
     void ProcessMouse(float xoffset, float yoffset);
     void ToggleFlyMode();
     bool GetFlyMode() const;
-    void SetCameraSpeed(glm::vec3 speed);
+    void SetCameraSpeed(const glm::vec3& speed);
     void Move(float deltaTime);
     glm::mat4 GetMVP() const;
     glm::vec3* GetPlayerPosition();

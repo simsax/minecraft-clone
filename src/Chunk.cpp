@@ -146,7 +146,7 @@ static void CreateLQuad(std::vector<uint32_t>& target, const glm::vec3& position
 // (I only generate the mesh of the part inside the border)
 Chunk::Chunk(glm::vec3 position, const VertexBufferLayout& layout, uint32_t maxVertexCount,
     const std::vector<uint32_t>& indices, glm::vec3* playerPosition)
-    : m_ChunkPosition(position)
+    : m_ChunkPosition(std::move(position))
     , m_Chunk(Matrix3D<Block, XSIZE, YSIZE, ZSIZE>())
     , m_MaxVertexCount(maxVertexCount)
     , m_PlayerPosition(playerPosition)

@@ -17,16 +17,16 @@ public:
     void UpdateChunk(ChunkCoord chunk);
     int GetViewDistance() const;
     void SetNewChunks();
-    std::array<unsigned int, 3> GetChunkSize() const;
+    std::array<uint32_t, 3> GetChunkSize() const;
     std::unordered_map<ChunkCoord, Chunk, hash_fn> m_ChunkMap;
 
 private:
     void SortChunks();
     void LoadChunks();
-    std::array<unsigned int, 3> m_ChunkSize;
+    std::array<uint32_t, 3> m_ChunkSize;
     std::future<std::vector<std::pair<ChunkCoord, Chunk>>> m_FutureChunks;
     VertexBufferLayout m_VertexLayout;
-    std::vector<unsigned int> m_Indices;
+    std::vector<uint32_t> m_Indices;
     std::vector<Chunk*> m_ChunksToRender;
     std::queue<ChunkCoord> m_ChunksToLoad;
     std::queue<ChunkCoord> m_ChunksToUpload;

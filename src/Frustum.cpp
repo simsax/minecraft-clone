@@ -12,7 +12,8 @@ Frustum::Frustum(float znear, float zfar, float fov, float height, float width)
 {
 }
 
-std::array<Plane, 6> Frustum::GeneratePlanes(glm::vec3 cameraPos, glm::vec3 cameraFront, glm::vec3 cameraUp)
+std::array<Plane, 6> Frustum::GeneratePlanes(
+    const glm::vec3& cameraPos, const glm::vec3& cameraFront, const glm::vec3& cameraUp)
 {
     std::array<Plane, 6> frustumPlanes;
     glm::vec3 rightV = glm::normalize(glm::cross(cameraFront, cameraUp));
