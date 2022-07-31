@@ -11,9 +11,9 @@ namespace physics {
 
 std::string Aabb::Print() const
 {
-    return "minX: " + std::to_string(minX) + ", maxX: " + std::to_string(maxX) + "\n" + "minY: " + std::to_string(minY)
-        + ", maxY: " + std::to_string(maxY) + "\n" + "minZ: " + std::to_string(minZ) + ", maxZ: " + std::to_string(maxZ)
-        + "\n";
+    return "minX: " + std::to_string(minX) + ", maxX: " + std::to_string(maxX) + "\n"
+        + "minY: " + std::to_string(minY) + ", maxY: " + std::to_string(maxY) + "\n"
+        + "minZ: " + std::to_string(minZ) + ", maxZ: " + std::to_string(maxZ) + "\n";
 }
 
 glm::vec3 Aabb::GetPositiveVertex(glm::vec3 normal) const
@@ -30,8 +30,8 @@ glm::vec3 Aabb::GetPositiveVertex(glm::vec3 normal) const
 
 Aabb CreateBlockAabb(glm::vec3 position)
 {
-    Aabb bbox = { position.x, position.x + BLOCK_SIZE, position.y, position.y + BLOCK_SIZE, position.z,
-        position.z + BLOCK_SIZE };
+    Aabb bbox = { position.x, position.x + BLOCK_SIZE, position.y, position.y + BLOCK_SIZE,
+        position.z, position.z + BLOCK_SIZE };
     return bbox;
 }
 
@@ -46,8 +46,8 @@ Aabb CreatePlayerAabb(glm::vec3 position)
 
 Aabb CreateChunkAabb(glm::vec3 position)
 {
-    Aabb bbox = { position.x - CHUNK_HALF_WIDTH, position.x + CHUNK_HALF_WIDTH, position.y, position.y + CHUNK_HEIGHT,
-        position.z - CHUNK_HALF_WIDTH, position.z + CHUNK_HALF_WIDTH };
+    Aabb bbox = { position.x - CHUNK_HALF_WIDTH, position.x + CHUNK_HALF_WIDTH, position.y,
+        position.y + CHUNK_HEIGHT, position.z - CHUNK_HALF_WIDTH, position.z + CHUNK_HALF_WIDTH };
     return bbox;
 }
 

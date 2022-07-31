@@ -23,16 +23,16 @@ std::size_t hash_fn::operator()(const ChunkCoord& coord) const
     return h1 ^ h2;
 }
 
-static std::array<unsigned int, 4> GenerateTextCoords(const std::array<unsigned char, 2>& textureCoords)
+static std::array<uint32_t, 4> GenerateTextCoords(const std::array<unsigned char, 2>& textureCoords)
 {
-    unsigned int t0 = (textureCoords[0] << 4 | textureCoords[1]) << 2;
-    unsigned int t1 = t0 | 1;
-    unsigned int t2 = t0 | 2;
-    unsigned int t3 = t0 | 3;
+    uint32_t t0 = (textureCoords[0] << 4 | textureCoords[1]) << 2;
+    uint32_t t1 = t0 | 1;
+    uint32_t t2 = t0 | 2;
+    uint32_t t3 = t0 | 3;
     return { t0, t1, t2, t3 };
 }
 
-static void PushVertexPos(std::vector<unsigned int>& target, const std::array<unsigned int, 4>& v)
+static void PushVertexPos(std::vector<uint32_t>& target, const std::array<uint32_t, 4>& v)
 {
     target.emplace_back(v[0]);
     target.emplace_back(v[1]);
@@ -40,88 +40,112 @@ static void PushVertexPos(std::vector<unsigned int>& target, const std::array<un
     target.emplace_back(v[3]);
 }
 
-static void CreateUQuad(
-    std::vector<unsigned int>& target, const glm::vec3& position, const std::array<unsigned char, 6>& textureCoords)
+static void CreateUQuad(std::vector<uint32_t>& target, const glm::vec3& position,
+    const std::array<unsigned char, 6>& textureCoords)
 {
-    std::array<unsigned int, 4> t = GenerateTextCoords({ textureCoords[0], textureCoords[1] });
+    std::array<uint32_t, 4> t = GenerateTextCoords({ textureCoords[0], textureCoords[1] });
 
-    unsigned int v0 = ((int)position[0] + 0) << 23 | ((int)position[1] + 1) << 15 | ((int)position[2] + 1) << 11 | t[0];
-    unsigned int v1 = ((int)position[0] + 1) << 23 | ((int)position[1] + 1) << 15 | ((int)position[2] + 1) << 11 | t[1];
-    unsigned int v2 = ((int)position[0] + 1) << 23 | ((int)position[1] + 1) << 15 | ((int)position[2] + 0) << 11 | t[2];
-    unsigned int v3 = ((int)position[0] + 0) << 23 | ((int)position[1] + 1) << 15 | ((int)position[2] + 0) << 11 | t[3];
+    uint32_t v0 = ((int)position[0] + 0) << 23 | ((int)position[1] + 1) << 15
+        | ((int)position[2] + 1) << 11 | t[0];
+    uint32_t v1 = ((int)position[0] + 1) << 23 | ((int)position[1] + 1) << 15
+        | ((int)position[2] + 1) << 11 | t[1];
+    uint32_t v2 = ((int)position[0] + 1) << 23 | ((int)position[1] + 1) << 15
+        | ((int)position[2] + 0) << 11 | t[2];
+    uint32_t v3 = ((int)position[0] + 0) << 23 | ((int)position[1] + 1) << 15
+        | ((int)position[2] + 0) << 11 | t[3];
 
     PushVertexPos(target, { v0, v1, v2, v3 });
 }
 
-static void CreateDQuad(
-    std::vector<unsigned int>& target, const glm::vec3& position, const std::array<unsigned char, 6>& textureCoords)
+static void CreateDQuad(std::vector<uint32_t>& target, const glm::vec3& position,
+    const std::array<unsigned char, 6>& textureCoords)
 {
-    std::array<unsigned int, 4> t = GenerateTextCoords({ textureCoords[4], textureCoords[5] });
+    std::array<uint32_t, 4> t = GenerateTextCoords({ textureCoords[4], textureCoords[5] });
 
-    unsigned int v0 = ((int)position[0] + 0) << 23 | ((int)position[1] + 0) << 15 | ((int)position[2] + 1) << 11 | t[0];
-    unsigned int v1 = ((int)position[0] + 0) << 23 | ((int)position[1] + 0) << 15 | ((int)position[2] + 0) << 11 | t[1];
-    unsigned int v2 = ((int)position[0] + 1) << 23 | ((int)position[1] + 0) << 15 | ((int)position[2] + 0) << 11 | t[2];
-    unsigned int v3 = ((int)position[0] + 1) << 23 | ((int)position[1] + 0) << 15 | ((int)position[2] + 1) << 11 | t[3];
+    uint32_t v0 = ((int)position[0] + 0) << 23 | ((int)position[1] + 0) << 15
+        | ((int)position[2] + 1) << 11 | t[0];
+    uint32_t v1 = ((int)position[0] + 0) << 23 | ((int)position[1] + 0) << 15
+        | ((int)position[2] + 0) << 11 | t[1];
+    uint32_t v2 = ((int)position[0] + 1) << 23 | ((int)position[1] + 0) << 15
+        | ((int)position[2] + 0) << 11 | t[2];
+    uint32_t v3 = ((int)position[0] + 1) << 23 | ((int)position[1] + 0) << 15
+        | ((int)position[2] + 1) << 11 | t[3];
 
     PushVertexPos(target, { v0, v1, v2, v3 });
 }
 
-static void CreateFQuad(
-    std::vector<unsigned int>& target, const glm::vec3& position, const std::array<unsigned char, 6>& textureCoords)
+static void CreateFQuad(std::vector<uint32_t>& target, const glm::vec3& position,
+    const std::array<unsigned char, 6>& textureCoords)
 {
-    std::array<unsigned int, 4> t = GenerateTextCoords({ textureCoords[2], textureCoords[3] });
+    std::array<uint32_t, 4> t = GenerateTextCoords({ textureCoords[2], textureCoords[3] });
 
-    unsigned int v0 = ((int)position[0] + 0) << 23 | ((int)position[1] + 0) << 15 | ((int)position[2] + 1) << 11 | t[0];
-    unsigned int v1 = ((int)position[0] + 1) << 23 | ((int)position[1] + 0) << 15 | ((int)position[2] + 1) << 11 | t[1];
-    unsigned int v2 = ((int)position[0] + 1) << 23 | ((int)position[1] + 1) << 15 | ((int)position[2] + 1) << 11 | t[2];
-    unsigned int v3 = ((int)position[0] + 0) << 23 | ((int)position[1] + 1) << 15 | ((int)position[2] + 1) << 11 | t[3];
+    uint32_t v0 = ((int)position[0] + 0) << 23 | ((int)position[1] + 0) << 15
+        | ((int)position[2] + 1) << 11 | t[0];
+    uint32_t v1 = ((int)position[0] + 1) << 23 | ((int)position[1] + 0) << 15
+        | ((int)position[2] + 1) << 11 | t[1];
+    uint32_t v2 = ((int)position[0] + 1) << 23 | ((int)position[1] + 1) << 15
+        | ((int)position[2] + 1) << 11 | t[2];
+    uint32_t v3 = ((int)position[0] + 0) << 23 | ((int)position[1] + 1) << 15
+        | ((int)position[2] + 1) << 11 | t[3];
 
     PushVertexPos(target, { v0, v1, v2, v3 });
 }
 
-static void CreateBQuad(
-    std::vector<unsigned int>& target, const glm::vec3& position, const std::array<unsigned char, 6>& textureCoords)
+static void CreateBQuad(std::vector<uint32_t>& target, const glm::vec3& position,
+    const std::array<unsigned char, 6>& textureCoords)
 {
-    std::array<unsigned int, 4> t = GenerateTextCoords({ textureCoords[2], textureCoords[3] });
+    std::array<uint32_t, 4> t = GenerateTextCoords({ textureCoords[2], textureCoords[3] });
 
-    unsigned int v0 = ((int)position[0] + 1) << 23 | ((int)position[1] + 0) << 15 | ((int)position[2] + 0) << 11 | t[0];
-    unsigned int v1 = ((int)position[0] + 0) << 23 | ((int)position[1] + 0) << 15 | ((int)position[2] + 0) << 11 | t[1];
-    unsigned int v2 = ((int)position[0] + 0) << 23 | ((int)position[1] + 1) << 15 | ((int)position[2] + 0) << 11 | t[2];
-    unsigned int v3 = ((int)position[0] + 1) << 23 | ((int)position[1] + 1) << 15 | ((int)position[2] + 0) << 11 | t[3];
+    uint32_t v0 = ((int)position[0] + 1) << 23 | ((int)position[1] + 0) << 15
+        | ((int)position[2] + 0) << 11 | t[0];
+    uint32_t v1 = ((int)position[0] + 0) << 23 | ((int)position[1] + 0) << 15
+        | ((int)position[2] + 0) << 11 | t[1];
+    uint32_t v2 = ((int)position[0] + 0) << 23 | ((int)position[1] + 1) << 15
+        | ((int)position[2] + 0) << 11 | t[2];
+    uint32_t v3 = ((int)position[0] + 1) << 23 | ((int)position[1] + 1) << 15
+        | ((int)position[2] + 0) << 11 | t[3];
 
     PushVertexPos(target, { v0, v1, v2, v3 });
 }
 
-static void CreateRQuad(
-    std::vector<unsigned int>& target, const glm::vec3& position, const std::array<unsigned char, 6>& textureCoords)
+static void CreateRQuad(std::vector<uint32_t>& target, const glm::vec3& position,
+    const std::array<unsigned char, 6>& textureCoords)
 {
-    std::array<unsigned int, 4> t = GenerateTextCoords({ textureCoords[2], textureCoords[3] });
+    std::array<uint32_t, 4> t = GenerateTextCoords({ textureCoords[2], textureCoords[3] });
 
-    unsigned int v0 = ((int)position[0] + 1) << 23 | ((int)position[1] + 0) << 15 | ((int)position[2] + 1) << 11 | t[0];
-    unsigned int v1 = ((int)position[0] + 1) << 23 | ((int)position[1] + 0) << 15 | ((int)position[2] + 0) << 11 | t[1];
-    unsigned int v2 = ((int)position[0] + 1) << 23 | ((int)position[1] + 1) << 15 | ((int)position[2] + 0) << 11 | t[2];
-    unsigned int v3 = ((int)position[0] + 1) << 23 | ((int)position[1] + 1) << 15 | ((int)position[2] + 1) << 11 | t[3];
+    uint32_t v0 = ((int)position[0] + 1) << 23 | ((int)position[1] + 0) << 15
+        | ((int)position[2] + 1) << 11 | t[0];
+    uint32_t v1 = ((int)position[0] + 1) << 23 | ((int)position[1] + 0) << 15
+        | ((int)position[2] + 0) << 11 | t[1];
+    uint32_t v2 = ((int)position[0] + 1) << 23 | ((int)position[1] + 1) << 15
+        | ((int)position[2] + 0) << 11 | t[2];
+    uint32_t v3 = ((int)position[0] + 1) << 23 | ((int)position[1] + 1) << 15
+        | ((int)position[2] + 1) << 11 | t[3];
 
     PushVertexPos(target, { v0, v1, v2, v3 });
 }
 
-static void CreateLQuad(
-    std::vector<unsigned int>& target, const glm::vec3& position, const std::array<unsigned char, 6>& textureCoords)
+static void CreateLQuad(std::vector<uint32_t>& target, const glm::vec3& position,
+    const std::array<unsigned char, 6>& textureCoords)
 {
-    std::array<unsigned int, 4> t = GenerateTextCoords({ textureCoords[2], textureCoords[3] });
+    std::array<uint32_t, 4> t = GenerateTextCoords({ textureCoords[2], textureCoords[3] });
 
-    unsigned int v0 = ((int)position[0] + 0) << 23 | ((int)position[1] + 0) << 15 | ((int)position[2] + 0) << 11 | t[0];
-    unsigned int v1 = ((int)position[0] + 0) << 23 | ((int)position[1] + 0) << 15 | ((int)position[2] + 1) << 11 | t[1];
-    unsigned int v2 = ((int)position[0] + 0) << 23 | ((int)position[1] + 1) << 15 | ((int)position[2] + 1) << 11 | t[2];
-    unsigned int v3 = ((int)position[0] + 0) << 23 | ((int)position[1] + 1) << 15 | ((int)position[2] + 0) << 11 | t[3];
+    uint32_t v0 = ((int)position[0] + 0) << 23 | ((int)position[1] + 0) << 15
+        | ((int)position[2] + 0) << 11 | t[0];
+    uint32_t v1 = ((int)position[0] + 0) << 23 | ((int)position[1] + 0) << 15
+        | ((int)position[2] + 1) << 11 | t[1];
+    uint32_t v2 = ((int)position[0] + 0) << 23 | ((int)position[1] + 1) << 15
+        | ((int)position[2] + 1) << 11 | t[2];
+    uint32_t v3 = ((int)position[0] + 0) << 23 | ((int)position[1] + 1) << 15
+        | ((int)position[2] + 0) << 11 | t[3];
 
     PushVertexPos(target, { v0, v1, v2, v3 });
 }
 
 // the chunk has a border so that I know what faces to cull between chunks
 // (I only generate the mesh of the part inside the border)
-Chunk::Chunk(glm::vec3 position, const VertexBufferLayout& layout, unsigned int maxVertexCount,
-    const std::vector<unsigned int>& indices, glm::vec3* playerPosition)
+Chunk::Chunk(glm::vec3 position, const VertexBufferLayout& layout, uint32_t maxVertexCount,
+    const std::vector<uint32_t>& indices, glm::vec3* playerPosition)
     : m_ChunkPosition(position)
     , m_Chunk(Matrix3D<Block, XSIZE, YSIZE, ZSIZE>())
     , m_MaxVertexCount(maxVertexCount)
@@ -129,12 +153,13 @@ Chunk::Chunk(glm::vec3 position, const VertexBufferLayout& layout, unsigned int 
     , m_MinHeight(YSIZE)
     , m_MaxHeight(0)
 {
-    m_IBO = std::make_unique<IndexBuffer>(indices.size() * sizeof(unsigned int), indices.data());
-    m_TransparentIBO = std::make_unique<IndexBuffer>(indices.size() * sizeof(unsigned int), indices.data());
+    m_IBO = std::make_unique<IndexBuffer>(indices.size() * sizeof(uint32_t), indices.data());
+    m_TransparentIBO
+        = std::make_unique<IndexBuffer>(indices.size() * sizeof(uint32_t), indices.data());
     m_VBO = std::make_unique<VertexBuffer>();
     m_TransparentVBO = std::make_unique<VertexBuffer>();
-    m_VBO->CreateDynamic(sizeof(unsigned int) * maxVertexCount);
-    m_TransparentVBO->CreateDynamic(sizeof(unsigned int) * maxVertexCount);
+    m_VBO->CreateDynamic(sizeof(uint32_t) * maxVertexCount);
+    m_TransparentVBO->CreateDynamic(sizeof(uint32_t) * maxVertexCount);
     m_VAO = std::make_unique<VertexArray>();
     m_TransparentVAO = std::make_unique<VertexArray>();
     m_VAO->AddBuffer(*m_VBO, layout);
@@ -174,8 +199,13 @@ void Chunk::CreateHeightMap()
 
     for (int i = 0; i < XSIZE; i++) {
         for (int k = 0; k < ZSIZE; k++) {
-            float a = (m_Noise.OctaveNoise(i + m_ChunkPosition.x, k + m_ChunkPosition.z, 6, 0.002f) + 1) / 2;
-            float m = (m_Noise.OctaveNoise(i + m_ChunkPosition.x + 123, k + m_ChunkPosition.z + 456, 8, 0.01f) + 1) / 2;
+            float a
+                = (m_Noise.OctaveNoise(i + m_ChunkPosition.x, k + m_ChunkPosition.z, 6, 0.002f) + 1)
+                / 2;
+            float m = (m_Noise.OctaveNoise(
+                           i + m_ChunkPosition.x + 123, k + m_ChunkPosition.z + 456, 8, 0.01f)
+                          + 1)
+                / 2;
             a *= a;
             float terrain_height;
             if (a < 0.5)
@@ -186,7 +216,8 @@ void Chunk::CreateHeightMap()
             terrain_height = static_cast<int>(terrain_height + elevation);
             if (terrain_height < 40)
                 terrain_height = 40;
-            int height = static_cast<int>(m_Noise.OctaveNoise(i + m_ChunkPosition.x, k + m_ChunkPosition.z, 8) * 5.0f);
+            int height = static_cast<int>(
+                m_Noise.OctaveNoise(i + m_ChunkPosition.x, k + m_ChunkPosition.z, 8) * 5.0f);
 
             int final_height = height + terrain_height;
             if (final_height > YSIZE)
@@ -220,16 +251,18 @@ void Chunk::CreateSurfaceLayer()
                 int height = m_HeightMap[index++];
                 if (j < height) {
                     int dirtThickness
-                        = static_cast<int>(
-                              (m_Noise.OctaveNoise(i + m_ChunkPosition.x + 111, k + m_ChunkPosition.z + 111, 8) + 1) / 2
-                              * 10)
+                        = static_cast<int>((m_Noise.OctaveNoise(i + m_ChunkPosition.x + 111,
+                                                k + m_ChunkPosition.z + 111, 8)
+                                               + 1)
+                              / 2 * 10)
                         - j;
                     if (dirtThickness > 0)
                         m_Chunk(i, j, k) = Block::DIRT;
                     else
                         m_Chunk(i, j, k) = Block::STONE;
                 } else if (j == height) {
-                    float noise_chance = m_Noise.OctaveNoise(i + m_ChunkPosition.x, k + m_ChunkPosition.z, 8);
+                    float noise_chance
+                        = m_Noise.OctaveNoise(i + m_ChunkPosition.x, k + m_ChunkPosition.z, 8);
                     if (j == water_level && noise_chance >= 0)
                         m_Chunk(i, j, k) = Block::SAND;
                     else if (j < water_level) {
@@ -263,7 +296,8 @@ void Chunk::GenerateMesh()
             for (int i = 1; i < XSIZE - 1; i++) {
                 for (int k = 1; k < ZSIZE - 1; k++) {
                     if (m_Chunk(i, j, k) != Block::EMPTY) {
-                        std::array<unsigned char, 6> textureCoords = s_TextureMap.at(m_Chunk(i, j, k));
+                        std::array<unsigned char, 6> textureCoords
+                            = s_TextureMap.at(m_Chunk(i, j, k));
                         if (m_Chunk(i, j, k) != Block::WATER) {
                             if (j > 0
                                 && (m_Chunk(i, j - 1, k) == Block::EMPTY
@@ -275,16 +309,20 @@ void Chunk::GenerateMesh()
                                     || m_Chunk(i, j + 1, k) == Block::WATER)) { // U
                                 CreateUQuad(m_Mesh, glm::vec3(i, j, k), textureCoords);
                             }
-                            if (m_Chunk(i, j, k - 1) == Block::EMPTY || m_Chunk(i, j, k - 1) == Block::WATER) { // B
+                            if (m_Chunk(i, j, k - 1) == Block::EMPTY
+                                || m_Chunk(i, j, k - 1) == Block::WATER) { // B
                                 CreateBQuad(m_Mesh, glm::vec3(i, j, k), textureCoords);
                             }
-                            if (m_Chunk(i, j, k + 1) == Block::EMPTY || m_Chunk(i, j, k + 1) == Block::WATER) { // F
+                            if (m_Chunk(i, j, k + 1) == Block::EMPTY
+                                || m_Chunk(i, j, k + 1) == Block::WATER) { // F
                                 CreateFQuad(m_Mesh, glm::vec3(i, j, k), textureCoords);
                             }
-                            if (m_Chunk(i - 1, j, k) == Block::EMPTY || m_Chunk(i - 1, j, k) == Block::WATER) { // L
+                            if (m_Chunk(i - 1, j, k) == Block::EMPTY
+                                || m_Chunk(i - 1, j, k) == Block::WATER) { // L
                                 CreateLQuad(m_Mesh, glm::vec3(i, j, k), textureCoords);
                             }
-                            if (m_Chunk(i + 1, j, k) == Block::EMPTY || m_Chunk(i + 1, j, k) == Block::WATER) { // R
+                            if (m_Chunk(i + 1, j, k) == Block::EMPTY
+                                || m_Chunk(i + 1, j, k) == Block::WATER) { // R
                                 CreateRQuad(m_Mesh, glm::vec3(i, j, k), textureCoords);
                             }
                         } else { // add to transparent buffer
@@ -313,26 +351,28 @@ void Chunk::GenerateMesh()
         }
         // solid mesh
         size_t indexCount = m_Mesh.size() / 4 * 6; // num faces * 6
-        m_VBO->SendData(m_Mesh.size() * sizeof(unsigned int), m_Mesh.data());
+        m_VBO->SendData(m_Mesh.size() * sizeof(uint32_t), m_Mesh.data());
         m_IBO->SetCount(indexCount);
         // transparent mesh
         if (!m_TransparentMesh.empty()) {
             indexCount = m_TransparentMesh.size() / 4 * 6;
-            m_TransparentVBO->SendData(m_TransparentMesh.size() * sizeof(unsigned int), m_TransparentMesh.data());
+            m_TransparentVBO->SendData(
+                m_TransparentMesh.size() * sizeof(uint32_t), m_TransparentMesh.data());
             m_TransparentIBO->SetCount(indexCount);
         }
     }
 }
 
-/* void Chunk::UpdateMesh(unsigned int x, unsigned int y, unsigned int z, Block block) */
+/* void Chunk::UpdateMesh(uint32_t x, uint32_t y, uint32_t z, Block block) */
 /* { */
 /*     // take care of border (I think, maybe I also have to do for y or not do this at all) */
 /*     x += 1; */
 /*     z += 1; */
-/*     // check the blocks surrounding the modified block and figure out a way to edit the m_Mesh accordingly */
-/*     for (unsigned int i = x - 1; i <= x + 1; i++) { */
-/*         for (unsigned int k = z - 1; k <= z + 1; k++) { */
-/*             for (unsigned int j = y - 1; j <= y + 1; j++) { */
+/*     // check the blocks surrounding the modified block and figure out a way to edit the m_Mesh
+ * accordingly */
+/*     for (uint32_t i = x - 1; i <= x + 1; i++) { */
+/*         for (uint32_t k = z - 1; k <= z + 1; k++) { */
+/*             for (uint32_t j = y - 1; j <= y + 1; j++) { */
 /*                 // to figure out */
 /*             } */
 /*         } */
@@ -348,7 +388,7 @@ void Chunk::Render(const Renderer& renderer)
 
 Matrix3D<Block, XSIZE, YSIZE, ZSIZE> Chunk::GetMatrix() const { return m_Chunk; }
 
-void Chunk::SetMatrix(unsigned int x, unsigned int y, unsigned int z, Block block)
+void Chunk::SetMatrix(uint32_t x, uint32_t y, uint32_t z, Block block)
 {
     m_Chunk(x, y, z) = block;
     if (y < m_MinHeight)
@@ -366,13 +406,14 @@ glm::vec3 Chunk::GetCenterPosition() const
     return glm::vec3(m_ChunkPosition.x + XSIZE / 2, 0, m_ChunkPosition.z + ZSIZE / 2);
 }
 
-const std::unordered_map<Block, std::array<unsigned char, 6>> Chunk::s_TextureMap = { // top, side, bottom
-    { Block::GRASS, { 12, 3, 3, 15, 2, 15 } }, { Block::DIRT, { 2, 15, 2, 15, 2, 15 } },
-    { Block::STONE, { 1, 15, 1, 15, 1, 15 } }, { Block::DIAMOND, { 2, 12, 2, 12, 2, 12 } },
-    { Block::GOLD, { 0, 13, 0, 13, 0, 13 } }, { Block::COAL, { 2, 13, 2, 13, 2, 13 } },
-    { Block::IRON, { 1, 13, 1, 13, 1, 13 } }, { Block::LEAVES, { 11, 1, 11, 1, 11, 1 } },
-    { Block::WOOD, { 5, 14, 4, 14, 5, 14 } }, { Block::SNOW, { 2, 11, 2, 11, 2, 11 } },
-    { Block::SNOWY_GRASS, { 2, 11, 4, 11, 2, 15 } }, { Block::WATER, { 15, 3, 15, 3, 15, 3 } },
-    { Block::SAND, { 2, 14, 2, 14, 2, 14 } }, { Block::GRAVEL, { 3, 14, 3, 14, 3, 14 } },
-    { Block::BEDROCK, { 1, 14, 1, 14, 1, 14 } }
-};
+const std::unordered_map<Block, std::array<unsigned char, 6>> Chunk::s_TextureMap
+    = { // top, side, bottom
+          { Block::GRASS, { 12, 3, 3, 15, 2, 15 } }, { Block::DIRT, { 2, 15, 2, 15, 2, 15 } },
+          { Block::STONE, { 1, 15, 1, 15, 1, 15 } }, { Block::DIAMOND, { 2, 12, 2, 12, 2, 12 } },
+          { Block::GOLD, { 0, 13, 0, 13, 0, 13 } }, { Block::COAL, { 2, 13, 2, 13, 2, 13 } },
+          { Block::IRON, { 1, 13, 1, 13, 1, 13 } }, { Block::LEAVES, { 11, 1, 11, 1, 11, 1 } },
+          { Block::WOOD, { 5, 14, 4, 14, 5, 14 } }, { Block::SNOW, { 2, 11, 2, 11, 2, 11 } },
+          { Block::SNOWY_GRASS, { 2, 11, 4, 11, 2, 15 } },
+          { Block::WATER, { 15, 3, 15, 3, 15, 3 } }, { Block::SAND, { 2, 14, 2, 14, 2, 14 } },
+          { Block::GRAVEL, { 3, 14, 3, 14, 3, 14 } }, { Block::BEDROCK, { 1, 14, 1, 14, 1, 14 } }
+      };

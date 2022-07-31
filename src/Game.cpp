@@ -23,17 +23,14 @@ static int mod(int a, int b)
     return res >= 0 ? res : res + b;
 }
 
-std::pair<ChunkCoord, std::array<unsigned int, 3>> Game::GlobalToLocal(
-    const glm::vec3& playerPosition)
+std::pair<ChunkCoord, glm::vec3> Game::GlobalToLocal(const glm::vec3& playerPosition)
 {
-    unsigned int chunkSize = m_ChunkManager.GetChunkSize()[0];
+    uint32_t chunkSize = m_ChunkManager.GetChunkSize()[0];
     ChunkCoord chunkCoord = m_ChunkManager.CalculateChunkCoord(playerPosition);
-    unsigned int playerPosX
-        = mod(static_cast<int>(std::floor(playerPosition.x) - 1), chunkSize) + 1;
-    unsigned int playerPosZ
-        = mod(static_cast<int>(std::floor(playerPosition.z) - 1), chunkSize) + 1;
-    std::array<unsigned int, 3> playerPos
-        = { playerPosX, static_cast<unsigned int>(std::floor(playerPosition.y)), playerPosZ };
+    uint32_t playerPosX = mod(static_cast<int>(std::floor(playerPosition.x) - 1), chunkSize) + 1;
+    uint32_t playerPosZ = mod(static_cast<int>(std::floor(playerPosition.z) - 1), chunkSize) + 1;
+    glm::vec3 playerPos
+        = { playerPosX, static_cast<uint32_t>(std::floor(playerPosition.y)), playerPosZ };
     return std::make_pair(chunkCoord, playerPos);
 }
 
@@ -112,7 +109,7 @@ void Game::ReleaseKey(int key) { m_KeyPressed[key] = false; }
 glm::vec3 Game::GetPlayerPosition() { return *m_Camera.GetPlayerPosition(); }
 
 bool Game::CalculateCollision(
-    glm::vec3* currentPosition, const glm::vec3& playerSpeed, unsigned int chunkSize)
+    glm::vec3* currentPosition, const glm::vec3& playerSpeed, uint32_t chunkSize)
 {
     glm::vec3 finalPosition = *currentPosition + playerSpeed;
     int startX, endX, startY, endY, startZ, endZ;
@@ -142,14 +139,17 @@ bool Game::CalculateCollision(
     for (int i = startX; i <= endX; i++) {
         for (int j = startY; j <= endY; j++) {
             for (int k = startZ; k <= endZ; k++) {
-                std::pair<ChunkCoord, std::array<unsigned int, 3>> localPos
-                    = GlobalToLocal(glm::vec3(i, j, k));
-                Chunk* chunk = &m_ChunkManager.m_ChunkMap.find(localPos.first)->second;
-                if (chunk->GetMatrix()(localPos.second[0], localPos.second[1], localPos.second[2])
-                    != Block::EMPTY) {
-                    physics::Aabb blockBbox = physics::CreateBlockAabb(glm::vec3(i, j, k));
-                    physics::SnapAabb(playerBbox, blockBbox, playerSpeed, currentPosition);
-                    return true;
+                std::pair<ChunkCoord, glm::vec3> localPos = GlobalToLocal(glm::vec3(i, j, k));
+                if (m_ChunkManager.m_ChunkMap.find(localPos.first)
+                    != m_ChunkManager.m_ChunkMap.end()) {
+                    Chunk* chunk = &m_ChunkManager.m_ChunkMap.find(localPos.first)->second;
+                    if (chunk->GetMatrix()(
+                            localPos.second[0], localPos.second[1], localPos.second[2])
+                        != Block::EMPTY) {
+                        physics::Aabb blockBbox = physics::CreateBlockAabb(glm::vec3(i, j, k));
+                        physics::SnapAabb(playerBbox, blockBbox, playerSpeed, currentPosition);
+                        return true;
+                    }
                 }
             }
         }
@@ -160,7 +160,7 @@ bool Game::CalculateCollision(
 void Game::Move(float deltaTime)
 {
     glm::vec3* currentPosition = m_Camera.GetPlayerPosition();
-    unsigned int chunkSize = m_ChunkManager.GetChunkSize()[0];
+    uint32_t chunkSize = m_ChunkManager.GetChunkSize()[0];
     glm::vec3 playerSpeed
         = m_Camera.GetCameraSpeed() * deltaTime; // the destination in the next frame
 
@@ -221,6 +221,7 @@ void Game::Move(float deltaTime)
 
     *currentPosition += playerSpeed;
 
+    // don't let the player go outside of world borders
     if (currentPosition->y < 0)
         currentPosition->y = 0;
     else if (currentPosition->y > m_ChunkManager.GetChunkSize()[1] - 1)
@@ -242,7 +243,7 @@ void Game::ApplyGravity(float deltaTime)
 void Game::CheckRayCast()
 {
     glm::vec3* playerPos = m_Camera.GetPlayerPosition();
-    unsigned int chunkSize = m_ChunkManager.GetChunkSize()[0];
+    uint32_t chunkSize = m_ChunkManager.GetChunkSize()[0];
     glm::vec3 playerDir = m_Camera.GetPlayerDirection();
     float Sx = std::abs(1 / playerDir.x);
     float Sy = std::abs(1 / playerDir.y);
@@ -279,10 +280,10 @@ void Game::CheckRayCast()
     float distance = 0.0f;
     ChunkCoord targetLocalCoord;
     ChunkCoord previousChunkCoord;
-    std::array<unsigned int, 3> targetLocalVoxel;
-    std::array<unsigned int, 3> previousLocalVoxel;
+    glm::vec3 targetLocalVoxel;
+    glm::vec3 previousLocalVoxel;
     Chunk* targetChunk = nullptr;
-    Chunk* previousChunk;
+    Chunk* previousChunk = nullptr;
     glm::vec3 previousVoxel;
     while (!voxelFound && distance < maxDistance) {
         previousVoxel = currentVoxel;
@@ -312,20 +313,21 @@ void Game::CheckRayCast()
             }
         }
 
-        std::pair<ChunkCoord, std::array<unsigned int, 3>> target = GlobalToLocal(currentVoxel);
+        std::pair<ChunkCoord, glm::vec3> target = GlobalToLocal(currentVoxel);
         targetLocalCoord = target.first;
         targetLocalVoxel = target.second;
-        targetChunk = &m_ChunkManager.m_ChunkMap.find(targetLocalCoord)->second;
+        if (m_ChunkManager.m_ChunkMap.find(targetLocalCoord) != m_ChunkManager.m_ChunkMap.end()) {
+            targetChunk = &m_ChunkManager.m_ChunkMap.find(targetLocalCoord)->second;
 
-        if (currentVoxel.y >= 0 && currentVoxel.y < m_ChunkManager.GetChunkSize()[1]
-            && targetChunk->GetMatrix()(
-                   targetLocalVoxel[0], targetLocalVoxel[1], targetLocalVoxel[2])
-                != Block::EMPTY) {
-            voxelFound = true;
+            if (currentVoxel.y >= 0 && currentVoxel.y < m_ChunkManager.GetChunkSize()[1]
+                && targetChunk->GetMatrix()(
+                       targetLocalVoxel[0], targetLocalVoxel[1], targetLocalVoxel[2])
+                    != Block::EMPTY) {
+                voxelFound = true;
+            }
         }
     }
 
-    // TODO: split this method here
     if (voxelFound) {
         if (m_KeyPressed[GLFW_MOUSE_BUTTON_LEFT]) {
             m_HoldingBlock = targetChunk->GetMatrix()(
@@ -333,30 +335,30 @@ void Game::CheckRayCast()
             if (m_HoldingBlock == Block::BEDROCK) {
                 m_HoldingBlock = Block::EMPTY;
             } else {
-                targetChunk->SetMatrix(
-                    targetLocalVoxel[0], targetLocalVoxel[1], targetLocalVoxel[2], Block::EMPTY);
-                m_ChunkManager.UpdateChunk(targetLocalCoord);
-                // check if the target block is in the chunk border
-                if (targetLocalVoxel[0] == 1 || targetLocalVoxel[2] == 1
-                    || targetLocalVoxel[0] == chunkSize || targetLocalVoxel[2] == chunkSize) {
-                    UpdateNeighbor(currentVoxel, chunkSize, targetLocalCoord, Block::EMPTY);
-                }
+                PlaceBlock(Block::EMPTY, targetChunk, targetLocalCoord, targetLocalVoxel,
+                    currentVoxel, chunkSize);
             }
-        } else if (m_KeyPressed[GLFW_MOUSE_BUTTON_RIGHT]
+            m_KeyPressed[GLFW_MOUSE_BUTTON_LEFT] = false;
+        } else if (m_KeyPressed[GLFW_MOUSE_BUTTON_RIGHT] && previousChunk != nullptr
             && !physics::Intersect(
                 physics::CreatePlayerAabb(*playerPos), physics::CreateBlockAabb(previousVoxel))) {
-            previousChunk->SetMatrix(previousLocalVoxel[0], previousLocalVoxel[1],
-                previousLocalVoxel[2], m_HoldingBlock);
-            m_ChunkManager.UpdateChunk(previousChunkCoord);
-            // check if the target is in the chunk border
-            if (previousLocalVoxel[0] == 1 || previousLocalVoxel[2] == 1
-                || previousLocalVoxel[0] == chunkSize || previousLocalVoxel[2] == chunkSize) {
-                UpdateNeighbor(previousVoxel, chunkSize, previousChunkCoord, m_HoldingBlock);
-            }
+            PlaceBlock(m_HoldingBlock, previousChunk, previousChunkCoord, previousLocalVoxel,
+                previousVoxel, chunkSize);
+            m_KeyPressed[GLFW_MOUSE_BUTTON_RIGHT] = false;
         }
     }
-    m_KeyPressed[GLFW_MOUSE_BUTTON_LEFT] = false;
-    m_KeyPressed[GLFW_MOUSE_BUTTON_RIGHT] = false;
+}
+
+void Game::PlaceBlock(Block block, Chunk* chunk, const ChunkCoord& chunkCoord,
+    const glm::vec3& localVoxel, const glm::vec3& globalVoxel, uint32_t chunkSize)
+{
+    chunk->SetMatrix(localVoxel[0], localVoxel[1], localVoxel[2], block);
+    m_ChunkManager.UpdateChunk(chunkCoord);
+    // check if the target is in the chunk border
+    if (localVoxel[0] == 1 || localVoxel[2] == 1 || localVoxel[0] == chunkSize
+        || localVoxel[2] == chunkSize) {
+        UpdateNeighbor(globalVoxel, chunkSize, chunkCoord, block);
+    }
 }
 
 void Game::CheckJump()
@@ -382,11 +384,11 @@ void Game::UpdateChunks()
 }
 
 void Game::UpdateNeighbor(
-    glm::vec3 currentVoxel, unsigned int chunkSize, ChunkCoord targetLocalCoord, Block block)
+    glm::vec3 currentVoxel, uint32_t chunkSize, ChunkCoord targetLocalCoord, Block block)
 {
     // take a step of 1 in every direction and update the neighboring chunks found
     currentVoxel.x += 1;
-    std::pair<ChunkCoord, std::array<unsigned int, 3>> neighbor = GlobalToLocal(currentVoxel);
+    std::pair<ChunkCoord, glm::vec3> neighbor = GlobalToLocal(currentVoxel);
     if (neighbor.first != targetLocalCoord) {
         Chunk* neighborChunk = &m_ChunkManager.m_ChunkMap.find(neighbor.first)->second;
         neighborChunk->SetMatrix(

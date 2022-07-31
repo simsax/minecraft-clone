@@ -22,14 +22,15 @@ private:
     void ApplyGravity(float deltaTime);
     void CheckJump();
     void UpdateNeighbor(
-        glm::vec3 currentVoxel, unsigned int chunkSize, ChunkCoord targetLocalCoord, Block block);
+        glm::vec3 currentVoxel, uint32_t chunkSize, ChunkCoord targetLocalCoord, Block block);
     void UpdateChunks();
     void Move(float deltaTime);
     void HandleInput();
     bool CalculateCollision(
-        glm::vec3* currentPosition, const glm::vec3& playerSpeed, unsigned int chunkSize);
-    std::pair<ChunkCoord, std::array<unsigned int, 3>> GlobalToLocal(
-        const glm::vec3& playerPosition);
+        glm::vec3* currentPosition, const glm::vec3& playerSpeed, uint32_t chunkSize);
+    std::pair<ChunkCoord, glm::vec3> GlobalToLocal(const glm::vec3& playerPosition);
+    void PlaceBlock(Block block, Chunk* chunk, const ChunkCoord& chunkCoord,
+        const glm::vec3& localVoxel, const glm::vec3& globalVoxel, uint32_t chunkSize);
 
     std::array<bool, GLFW_KEY_LAST> m_KeyPressed;
     bool m_Ground;
