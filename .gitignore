@@ -6,6 +6,7 @@
 # User-specific files
 TODO
 .idea
+.vscode
 /cmake-build-debug
 /cmake-build-release
 /build
