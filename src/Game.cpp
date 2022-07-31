@@ -44,6 +44,7 @@ Game::Game()
     , m_LastChunk({ 0, 0 })
     , m_SortedChunk({ 0, 0 })
     , m_HoldingBlock(Block::STONE)
+    , m_SkyColor(173.0f / 255.0f, 223.0f / 255.0f, 230.0f / 255.0f)
 {
 }
 
@@ -80,10 +81,12 @@ void Game::OnUpdate(float deltaTime)
 
 void Game::OnRender()
 {
-    glClearColor(173.0f / 255.0f, 223.0f / 255.0f, 230.0f / 255.0f, 1.0f);
+    glClearColor(m_SkyColor.x, m_SkyColor.y, m_SkyColor.z, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     m_Renderer.SetMVP(m_Camera.GetMVP());
+    m_Renderer.SetMV(m_Camera.GetMV());
+    m_Renderer.SetSkyColor(m_SkyColor);
     m_ChunkManager.Render(m_Renderer);
 }
 

@@ -15,6 +15,7 @@ public:
     void SetCameraSpeed(const glm::vec3& speed);
     void Move(float deltaTime);
     glm::mat4 GetMVP() const;
+    glm::mat4 GetMV() const;
     glm::vec3* GetPlayerPosition();
     glm::vec3 GetPreviousPlayerPosition() const;
     glm::vec3 GetPlayerDirection() const;

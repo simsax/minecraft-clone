@@ -51,6 +51,11 @@ glm::mat4 Camera::GetMVP() const
     return m_Proj * glm::lookAt(m_CameraPos, m_CameraPos + m_CameraFront, m_CameraUp);
 }
 
+glm::mat4 Camera::GetMV() const
+{
+    return glm::lookAt(m_CameraPos, m_CameraPos + m_CameraFront, m_CameraUp);
+}
+
 glm::vec3* Camera::GetPlayerPosition() { return &m_CameraPos; }
 
 glm::vec3 Camera::GetPreviousPlayerPosition() const { return m_CameraPreviousPos; }

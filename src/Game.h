@@ -43,4 +43,5 @@ private:
     ChunkCoord m_SortedChunk;
     float m_VerticalVelocity;
     Block m_HoldingBlock;
+    glm::vec3 m_SkyColor;
 };

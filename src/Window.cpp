@@ -51,9 +51,9 @@ Window::Window(Game* game, int width, int height, const char* name)
 
 #ifndef NDEBUG
     // debug stuff
-//	glEnable(GL_DEBUG_OUTPUT);
-//	glDebugMessageCallback(Window::MessageCallback, 0);
-//	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
+    glEnable(GL_DEBUG_OUTPUT);
+    glDebugMessageCallback(Window::MessageCallback, 0);
+    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
 #endif
 
     m_Game->Init();
