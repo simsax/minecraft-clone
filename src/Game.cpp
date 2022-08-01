@@ -88,7 +88,7 @@ void Game::OnRender()
     m_Renderer.SetMV(m_Camera.GetMV());
     m_Renderer.SetSkyColor(m_SkyColor);
     m_ChunkManager.Render(m_Renderer);
-    // m_SpriteRenderer.Draw();
+    m_SpriteRenderer.Draw();
 }
 
 void Game::HandleInput()

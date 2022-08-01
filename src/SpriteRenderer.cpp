@@ -39,11 +39,11 @@ void SpriteRenderer::Init()
     m_Shader = std::make_unique<Shader>(std::string(SOURCE_DIR) + "/res/shaders/shader_sprite.vert",
         std::string(SOURCE_DIR) + "/res/shaders/shader_sprite.frag");
     m_Shader->Bind();
+    m_Shader->SetUniform1i("u_Texture", 0);
 
     m_Texture = std::make_unique<Texture>(std::string(SOURCE_DIR) + "/res/textures/gui.png");
-    //   m_Texture->Bind(0);
-    //   m_Shader->SetUniform1i("u_Texture", 0);
 
+    // put this in constructor
     m_VBO = std::make_unique<VertexBuffer>();
     m_VBO->CreateStatic(crosshair_vertices.size() * sizeof(float), crosshair_vertices.data());
     m_VertexLayout.Push<float>(4); // vec2 pos + vec2 texture
@@ -53,16 +53,17 @@ void SpriteRenderer::Init()
 
 void SpriteRenderer::Draw() const
 {
-    glDisable(GL_DEPTH_TEST);
+    // glDisable(GL_DEPTH_TEST);
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(0.5f, 0.5f, 0.0f));
     model = glm::translate(model, glm::vec3(WIDTH / 2, HEIGHT / 2, 0.0f));
     glm::mat4 mvp = m_Proj * model;
-    m_Shader->SetUniformMat4f("u_MVP", mvp);
     glm::vec4 texColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+    m_Shader->SetUniformMat4f("u_MVP", mvp);
     m_Shader->SetUniform4fv("u_TexColor", texColor);
+    m_Texture->Bind(0);
     m_Shader->Bind();
     m_VAO->Bind();
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    glEnable(GL_DEPTH_TEST);
+    // glEnable(GL_DEPTH_TEST);
 }

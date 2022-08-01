@@ -20,10 +20,9 @@ void Renderer::Init()
     m_Shader = std::make_unique<Shader>(std::string(SOURCE_DIR) + "/res/shaders/shader.vert",
         std::string(SOURCE_DIR) + "/res/shaders/shader.frag");
     m_Shader->Bind();
+    m_Shader->SetUniform1i("u_Texture", 0);
 
     m_Texture = std::make_unique<Texture>(std::string(SOURCE_DIR) + "/res/textures/terrain.png");
-    m_Texture->Bind(0);
-    m_Shader->SetUniform1i("u_Texture", 0);
 }
 
 void Renderer::Draw(
@@ -34,6 +33,7 @@ void Renderer::Draw(
     m_Shader->SetUniformMat4f("u_MV", m_MV);
     m_Shader->SetUniform3fv("u_ChunkPos", chunkPos);
     m_Shader->SetUniform3fv("u_SkyColor", m_SkyColor);
+    m_Texture->Bind(0);
     m_Shader->Bind();
     vao.Bind();
     ibo.Bind();
