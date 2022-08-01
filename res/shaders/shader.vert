@@ -10,10 +10,10 @@ uniform mat4 u_MV;
 uniform vec3 u_ChunkPos;
 
 const float offset = 0.0625f;
-const float density = 0.0045f;
-const float gradient = 6.0f;
+const float density = 0.006f;
+const float gradient = 10.0f;
 
-vec2 texCoords[4] = vec2[4](
+const vec2 texCoords[4] = vec2[4](
 	vec2(0.0f, 0.0f),
 	vec2(1.0f, 0.0f),
 	vec2(1.0f, 1.0f),

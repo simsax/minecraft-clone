@@ -5,9 +5,9 @@
 #include <string>
 #include <sstream>
 
-Shader::Shader(const std::string& folderPath)
+Shader::Shader(const std::string& vertexPath, const std::string& fragPath)
 {
-    ShaderProgramSource source = ParseShader(folderPath);
+    ShaderProgramSource source = ParseShader(vertexPath, fragPath);
     m_RendererID = CreateShader(source.VertexSource, source.FragmentSource);
 }
 
@@ -50,6 +50,11 @@ void Shader::SetUniform2fv(const std::string& name, const glm::vec2& value)
 void Shader::SetUniform3fv(const std::string& name, const glm::vec3& value)
 {
     glUniform3fv(GetUniformLocation(name), 1, &value[0]);
+}
+
+void Shader::SetUniform4fv(const std::string& name, const glm::vec4& value)
+{
+    glUniform4fv(GetUniformLocation(name), 1, &value[0]);
 }
 
 GLint Shader::GetUniformLocation(const std::string& name)
@@ -118,10 +123,10 @@ static std::string ReadFile(const std::string& filePath)
     return ss.str();
 }
 
-ShaderProgramSource Shader::ParseShader(const std::string& folderPath)
+ShaderProgramSource Shader::ParseShader(const std::string& vertexPath, const std::string& fragPath)
 {
-    std::string vertexShader = ReadFile(folderPath + "shader.vert");
-    std::string fragmentShader = ReadFile(folderPath + "shader.frag");
+    std::string vertexShader = ReadFile(vertexPath);
+    std::string fragmentShader = ReadFile(fragPath);
 
     return { vertexShader, fragmentShader };
 }

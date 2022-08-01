@@ -10,7 +10,6 @@
 
 Camera::Camera(glm::vec3 position)
     : m_Frustum(ZNEAR, ZFAR, FOV, HEIGHT, WIDTH)
-    , m_Proj(glm::perspective(glm::radians(FOV), WIDTH / HEIGHT, ZNEAR, ZFAR))
     , m_CameraPos(position)
     , m_CameraPreviousPos(position)
     , m_CameraFront(glm::vec3(0.0f, 0.0f, -1.0f))
@@ -45,11 +44,6 @@ void Camera::HandleInput(const std::array<bool, GLFW_KEY_LAST>& keyPressed)
 }
 
 void Camera::Move(float deltaTime) { m_CameraPos += m_CameraSpeed * deltaTime; }
-
-glm::mat4 Camera::GetMVP() const
-{
-    return m_Proj * glm::lookAt(m_CameraPos, m_CameraPos + m_CameraFront, m_CameraUp);
-}
 
 glm::mat4 Camera::GetMV() const
 {

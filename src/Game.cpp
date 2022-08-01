@@ -63,6 +63,7 @@ void Game::Init()
     glFrontFace(GL_CCW);
 
     m_Renderer.Init();
+    m_SpriteRenderer.Init();
     m_ChunkManager.InitWorld();
     // spawn player over a block
     m_Camera.GetPlayerPosition()->y
@@ -84,10 +85,10 @@ void Game::OnRender()
     glClearColor(m_SkyColor.x, m_SkyColor.y, m_SkyColor.z, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    m_Renderer.SetMVP(m_Camera.GetMVP());
     m_Renderer.SetMV(m_Camera.GetMV());
     m_Renderer.SetSkyColor(m_SkyColor);
     m_ChunkManager.Render(m_Renderer);
+    // m_SpriteRenderer.Draw();
 }
 
 void Game::HandleInput()

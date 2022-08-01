@@ -14,7 +14,6 @@ public:
     bool GetFlyMode() const;
     void SetCameraSpeed(const glm::vec3& speed);
     void Move(float deltaTime);
-    glm::mat4 GetMVP() const;
     glm::mat4 GetMV() const;
     glm::vec3* GetPlayerPosition();
     glm::vec3 GetPreviousPlayerPosition() const;
@@ -26,7 +25,6 @@ public:
 private:
     frustum::Frustum m_Frustum;
     std::array<frustum::Plane, 6> m_FrustumPlanes;
-    glm::mat4 m_Proj;
     glm::vec3 m_CameraPos;
     glm::vec3 m_CameraPreviousPos;
     glm::vec3 m_CameraFront;

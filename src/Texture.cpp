@@ -15,20 +15,27 @@ Texture::Texture(std::string path)
     stbi_set_flip_vertically_on_load(1);
     m_LocalBuffer = stbi_load(m_FilePath.c_str(), &m_Width, &m_Height, &m_BPP, 4);
     glGenTextures(1, &m_RendererID);
+    // if (m_FilePath == "/media/sax/storage/shared/dev/minecraft-clone/res/textures/terrain.png")
+    //     glActiveTexture(GL_TEXTURE0);
+    // else
+    //     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, m_RendererID);
+    if (m_FilePath == "/media/sax/storage/shared/dev/minecraft-clone/res/textures/terrain.png") {
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 4);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 4);
 
-    glTexImage2D(
-        GL_TEXTURE_2D, 0, GL_RGBA8, m_Width, m_Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, m_LocalBuffer);
-    glGenerateMipmap(GL_TEXTURE_2D);
-    Unbind();
-    if (m_LocalBuffer)
-        stbi_image_free(m_LocalBuffer);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_Width, m_Height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+            m_LocalBuffer);
+        glGenerateMipmap(GL_TEXTURE_2D);
+        Unbind();
+        if (m_LocalBuffer)
+            stbi_image_free(m_LocalBuffer);
+    }
 }
 
 Texture::~Texture() { glDeleteTextures(1, &m_RendererID); }

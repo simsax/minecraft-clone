@@ -2,6 +2,7 @@
 
 #include "Camera.h"
 #include "ChunkManager.h"
+#include "SpriteRenderer.h"
 
 class Game {
 public:
@@ -38,6 +39,7 @@ private:
     glm::mat4 m_Proj;
     Camera m_Camera;
     Renderer m_Renderer;
+    SpriteRenderer m_SpriteRenderer;
     ChunkManager m_ChunkManager;
     ChunkCoord m_LastChunk;
     ChunkCoord m_SortedChunk;
