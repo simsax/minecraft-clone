@@ -29,12 +29,12 @@ void Renderer::Draw(
     const VertexArray& vao, const IndexBuffer& ibo, GLenum type, const glm::vec3& chunkPos) const
 {
     glm::mat4 mvp = m_Proj * m_MV;
+    m_Shader->Bind();
     m_Shader->SetUniformMat4f("u_MVP", mvp);
     m_Shader->SetUniformMat4f("u_MV", m_MV);
     m_Shader->SetUniform3fv("u_ChunkPos", chunkPos);
     m_Shader->SetUniform3fv("u_SkyColor", m_SkyColor);
     m_Texture->Bind(0);
-    m_Shader->Bind();
     vao.Bind();
     ibo.Bind();
     glDrawElements(GL_TRIANGLES, ibo.GetCount(), type, nullptr);
