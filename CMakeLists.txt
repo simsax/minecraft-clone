@@ -44,7 +44,9 @@ if(NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/glm/CMakeLists.txt")
 endif()
 
 add_executable(${PROJECT_NAME}
-    src/SpriteRenderer.cpp
+    src/GuiManager.cpp
+    src/Gui.cpp
+    src/GuiRenderer.cpp
     src/Timer.cpp
     src/Frustum.cpp
     src/Camera.cpp

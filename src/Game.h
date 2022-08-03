@@ -2,7 +2,7 @@
 
 #include "Camera.h"
 #include "ChunkManager.h"
-#include "SpriteRenderer.h"
+#include "GuiManager.h"
 
 class Game {
 public:
@@ -36,14 +36,13 @@ private:
     std::array<bool, GLFW_KEY_LAST> m_KeyPressed;
     bool m_Ground;
     bool m_Jump;
-    glm::mat4 m_Proj;
     Camera m_Camera;
     Renderer m_Renderer;
-    SpriteRenderer m_SpriteRenderer;
     ChunkManager m_ChunkManager;
     ChunkCoord m_LastChunk;
     ChunkCoord m_SortedChunk;
     float m_VerticalVelocity;
     Block m_HoldingBlock;
     glm::vec3 m_SkyColor;
+    GuiManager m_GuiManager;
 };

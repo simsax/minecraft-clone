@@ -1,13 +1,9 @@
 #include "Game.h"
+#include "Config.h"
 #include "Physics.h"
-#include "Shader.h"
-#include "glm/gtc/matrix_transform.hpp"
-#include <algorithm>
 #include <array>
 #include <chrono>
 #include <iostream>
-#include <limits>
-#include <set>
 
 #define PLAYER_HALF_WIDTH 0.3f
 #define PLAYER_TOP_HEIGHT 0.2f
@@ -63,8 +59,9 @@ void Game::Init()
     glFrontFace(GL_CCW);
 
     m_Renderer.Init();
-    m_SpriteRenderer.Init();
     m_ChunkManager.InitWorld();
+    m_GuiManager.Init();
+
     // spawn player over a block
     m_Camera.GetPlayerPosition()->y
         += static_cast<float>(m_ChunkManager.SpawnHeight() + PLAYER_BOTTOM_HEIGHT + 3);
@@ -88,7 +85,7 @@ void Game::OnRender()
     m_Renderer.SetMV(m_Camera.GetMV());
     m_Renderer.SetSkyColor(m_SkyColor);
     m_ChunkManager.Render(m_Renderer);
-    m_SpriteRenderer.Draw();
+    m_GuiManager.Render();
 }
 
 void Game::HandleInput()
