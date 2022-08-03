@@ -16,6 +16,7 @@ private:
     static void GLAPIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity,
         GLsizei length, const GLchar* message, const void* userParam);
     static void ErrorCallback(int error, const char* msg);
+    static void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
     void ManageInput();
 
     static bool firstMouse;

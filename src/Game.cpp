@@ -39,8 +39,11 @@ Game::Game()
     , m_VerticalVelocity(0.0f)
     , m_LastChunk({ 0, 0 })
     , m_SortedChunk({ 0, 0 })
-    , m_HoldingBlock(Block::STONE)
+    , m_Blocks(std::vector({ Block::DIRT, Block::GRASS, Block::SAND, Block::SNOW, Block::STONE,
+          Block::WOOD, Block::DIAMOND, Block::EMPTY, Block::EMPTY }))
+    , m_HoldingBlock(0)
     , m_SkyColor(173.0f / 255.0f, 223.0f / 255.0f, 230.0f / 255.0f)
+    , m_ShowGui(true)
 {
 }
 
@@ -85,7 +88,8 @@ void Game::OnRender()
     m_Renderer.SetMV(m_Camera.GetMV());
     m_Renderer.SetSkyColor(m_SkyColor);
     m_ChunkManager.Render(m_Renderer);
-    m_GuiManager.Render();
+    if (m_ShowGui)
+        m_GuiManager.Render();
 }
 
 void Game::HandleInput()
@@ -99,13 +103,34 @@ void Game::HandleInput()
         m_Jump = true;
         m_KeyPressed[GLFW_KEY_SPACE] = false;
     }
+    if (m_KeyPressed[GLFW_KEY_G]) {
+        m_ShowGui = !m_ShowGui;
+        m_KeyPressed[GLFW_KEY_G] = false;
+    }
 }
 
 void Game::ProcessMouse(float xoffset, float yoffset) { m_Camera.ProcessMouse(xoffset, yoffset); }
 
-void Game::PressKey(int key) { m_KeyPressed[key] = true; }
+void Game::PressKey(int key)
+{
+    if (key >= GLFW_KEY_1 && key <= GLFW_KEY_9) {
+        m_HoldingBlock = key - GLFW_KEY_0 - 1;
+        m_GuiManager.PressKey(m_HoldingBlock);
+    }
+    m_KeyPressed[key] = true;
+}
 
 void Game::ReleaseKey(int key) { m_KeyPressed[key] = false; }
+
+void Game::Scroll(float offset)
+{
+    m_HoldingBlock += static_cast<int>(offset);
+    if (m_HoldingBlock < 0)
+        m_HoldingBlock = 0;
+    if (m_HoldingBlock > 8)
+        m_HoldingBlock = 8;
+    m_GuiManager.PressKey(m_HoldingBlock);
+}
 
 glm::vec3 Game::GetPlayerPosition() { return *m_Camera.GetPlayerPosition(); }
 
@@ -331,11 +356,7 @@ void Game::CheckRayCast()
 
     if (voxelFound) {
         if (m_KeyPressed[GLFW_MOUSE_BUTTON_LEFT]) {
-            m_HoldingBlock = targetChunk->GetMatrix()(
-                targetLocalVoxel[0], targetLocalVoxel[1], targetLocalVoxel[2]);
-            if (m_HoldingBlock == Block::BEDROCK) {
-                m_HoldingBlock = Block::EMPTY;
-            } else {
+            if (m_Blocks[m_HoldingBlock] != Block::BEDROCK) {
                 PlaceBlock(Block::EMPTY, targetChunk, targetLocalCoord, targetLocalVoxel,
                     currentVoxel, chunkSize);
             }
@@ -343,8 +364,8 @@ void Game::CheckRayCast()
         } else if (m_KeyPressed[GLFW_MOUSE_BUTTON_RIGHT] && previousChunk != nullptr
             && !physics::Intersect(
                 physics::CreatePlayerAabb(*playerPos), physics::CreateBlockAabb(previousVoxel))) {
-            PlaceBlock(m_HoldingBlock, previousChunk, previousChunkCoord, previousLocalVoxel,
-                previousVoxel, chunkSize);
+            PlaceBlock(m_Blocks[m_HoldingBlock], previousChunk, previousChunkCoord,
+                previousLocalVoxel, previousVoxel, chunkSize);
             m_KeyPressed[GLFW_MOUSE_BUTTON_RIGHT] = false;
         }
     }

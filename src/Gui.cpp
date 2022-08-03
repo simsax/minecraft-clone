@@ -14,4 +14,6 @@ glm::vec2 Gui::GetScale() const { return m_Scale; }
 
 glm::vec2 Gui::GetPosition() const { return m_Position; }
 
+void Gui::SetPosition(const glm::vec2& position) { m_Position = position; }
+
 std::string Gui::GetName() const { return m_Name; }

@@ -46,6 +46,7 @@ Window::Window(Game* game, int width, int height, const char* name)
     glfwSetMouseButtonCallback(m_Window, MouseButtonCallback);
     glfwSetKeyCallback(m_Window, KeyCallback);
     glfwSetWindowUserPointer(m_Window, (void*)m_Game);
+    glfwSetScrollCallback(m_Window, ScrollCallback);
     // capture cursor in the center and hide it
     glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -136,6 +137,7 @@ void Window::KeyCallback(GLFWwindow* window, int key, int scancode, int action, 
 
     if (key == GLFW_KEY_CAPS_LOCK && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+    // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     if (key == GLFW_KEY_Z && action == GLFW_PRESS) { // toggle wireframe mode
         wireframe = !wireframe;
         if (wireframe)
@@ -163,4 +165,11 @@ void Window::ErrorCallback(int error, const char* msg)
     std::string s;
     s = " [" + std::to_string(error) + "] " + msg + '\n';
     std::cerr << s << std::endl;
+}
+
+void Window::ScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
+{
+    Game* game;
+    game = (Game*)glfwGetWindowUserPointer(window);
+    game->Scroll(yoffset);
 }

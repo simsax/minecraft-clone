@@ -10,6 +10,7 @@ public:
     std::shared_ptr<Texture> GetTexture() const;
     glm::vec2 GetScale() const;
     glm::vec2 GetPosition() const;
+    void SetPosition(const glm::vec2& position);
     std::string GetName() const;
 
 private:

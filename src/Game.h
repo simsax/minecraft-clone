@@ -13,6 +13,7 @@ public:
     void ProcessMouse(float xoffset, float yoffset);
     void PressKey(int key);
     void ReleaseKey(int key);
+    void Scroll(float offset);
 
     /* #ifndef  NDEBUG */
     glm::vec3 GetPlayerPosition();
@@ -42,7 +43,9 @@ private:
     ChunkCoord m_LastChunk;
     ChunkCoord m_SortedChunk;
     float m_VerticalVelocity;
-    Block m_HoldingBlock;
+    std::vector<Block> m_Blocks;
+    int m_HoldingBlock;
     glm::vec3 m_SkyColor;
     GuiManager m_GuiManager;
+    bool m_ShowGui;
 };
