@@ -1,14 +1,14 @@
 #pragma once
 
-#include "IndexBuffer.h"
-#include "Matrix3D.hpp"
-#include "Noise.h"
-#include "Renderer.h"
-#include "VertexArray.h"
-#include "VertexBuffer.h"
-#include "VertexBufferLayout.hpp"
+#include "../graphics/IndexBuffer.h"
+#include "../utils/Matrix3D.hpp"
+#include "../utils/Noise.h"
+#include "../graphics/Renderer.h"
+#include "../graphics/VertexArray.h"
+#include "../graphics/VertexBuffer.h"
+#include "../graphics/VertexBufferLayout.hpp"
 #include "glm/glm.hpp"
-#include <GL/glew.h>
+#include "GL/glew.h"
 #include <array>
 #include <memory>
 #include <unordered_map>
@@ -18,7 +18,7 @@
 #define YSIZE 256
 #define ZSIZE 16
 
-enum class Block : unsigned char {
+enum class Block : uint8_t {
     EMPTY,
     GRASS,
     DIRT,
@@ -52,22 +52,28 @@ int operator-(const ChunkCoord& l, const ChunkCoord& r);
 
 class Chunk {
 public:
-    Chunk(glm::vec3 position, const VertexBufferLayout& layout, unsigned int maxVertexCount,
-        const std::vector<unsigned int>& indices, glm::vec3* playerPosition);
-    Matrix3D<Block, XSIZE, YSIZE, ZSIZE> GetMatrix() const;
+    Chunk(glm::vec3 position, const VertexBufferLayout& layout, uint32_t maxVertexCount,
+        const std::vector<uint32_t>& indices, glm::vec3* playerPosition);
     void GenerateMesh();
-    void SetMatrix(unsigned int x, unsigned int y, unsigned int z, Block block);
+    Block GetBlock(uint32_t x, uint32_t y, uint32_t z) const;
+    void SetBlock(uint32_t x, uint32_t y, uint32_t z, Block block);
     void Render(const Renderer& renderer);
+    void RenderOutline(Renderer& renderer, VertexArray* vao, VertexBuffer* vbo,
+        IndexBuffer* ibo, const glm::vec3& target, std::vector<uint32_t>& outlineMesh);
     glm::vec3 GetPosition() const;
     glm::vec3 GetCenterPosition() const;
 
 private:
-    static const std::unordered_map<Block, std::array<unsigned char, 6>> s_TextureMap;
-    /* void UpdateMesh(unsigned int x, unsigned int y, unsigned int z, Block block); */
+    static const std::unordered_map<Block, std::array<uint8_t, 6>> s_TextureMap;
+    /* void UpdateMesh(uint32_t x, uint32_t y, uint32_t z, Block block); */
     void CreateHeightMap();
     void FastFill();
     void CreateSurfaceLayer();
     float Continentalness(int x, int y);
+    void GenSolidCube(int i, int j, int k, std::vector<uint32_t>& target,
+        const std::array<uint8_t, 6>& textureCoords);
+    void GenWaterCube(int i, int j, int k, std::vector<uint32_t>& target,
+        const std::array<uint8_t, 6>& textureCoords);
 
     std::unique_ptr<VertexArray> m_VAO;
     std::unique_ptr<VertexArray> m_TransparentVAO;
@@ -80,9 +86,9 @@ private:
     Noise m_Noise;
     glm::vec3 m_ChunkPosition;
     Matrix3D<Block, XSIZE, YSIZE, ZSIZE> m_Chunk;
-    std::vector<unsigned int> m_Mesh;
-    std::vector<unsigned int> m_TransparentMesh;
-    unsigned int m_MaxVertexCount;
+    std::vector<uint32_t> m_Mesh;
+    std::vector<uint32_t> m_TransparentMesh;
+    uint32_t m_MaxVertexCount;
     glm::vec3* m_PlayerPosition;
     int m_MinHeight;
     int m_MaxHeight;

@@ -1,6 +1,5 @@
 #include "Game.h"
-#include "Config.h"
-#include "Physics.h"
+#include "utils/Physics.h"
 #include <array>
 #include <chrono>
 #include <iostream>
@@ -49,14 +48,11 @@ Game::Game()
 
 void Game::Init()
 {
-    // depth testing
     glEnable(GL_DEPTH_TEST);
 
-    // enable blending
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    // enable face culling
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
@@ -85,7 +81,7 @@ void Game::OnRender()
     glClearColor(m_SkyColor.x, m_SkyColor.y, m_SkyColor.z, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    m_Renderer.SetMV(m_Camera.GetMV());
+    m_Renderer.SetViewMatrix(m_Camera.GetViewMatrix());
     m_Renderer.SetSkyColor(m_SkyColor);
     m_ChunkManager.Render(m_Renderer);
     if (m_ShowGui)
@@ -169,9 +165,8 @@ bool Game::CalculateCollision(
                 if (m_ChunkManager.m_ChunkMap.find(localPos.first)
                     != m_ChunkManager.m_ChunkMap.end()) {
                     Chunk* chunk = &m_ChunkManager.m_ChunkMap.find(localPos.first)->second;
-                    if (chunk->GetMatrix()(
-                            localPos.second[0], localPos.second[1], localPos.second[2])
-                        != Block::EMPTY) {
+                    Block block = chunk->GetBlock(localPos.second[0], localPos.second[1], localPos.second[2]);
+                    if (block != Block::EMPTY && block != Block::WATER) {
                         physics::Aabb blockBbox = physics::CreateBlockAabb(glm::vec3(i, j, k));
                         physics::SnapAabb(playerBbox, blockBbox, playerSpeed, currentPosition);
                         return true;
@@ -278,6 +273,8 @@ void Game::CheckRayCast()
         = { std::floor(playerPos->x), std::floor(playerPos->y), std::floor(playerPos->z) };
     glm::vec3 rayLength;
     glm::vec3 step;
+    std::pair<ChunkCoord, glm::vec3> selectedBlock
+        = std::make_pair(ChunkCoord { -1, -1 }, glm::vec3(-1));
 
     if (playerDir.x < 0) {
         step.x = -1;
@@ -346,7 +343,7 @@ void Game::CheckRayCast()
             targetChunk = &m_ChunkManager.m_ChunkMap.find(targetLocalCoord)->second;
 
             if (currentVoxel.y >= 0 && currentVoxel.y < m_ChunkManager.GetChunkSize()[1]
-                && targetChunk->GetMatrix()(
+                && targetChunk->GetBlock(
                        targetLocalVoxel[0], targetLocalVoxel[1], targetLocalVoxel[2])
                     != Block::EMPTY) {
                 voxelFound = true;
@@ -355,8 +352,12 @@ void Game::CheckRayCast()
     }
 
     if (voxelFound) {
+        selectedBlock = std::make_pair(targetLocalCoord, targetLocalVoxel);
+        m_ChunkManager.SetSelectedBlock(selectedBlock);
         if (m_KeyPressed[GLFW_MOUSE_BUTTON_LEFT]) {
-            if (m_Blocks[m_HoldingBlock] != Block::BEDROCK) {
+            Block target = targetChunk->GetBlock(
+                targetLocalVoxel[0], targetLocalVoxel[1], targetLocalVoxel[2]);
+            if (target != Block::BEDROCK) {
                 PlaceBlock(Block::EMPTY, targetChunk, targetLocalCoord, targetLocalVoxel,
                     currentVoxel, chunkSize);
             }
@@ -368,13 +369,15 @@ void Game::CheckRayCast()
                 previousLocalVoxel, previousVoxel, chunkSize);
             m_KeyPressed[GLFW_MOUSE_BUTTON_RIGHT] = false;
         }
+    } else {
+        m_ChunkManager.ClearSelectedBlock();
     }
 }
 
 void Game::PlaceBlock(Block block, Chunk* chunk, const ChunkCoord& chunkCoord,
     const glm::vec3& localVoxel, const glm::vec3& globalVoxel, uint32_t chunkSize)
 {
-    chunk->SetMatrix(localVoxel[0], localVoxel[1], localVoxel[2], block);
+    chunk->SetBlock(localVoxel[0], localVoxel[1], localVoxel[2], block);
     m_ChunkManager.UpdateChunk(chunkCoord);
     // check if the target is in the chunk border
     if (localVoxel[0] == 1 || localVoxel[2] == 1 || localVoxel[0] == chunkSize
@@ -413,8 +416,8 @@ void Game::UpdateNeighbor(
     std::pair<ChunkCoord, glm::vec3> neighbor = GlobalToLocal(currentVoxel);
     if (neighbor.first != targetLocalCoord) {
         Chunk* neighborChunk = &m_ChunkManager.m_ChunkMap.find(neighbor.first)->second;
-        neighborChunk->SetMatrix(
-            neighbor.second[0] - 1, neighbor.second[1], neighbor.second[2], block);
+        neighborChunk->SetBlock(
+                neighbor.second[0] - 1, neighbor.second[1], neighbor.second[2], block);
         m_ChunkManager.UpdateChunk(neighbor.first);
         currentVoxel.x -= 1;
     } else {
@@ -422,8 +425,8 @@ void Game::UpdateNeighbor(
         neighbor = GlobalToLocal(currentVoxel);
         if (neighbor.first != targetLocalCoord) {
             Chunk* neighborChunk = &m_ChunkManager.m_ChunkMap.find(neighbor.first)->second;
-            neighborChunk->SetMatrix(
-                neighbor.second[0] + 1, neighbor.second[1], neighbor.second[2], block);
+            neighborChunk->SetBlock(
+                    neighbor.second[0] + 1, neighbor.second[1], neighbor.second[2], block);
             m_ChunkManager.UpdateChunk(neighbor.first);
         }
         currentVoxel.x += 1;
@@ -432,8 +435,8 @@ void Game::UpdateNeighbor(
     neighbor = GlobalToLocal(currentVoxel);
     if (neighbor.first != targetLocalCoord) {
         Chunk* neighborChunk = &m_ChunkManager.m_ChunkMap.find(neighbor.first)->second;
-        neighborChunk->SetMatrix(
-            neighbor.second[0], neighbor.second[1], neighbor.second[2] - 1, block);
+        neighborChunk->SetBlock(
+                neighbor.second[0], neighbor.second[1], neighbor.second[2] - 1, block);
         m_ChunkManager.UpdateChunk(neighbor.first);
         currentVoxel.z -= 1;
     } else {
@@ -441,8 +444,8 @@ void Game::UpdateNeighbor(
         neighbor = GlobalToLocal(currentVoxel);
         if (neighbor.first != targetLocalCoord) {
             Chunk* neighborChunk = &m_ChunkManager.m_ChunkMap.find(neighbor.first)->second;
-            neighborChunk->SetMatrix(
-                neighbor.second[0], neighbor.second[1], neighbor.second[2] + 1, block);
+            neighborChunk->SetBlock(
+                    neighbor.second[0], neighbor.second[1], neighbor.second[2] + 1, block);
             m_ChunkManager.UpdateChunk(neighbor.first);
         }
         currentVoxel.z += 1;

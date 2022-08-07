@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Camera.h"
-#include "ChunkManager.h"
-#include "GuiManager.h"
+#include "camera/Camera.h"
+#include "world/ChunkManager.h"
+#include "gui/GuiManager.h"
 
 class Game {
 public:

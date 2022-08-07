@@ -1,7 +1,7 @@
 #pragma once
-#include <GL/glew.h>
+#include "GL/glew.h"
 #include <memory>
-#include "Texture.h"
+#include "../graphics/Texture.h"
 #include "glm/gtc/matrix_transform.hpp"
 
 class Gui {

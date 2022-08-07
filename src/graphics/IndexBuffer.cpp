@@ -15,6 +15,6 @@ void IndexBuffer::Bind() const { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_Rendere
 
 void IndexBuffer::UnBind() const { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); }
 
-unsigned int IndexBuffer::GetCount() const { return m_Count; }
+uint32_t IndexBuffer::GetCount() const { return m_Count; }
 
-void IndexBuffer::SetCount(unsigned int count) { m_Count = count; }
+void IndexBuffer::SetCount(uint32_t count) { m_Count = count; }

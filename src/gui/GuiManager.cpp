@@ -1,20 +1,21 @@
 #include "GuiManager.h"
-#include "Keycodes.h"
+#include "../utils/Keycodes.h"
 #include "Config.h"
 
 #define HEIGHT 1080.0f
 #define WIDTH 1920.0f
-#define CURSOR_SCALE 30.0f
-#define BAR_HEIGHT 100.0f
+#define CURSOR_SCALE 20.0f
+#define BAR_HEIGHT 80.0f
 #define BAR_WIDTH 9 * BAR_HEIGHT
-#define ACTIVE_SQUARE_SCALE 110.0f
-#define BAR_OFFSET 99.0f
-#define BLOCK_SIZE 50.0f
+#define ACTIVE_SQUARE_SCALE 90.0f
+#define BAR_OFFSET 79.0f
+#define BLOCK_SIZE 40.0f
 
 void GuiManager::Init()
 {
     m_GuiRenderer.Init();
-    m_SquareBase = WIDTH / 2.0f - 395.0f;
+    float offset = (BAR_WIDTH - BAR_HEIGHT) / 2;
+    m_SquareBase = WIDTH / 2.0f - offset + 4.0f;
     std::string baseDir = std::string(SOURCE_DIR) + "/res/textures/gui/";
     m_GuiElements = { Gui("cursor", baseDir + "cursor.png", glm::vec2(CURSOR_SCALE, CURSOR_SCALE),
                           glm::vec2(WIDTH / 2.0f, HEIGHT / 2.0f)),
@@ -47,8 +48,6 @@ void GuiManager::Init()
         Gui("diamond", baseDir + "diamond.png", glm::vec2(BLOCK_SIZE, BLOCK_SIZE),
             glm::vec2(m_SquareBase + BAR_OFFSET * 6, BAR_HEIGHT / 2.0f)) };
 }
-
-void GuiManager::Update() { }
 
 void GuiManager::Render()
 {

@@ -9,10 +9,10 @@ public:
 
     void Bind() const;
     void UnBind() const;
-    unsigned int GetCount() const;
-    void SetCount(unsigned int count);
+    uint32_t GetCount() const;
+    void SetCount(uint32_t count);
 
 private:
-    unsigned int m_RendererID;
-    unsigned int m_Count;
+    uint32_t m_RendererID;
+    uint32_t m_Count;
 };

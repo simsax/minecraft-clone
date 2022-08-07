@@ -6,7 +6,6 @@ class GuiManager {
 public:
     void Init();
     void Render();
-    void Update();
     void PressKey(int key);
 
 private:

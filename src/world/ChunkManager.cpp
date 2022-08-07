@@ -1,6 +1,6 @@
 #include "ChunkManager.h"
 #include "time.h"
-#include <glm/gtx/norm.hpp>
+#include "glm/gtx/norm.hpp"
 #include <iostream>
 
 using namespace std::chrono_literals;
@@ -18,6 +18,7 @@ ChunkManager::ChunkManager(Camera* camera)
     , m_Camera(camera)
     , m_NewChunks(false)
     , m_HalfChunkDiag(m_ChunkSize[0] / std::sqrt(2))
+    , m_Selected(false)
 //	m_ThreadPool(ctpl::thread_pool(std::thread::hardware_concurrency()))
 {
     m_VertexLayout.Push<uint32_t>(1); // position + texture coords
@@ -65,17 +66,27 @@ ChunkManager::~ChunkManager()
      lk.unlock();
      m_Cv.notify_one();
      m_Thread.join();	*/
+    delete m_OutlineIBO;
+    delete m_OutlineVAO;
+    delete m_OutlineVBO;
 }
 
 void ChunkManager::InitWorld()
 {
+    m_OutlineVBO = new VertexBuffer();
+    m_OutlineVBO->CreateDynamic(sizeof(uint32_t) * 24);
+    std::vector<uint32_t> outlineIndices(m_Indices.begin(), m_Indices.begin() + 36);
+    m_OutlineIBO = new IndexBuffer(outlineIndices.size() * sizeof(uint32_t), outlineIndices.data());
+    m_OutlineVAO = new VertexArray();
+    m_OutlineVAO->AddBuffer(*m_OutlineVBO, m_VertexLayout);
+
     GenerateChunks();
     while (!m_ChunksToLoad.empty())
         LoadChunks();
     SortChunks();
 }
 
-void ChunkManager::Render(const Renderer& renderer)
+void ChunkManager::Render(Renderer& renderer)
 {
     LoadChunks();
     // UpdateChunksToRender();
@@ -83,6 +94,12 @@ void ChunkManager::Render(const Renderer& renderer)
     if (m_NewChunks) {
         m_NewChunks = false;
         SortChunks();
+    }
+
+    if (m_Selected) {
+        Chunk* chunk = &m_ChunkMap.find(m_SelectedBlock.first)->second;
+        chunk->RenderOutline(renderer, m_OutlineVAO, m_OutlineVBO, m_OutlineIBO,
+                             m_SelectedBlock.second, m_OutlineMesh);
     }
 
     // frustum culling
@@ -195,7 +212,7 @@ int ChunkManager::SpawnHeight()
     int water_level = 63;
     int i;
     for (i = water_level; i < YSIZE; i++) {
-        if (chunk->GetMatrix()(0, i, 0) == Block::EMPTY)
+        if (chunk->GetBlock(0, i, 0) == Block::EMPTY)
             break;
     }
     return i;
@@ -211,6 +228,14 @@ void ChunkManager::SortChunks()
 }
 
 void ChunkManager::SetNewChunks() { m_NewChunks = true; }
+
+void ChunkManager::SetSelectedBlock(const std::pair<ChunkCoord, glm::vec3>& target)
+{
+    m_SelectedBlock = target;
+    m_Selected = true;
+}
+
+void ChunkManager::ClearSelectedBlock() { m_Selected = false; }
 
 /*
 void ChunkManager::UpdateChunksToRender()

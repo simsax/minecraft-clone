@@ -2,7 +2,7 @@
 
 #include <queue>
 #include <future>
-#include "Chunk.h"
+#include "../world/Chunk.h"
 /*
 class ThreadPool {
 public:

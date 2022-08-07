@@ -1,5 +1,5 @@
 #include "Camera.h"
-#include "Physics.h"
+#include "../utils/Physics.h"
 #include "glm/gtc/matrix_transform.hpp"
 
 #define ZNEAR 0.1f
@@ -46,7 +46,7 @@ void Camera::HandleInput(const std::array<bool, GLFW_KEY_LAST>& keyPressed)
 
 void Camera::Move(float deltaTime) { m_CameraPos += m_CameraSpeed * deltaTime; }
 
-glm::mat4 Camera::GetMV() const
+glm::mat4 Camera::GetViewMatrix() const
 {
     return glm::lookAt(m_CameraPos, m_CameraPos + m_CameraFront, m_CameraUp);
 }

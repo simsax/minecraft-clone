@@ -1,6 +1,6 @@
 #pragma once
 #include "Frustum.h"
-#include "Keycodes.h"
+#include "../utils/Keycodes.h"
 #include "glm/glm.hpp"
 #include <array>
 
@@ -14,7 +14,7 @@ public:
     bool GetFlyMode() const;
     void SetCameraSpeed(const glm::vec3& speed);
     void Move(float deltaTime);
-    glm::mat4 GetMV() const;
+    glm::mat4 GetViewMatrix() const;
     glm::vec3* GetPlayerPosition();
     glm::vec3 GetPreviousPlayerPosition() const;
     glm::vec3 GetPlayerDirection() const;

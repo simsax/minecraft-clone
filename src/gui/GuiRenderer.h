@@ -1,10 +1,10 @@
 #pragma once
-#include <GL/glew.h>
+#include "GL/glew.h"
 #include <memory>
-#include "VertexArray.h"
-#include "IndexBuffer.h"
-#include "Texture.h"
-#include "Shader.h"
+#include "../graphics/VertexArray.h"
+#include "../graphics/IndexBuffer.h"
+#include "../graphics/Texture.h"
+#include "../graphics/Shader.h"
 
 class GuiRenderer {
 public:

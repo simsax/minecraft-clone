@@ -1,5 +1,5 @@
 #pragma once
-#include "Camera.h"
+#include "../camera/Camera.h"
 #include "Chunk.h"
 #include <future>
 #include <queue>
@@ -13,11 +13,13 @@ public:
     void GenerateChunks();
     ChunkCoord CalculateChunkCoord(const glm::vec3& position);
     // void UpdateChunksToRender();
-    void Render(const Renderer& renderer);
+    void Render(Renderer& renderer);
     void UpdateChunk(ChunkCoord chunk);
     int GetViewDistance() const;
     void SetNewChunks();
     std::array<uint32_t, 3> GetChunkSize() const;
+    void SetSelectedBlock(const std::pair<ChunkCoord, glm::vec3>& target);
+    void ClearSelectedBlock();
     std::unordered_map<ChunkCoord, Chunk, hash_fn> m_ChunkMap;
 
 private:
@@ -40,4 +42,10 @@ private:
     Camera* m_Camera;
     bool m_NewChunks;
     float m_HalfChunkDiag;
+    std::pair<ChunkCoord, glm::vec3> m_SelectedBlock;
+    IndexBuffer* m_OutlineIBO;
+    VertexBuffer* m_OutlineVBO;
+    VertexArray* m_OutlineVAO;
+    std::vector<uint32_t> m_OutlineMesh;
+    bool m_Selected;
 };
