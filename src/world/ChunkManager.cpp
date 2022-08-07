@@ -66,6 +66,10 @@ ChunkManager::~ChunkManager()
      lk.unlock();
      m_Cv.notify_one();
      m_Thread.join();	*/
+    delete m_IBO;
+    delete m_TransparentIBO;
+    delete m_VAO;
+    delete m_TransparentVAO;
     delete m_OutlineIBO;
     delete m_OutlineVAO;
     delete m_OutlineVBO;
@@ -73,6 +77,11 @@ ChunkManager::~ChunkManager()
 
 void ChunkManager::InitWorld()
 {
+    m_IBO = new IndexBuffer(m_Indices.size() * sizeof(uint32_t), m_Indices.data());
+    m_TransparentIBO = new IndexBuffer(m_Indices.size() * sizeof(uint32_t), m_Indices.data());
+    m_VAO = new VertexArray();
+    m_TransparentVAO = new VertexArray();
+//    m_VAO->AddBuffer(*m_VBO, layout);
     m_OutlineVBO = new VertexBuffer();
     m_OutlineVBO->CreateDynamic(sizeof(uint32_t) * 24);
     std::vector<uint32_t> outlineIndices(m_Indices.begin(), m_Indices.begin() + 36);
@@ -107,7 +116,7 @@ void ChunkManager::Render(Renderer& renderer)
     for (Chunk* chunk : m_ChunksToRender) {
         glm::vec3 center = chunk->GetCenterPosition();
         if (m_Camera->IsInFrustum(center))
-            chunk->Render(renderer);
+            chunk->Render(renderer, m_VAO, m_TransparentVAO, m_IBO, m_TransparentIBO);
     }
 }
 
@@ -165,7 +174,7 @@ void ChunkManager::LoadChunks()
     while (!m_ChunksToUpload.empty()) {
         ChunkCoord coords = m_ChunksToUpload.front();
         m_ChunksToUpload.pop();
-        m_ChunkMap.find(coords)->second.GenerateMesh();
+        m_ChunkMap.find(coords)->second.GenerateMesh(m_IBO, m_TransparentIBO);
         uploaded = true;
     }
 
@@ -178,7 +187,7 @@ void ChunkManager::LoadChunks()
         Chunk chunk(glm::vec3(coords.x * static_cast<int>(m_ChunkSize[0]), 0.0f,
                         coords.z * static_cast<int>(m_ChunkSize[2])),
             m_VertexLayout, MAX_VERTEX_COUNT, m_Indices, m_Camera->GetPlayerPosition());
-        chunk.GenerateMesh();
+        chunk.GenerateMesh(m_IBO, m_TransparentIBO);
         m_ChunkMap.insert({ coords, std::move(chunk) });
         m_ChunksToRender.emplace_back(&m_ChunkMap.find(coords)->second);
     }

@@ -28,6 +28,10 @@ private:
     std::array<uint32_t, 3> m_ChunkSize;
     std::future<std::vector<std::pair<ChunkCoord, Chunk>>> m_FutureChunks;
     VertexBufferLayout m_VertexLayout;
+    VertexArray* m_VAO;
+    VertexArray* m_TransparentVAO;
+    IndexBuffer* m_IBO;
+    IndexBuffer* m_TransparentIBO;
     std::vector<uint32_t> m_Indices;
     std::vector<Chunk*> m_ChunksToRender;
     std::queue<ChunkCoord> m_ChunksToLoad;

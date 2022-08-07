@@ -42,7 +42,7 @@ void VertexArray::AddBuffer(const VertexBuffer& vbo, const VertexBufferLayout& l
         }
         offset += element.count * VertexBufferElement::GetSizeOfType(element.type);
     }
-    m_NumElements += elements.size();
+//    m_NumElements += elements.size();
 }
 
 void VertexArray::AddInstanceBuffer(
