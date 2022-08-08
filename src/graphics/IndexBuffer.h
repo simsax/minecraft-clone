@@ -14,4 +14,7 @@ public:
 private:
     uint32_t m_Ibo;
     uint32_t m_Count;
+    static int8_t m_BufferCount;
+    static int8_t m_CurrentlyBound;
+    int8_t m_BindId;
 };

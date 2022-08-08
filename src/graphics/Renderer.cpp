@@ -44,8 +44,8 @@ void Renderer::Draw(
     m_Shader->SetUniform3fv("u_ChunkPos", chunkPos);
     m_Shader->SetUniform3fv("u_SkyColor", m_SkyColor);
     m_Texture->Bind(0);
+    vao.Bind();
     ibo.Bind(vao.GetId());
-    // vao is bound outside of this function since it's called in a loop
     glDrawElements(GL_TRIANGLES, ibo.GetCount(), type, nullptr);
 }
 

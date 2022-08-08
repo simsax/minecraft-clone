@@ -30,7 +30,6 @@ private:
     VertexBufferLayout m_VertexLayout;
     VertexArray* m_VAO;
     IndexBuffer* m_IBO;
-    IndexBuffer* m_TransparentIBO;
     std::vector<uint32_t> m_Indices;
     std::vector<Chunk*> m_ChunksToRender;
     std::queue<ChunkCoord> m_ChunksToLoad;

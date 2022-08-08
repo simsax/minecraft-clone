@@ -16,4 +16,7 @@ private:
 	uint32_t m_Vbo;
     uint32_t m_Stride;
     int m_BindingIndex;
+    static int8_t m_BufferCount;
+    static int8_t m_CurrentlyBound;
+    int8_t m_BindId;
 };

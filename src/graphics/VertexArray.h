@@ -15,4 +15,7 @@ public:
 private:
 	GLuint m_Vao;
 	uint32_t m_NumElements;
+    static int8_t m_BufferCount;
+    static int8_t m_CurrentlyBound;
+    int8_t m_BindId;
 };

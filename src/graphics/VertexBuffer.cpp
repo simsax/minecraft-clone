@@ -1,8 +1,13 @@
 #include "VertexBuffer.h"
 
+int8_t VertexBuffer::m_BufferCount = 0;
+int8_t VertexBuffer::m_CurrentlyBound = -1;
+
 VertexBuffer::VertexBuffer(uint32_t stride, int bindingIndex):
  m_Stride(stride), m_BindingIndex(bindingIndex)
 {
+    m_BindId = m_BufferCount;
+    m_BufferCount++;
 	glCreateBuffers(1, &m_Vbo);
 }
 
@@ -22,7 +27,10 @@ void VertexBuffer::CreateDynamic(GLsizeiptr size) const
 }
 
 void VertexBuffer::Bind(GLuint vao) const {
-    glVertexArrayVertexBuffer(vao, m_BindingIndex, m_Vbo, 0, m_Stride);
+    if (m_CurrentlyBound != m_BindId) {
+        glVertexArrayVertexBuffer(vao, m_BindingIndex, m_Vbo, 0, m_Stride);
+        m_CurrentlyBound = m_BindId;
+    }
 }
 
 void VertexBuffer::SendData(GLsizeiptr size, const void *data)

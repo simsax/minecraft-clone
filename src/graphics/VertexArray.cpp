@@ -1,13 +1,23 @@
 #include "VertexArray.h"
 
+int8_t VertexArray::m_BufferCount = 0;
+int8_t VertexArray::m_CurrentlyBound = -1;
+
 VertexArray::VertexArray()
         : m_NumElements(0) {
+    m_BindId = m_BufferCount;
+    m_BufferCount++;
     glCreateVertexArrays(1, &m_Vao);
 };
 
 VertexArray::~VertexArray() { glDeleteVertexArrays(1, &m_Vao); };
 
-void VertexArray::Bind() const { glBindVertexArray(m_Vao); };
+void VertexArray::Bind() const {
+    if (m_CurrentlyBound != m_BindId) {
+        glBindVertexArray(m_Vao);
+        m_CurrentlyBound = m_BindId;
+    }
+}
 
 void VertexArray::AddLayout(const VertexBufferLayout &layout, GLuint bindingIndex) {
     const auto &elements = layout.GetElements();

@@ -275,15 +275,14 @@ void Chunk::GenerateMesh() {
     }
 }
 
-void Chunk::Render(const Renderer &renderer, VertexArray *vao, IndexBuffer *ibo,
-                   IndexBuffer *t_ibo) {
+void Chunk::Render(const Renderer &renderer, VertexArray *vao, IndexBuffer *ibo) {
     ibo->SetCount(m_IBOCount);
     m_VBO->Bind(vao->GetId());
     renderer.Draw(*vao, *ibo, GL_UNSIGNED_INT, m_ChunkPosition);
     if (!m_TransparentMesh.empty()) {
-        t_ibo->SetCount(m_TIBOCount);
+        ibo->SetCount(m_TIBOCount);
         m_TransparentVBO->Bind(vao->GetId());
-        renderer.Draw(*vao, *t_ibo, GL_UNSIGNED_INT, m_ChunkPosition);
+        renderer.Draw(*vao, *ibo, GL_UNSIGNED_INT, m_ChunkPosition);
     }
 }
 

@@ -64,8 +64,7 @@ public:
 
     void SetBlock(uint32_t x, uint32_t y, uint32_t z, Block block);
 
-    void Render(const Renderer &renderer, VertexArray *vao, IndexBuffer *ibo,
-                IndexBuffer *t_ibo);
+    void Render(const Renderer &renderer, VertexArray *vao, IndexBuffer *ibo);
 
     void RenderOutline(Renderer &renderer, VertexArray *vao, VertexBuffer *vbo,
                        IndexBuffer *ibo, const glm::vec3 &target,

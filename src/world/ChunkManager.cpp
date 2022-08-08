@@ -2,6 +2,7 @@
 #include "time.h"
 #include "glm/gtx/norm.hpp"
 #include <iostream>
+#include "../utils/Timer.h"
 
 using namespace std::chrono_literals;
 
@@ -61,7 +62,6 @@ ChunkManager::~ChunkManager() { /*
      m_Cv.notify_one();
      m_Thread.join();	*/
     delete m_IBO;
-    delete m_TransparentIBO;
     delete m_VAO;
     delete m_OutlineIBO;
     delete m_OutlineVAO;
@@ -70,7 +70,6 @@ ChunkManager::~ChunkManager() { /*
 
 void ChunkManager::InitWorld() {
     m_IBO = new IndexBuffer(m_Indices.size() * sizeof(uint32_t), m_Indices.data());
-    m_TransparentIBO = new IndexBuffer(m_Indices.size() * sizeof(uint32_t), m_Indices.data());
     m_VAO = new VertexArray();
     m_VAO->AddLayout(m_VertexLayout, m_BindingIndex);
     m_OutlineVBO = new VertexBuffer(m_VertexLayout.GetStride(), m_BindingIndex);
@@ -101,14 +100,12 @@ void ChunkManager::Render(Renderer &renderer) {
         chunk->RenderOutline(renderer, m_OutlineVAO, m_OutlineVBO, m_OutlineIBO,
                              m_SelectedBlock.second, m_OutlineMesh);
     }
-
     // frustum culling
-    m_VAO->Bind();
     m_Camera->UpdateFrustum();
     for (Chunk *chunk: m_ChunksToRender) {
         glm::vec3 center = chunk->GetCenterPosition();
         if (m_Camera->IsInFrustum(center))
-            chunk->Render(renderer, m_VAO, m_IBO, m_TransparentIBO);
+            chunk->Render(renderer, m_VAO, m_IBO);
 //            RenderChunk(renderer, chunk);
     }
 }
