@@ -7,12 +7,11 @@ public:
     IndexBuffer(GLsizeiptr size, const void* data);
     ~IndexBuffer();
 
-    void Bind() const;
-    void UnBind() const;
+    void Bind(GLuint vao) const;
     uint32_t GetCount() const;
     void SetCount(uint32_t count);
 
 private:
-    uint32_t m_RendererID;
+    uint32_t m_Ibo;
     uint32_t m_Count;
 };

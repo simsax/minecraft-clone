@@ -4,15 +4,16 @@
 class VertexBuffer
 {
 public:
-	VertexBuffer();
+	VertexBuffer(uint32_t stride, int bindingIndex);
 	~VertexBuffer();
 
 	void CreateStatic(GLsizeiptr size, const void *data) const;
 	void CreateDynamic(GLsizeiptr size) const;
-	void Bind() const;
-	void UnBind() const;
+	void Bind(GLuint vao) const;
 	void SendData(GLsizeiptr size, const void *data);
 
 private:
-	unsigned int m_RendererID;
+	uint32_t m_Vbo;
+    uint32_t m_Stride;
+    int m_BindingIndex;
 };

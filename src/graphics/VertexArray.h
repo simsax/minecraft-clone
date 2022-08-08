@@ -8,12 +8,11 @@ public:
 	VertexArray();
 	~VertexArray();
 
-	void AddBuffer(const VertexBuffer &vbo, const VertexBufferLayout &layout);
-	void AddInstanceBuffer(const VertexBuffer &vbo, const VertexBufferLayout &layout, GLuint divisor);
+    void AddLayout(const VertexBufferLayout& layout, GLuint bindingIndex);
 	void Bind() const;
-	void Unbind() const;
+    GLuint GetId() const;
 
 private:
-	unsigned int m_RendererID;
-	unsigned int m_NumElements;
+	GLuint m_Vao;
+	uint32_t m_NumElements;
 };

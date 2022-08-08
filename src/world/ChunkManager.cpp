@@ -10,21 +10,16 @@ using namespace std::chrono_literals;
 #define VIEW_DISTANCE 24 // how far the player sees
 #define MAX_CHUNK_TO_LOAD 1
 
-ChunkManager::ChunkManager(Camera* camera)
-    : m_ChunkSize({ XSIZE - 2, YSIZE, ZSIZE - 2 })
-    , m_ViewDistance(VIEW_DISTANCE)
-    , m_Shutdown(false)
-    , m_LoadingChunks(false)
-    , m_Camera(camera)
-    , m_NewChunks(false)
-    , m_HalfChunkDiag(m_ChunkSize[0] / std::sqrt(2))
-    , m_Selected(false)
+ChunkManager::ChunkManager(Camera *camera)
+        : m_ChunkSize({XSIZE - 2, YSIZE, ZSIZE - 2}), m_ViewDistance(VIEW_DISTANCE),
+          m_Shutdown(false), m_LoadingChunks(false), m_Camera(camera), m_NewChunks(false),
+          m_Selected(false), m_BindingIndex(0)
 //	m_ThreadPool(ctpl::thread_pool(std::thread::hardware_concurrency()))
 {
     m_VertexLayout.Push<uint32_t>(1); // position + texture coords
 
     m_ChunksToRender.reserve(
-        static_cast<uint32_t>((m_ViewDistance * 2 + 1) * (m_ViewDistance * 2 + 1)));
+            static_cast<uint32_t>((m_ViewDistance * 2 + 1) * (m_ViewDistance * 2 + 1)));
 
     m_Indices.reserve(MAX_INDEX_COUNT);
     uint32_t offset = 0;
@@ -59,8 +54,7 @@ ChunkManager::ChunkManager(Camera* camera)
             });*/
 }
 
-ChunkManager::~ChunkManager()
-{ /*
+ChunkManager::~ChunkManager() { /*
      std::unique_lock<std::mutex> lk(m_Mtx);
      m_Shutdown = true;
      lk.unlock();
@@ -69,25 +63,23 @@ ChunkManager::~ChunkManager()
     delete m_IBO;
     delete m_TransparentIBO;
     delete m_VAO;
-    delete m_TransparentVAO;
     delete m_OutlineIBO;
     delete m_OutlineVAO;
     delete m_OutlineVBO;
 }
 
-void ChunkManager::InitWorld()
-{
+void ChunkManager::InitWorld() {
     m_IBO = new IndexBuffer(m_Indices.size() * sizeof(uint32_t), m_Indices.data());
     m_TransparentIBO = new IndexBuffer(m_Indices.size() * sizeof(uint32_t), m_Indices.data());
     m_VAO = new VertexArray();
-    m_TransparentVAO = new VertexArray();
-//    m_VAO->AddBuffer(*m_VBO, layout);
-    m_OutlineVBO = new VertexBuffer();
+    m_VAO->AddLayout(m_VertexLayout, m_BindingIndex);
+    m_OutlineVBO = new VertexBuffer(m_VertexLayout.GetStride(), m_BindingIndex);
     m_OutlineVBO->CreateDynamic(sizeof(uint32_t) * 24);
     std::vector<uint32_t> outlineIndices(m_Indices.begin(), m_Indices.begin() + 36);
     m_OutlineIBO = new IndexBuffer(outlineIndices.size() * sizeof(uint32_t), outlineIndices.data());
     m_OutlineVAO = new VertexArray();
-    m_OutlineVAO->AddBuffer(*m_OutlineVBO, m_VertexLayout);
+    m_OutlineVBO->Bind(m_OutlineVAO->GetId());
+    m_OutlineVAO->AddLayout(m_VertexLayout, m_BindingIndex);
 
     GenerateChunks();
     while (!m_ChunksToLoad.empty())
@@ -95,8 +87,7 @@ void ChunkManager::InitWorld()
     SortChunks();
 }
 
-void ChunkManager::Render(Renderer& renderer)
-{
+void ChunkManager::Render(Renderer &renderer) {
     LoadChunks();
     // UpdateChunksToRender();
     // std::unique_lock<std::mutex> lk(m_Mtx);
@@ -112,11 +103,13 @@ void ChunkManager::Render(Renderer& renderer)
     }
 
     // frustum culling
+    m_VAO->Bind();
     m_Camera->UpdateFrustum();
-    for (Chunk* chunk : m_ChunksToRender) {
+    for (Chunk *chunk: m_ChunksToRender) {
         glm::vec3 center = chunk->GetCenterPosition();
         if (m_Camera->IsInFrustum(center))
-            chunk->Render(renderer, m_VAO, m_TransparentVAO, m_IBO, m_TransparentIBO);
+            chunk->Render(renderer, m_VAO, m_IBO, m_TransparentIBO);
+//            RenderChunk(renderer, chunk);
     }
 }
 
@@ -126,15 +119,13 @@ int ChunkManager::GetViewDistance() const { return m_ViewDistance; }
 
 std::array<uint32_t, 3> ChunkManager::GetChunkSize() const { return m_ChunkSize; }
 
-ChunkCoord ChunkManager::CalculateChunkCoord(const glm::vec3& position)
-{
+ChunkCoord ChunkManager::CalculateChunkCoord(const glm::vec3 &position) {
     int chunkPosX = static_cast<int>(std::floor((position.x - 1) / m_ChunkSize[0]));
     int chunkPosZ = static_cast<int>(std::floor((position.z - 1) / m_ChunkSize[2]));
-    return { chunkPosX, chunkPosZ };
+    return {chunkPosX, chunkPosZ};
 }
 
-void ChunkManager::LoadChunks()
-{
+void ChunkManager::LoadChunks() {
     //	auto meshFun = [this](ChunkCoord coords) {
     //		Chunk chunk(m_ChunkSize[0], m_ChunkSize[1], m_ChunkSize[2], glm::vec3(coords.x *
     // static_cast<int>(m_ChunkSize[0]), 0.0, coords.z * static_cast<int>(m_ChunkSize[2])), m_Seed,
@@ -174,7 +165,7 @@ void ChunkManager::LoadChunks()
     while (!m_ChunksToUpload.empty()) {
         ChunkCoord coords = m_ChunksToUpload.front();
         m_ChunksToUpload.pop();
-        m_ChunkMap.find(coords)->second.GenerateMesh(m_IBO, m_TransparentIBO);
+        m_ChunkMap.find(coords)->second.GenerateMesh();
         uploaded = true;
     }
 
@@ -185,16 +176,16 @@ void ChunkManager::LoadChunks()
         // m_ChunksLoaded.push_back(m_ThreadPool.push(meshFun, coords));
         //  create new chunk and cache it
         Chunk chunk(glm::vec3(coords.x * static_cast<int>(m_ChunkSize[0]), 0.0f,
-                        coords.z * static_cast<int>(m_ChunkSize[2])),
-            m_VertexLayout, MAX_VERTEX_COUNT, m_Indices, m_Camera->GetPlayerPosition());
-        chunk.GenerateMesh(m_IBO, m_TransparentIBO);
-        m_ChunkMap.insert({ coords, std::move(chunk) });
+                              coords.z * static_cast<int>(m_ChunkSize[2])),
+                    MAX_VERTEX_COUNT, m_Indices, m_Camera->GetPlayerPosition(), m_VertexLayout,
+                    m_BindingIndex);
+        chunk.GenerateMesh();
+        m_ChunkMap.insert({coords, std::move(chunk)});
         m_ChunksToRender.emplace_back(&m_ChunkMap.find(coords)->second);
     }
 }
 
-void ChunkManager::GenerateChunks()
-{
+void ChunkManager::GenerateChunks() {
     ChunkCoord chunkCoord = CalculateChunkCoord(*m_Camera->GetPlayerPosition());
     m_ChunksToRender.clear();
 
@@ -202,7 +193,7 @@ void ChunkManager::GenerateChunks()
     // load chunks
     for (int i = -m_ViewDistance + chunkCoord.x; i <= m_ViewDistance + chunkCoord.x; i++) {
         for (int j = -m_ViewDistance + chunkCoord.z; j <= m_ViewDistance + chunkCoord.z; j++) {
-            ChunkCoord coords = { i, j };
+            ChunkCoord coords = {i, j};
             // check if this chunk hasn't already been generated
             if (m_ChunkMap.find(coords) == m_ChunkMap.end()) {
                 // add chunk to the loading queue
@@ -215,9 +206,8 @@ void ChunkManager::GenerateChunks()
     //	m_Cv.notify_one();
 }
 
-int ChunkManager::SpawnHeight()
-{
-    Chunk* chunk = &m_ChunkMap.find({ 0, 0 })->second;
+int ChunkManager::SpawnHeight() {
+    Chunk *chunk = &m_ChunkMap.find({0, 0})->second;
     int water_level = 63;
     int i;
     for (i = water_level; i < YSIZE; i++) {
@@ -227,24 +217,23 @@ int ChunkManager::SpawnHeight()
     return i;
 }
 
-void ChunkManager::SortChunks()
-{
+void ChunkManager::SortChunks() {
     glm::vec3 playerPos = *m_Camera->GetPlayerPosition() * glm::vec3(1.0f, 0, 1.0f);
-    std::sort(m_ChunksToRender.begin(), m_ChunksToRender.end(), [&playerPos](Chunk* a, Chunk* b) {
+    std::sort(m_ChunksToRender.begin(), m_ChunksToRender.end(), [&playerPos](Chunk *a, Chunk *b) {
         return glm::length2(playerPos - a->GetCenterPosition())
-            > glm::length2(playerPos - b->GetCenterPosition());
+               > glm::length2(playerPos - b->GetCenterPosition());
     });
 }
 
 void ChunkManager::SetNewChunks() { m_NewChunks = true; }
 
-void ChunkManager::SetSelectedBlock(const std::pair<ChunkCoord, glm::vec3>& target)
-{
+void ChunkManager::SetSelectedBlock(const std::pair<ChunkCoord, glm::vec3> &target) {
     m_SelectedBlock = target;
     m_Selected = true;
 }
 
 void ChunkManager::ClearSelectedBlock() { m_Selected = false; }
+
 
 /*
 void ChunkManager::UpdateChunksToRender()

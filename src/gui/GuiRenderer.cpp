@@ -23,11 +23,12 @@ void GuiRenderer::Init()
     m_Shader->Bind();
     m_Shader->SetUniform1i("u_Texture", 0);
 
-    m_VBO = std::make_unique<VertexBuffer>();
-    m_VBO->CreateStatic(positions.size() * sizeof(float), positions.data());
     m_VertexLayout.Push<float>(2); // texture coordinates are the same as the position ones
+    m_VBO = std::make_unique<VertexBuffer>(m_VertexLayout.GetStride(), 0);
+    m_VBO->CreateStatic(positions.size() * sizeof(float), positions.data());
     m_VAO = std::make_unique<VertexArray>();
-    m_VAO->AddBuffer(*m_VBO, m_VertexLayout);
+    m_VBO->Bind(m_VAO->GetId());
+    m_VAO->AddLayout(m_VertexLayout, 0);
 }
 
 void GuiRenderer::Render(const std::shared_ptr<Texture>& texture, const glm::vec2& position,

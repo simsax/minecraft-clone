@@ -54,16 +54,17 @@ int operator-(const ChunkCoord &l, const ChunkCoord &r);
 
 class Chunk {
 public:
-    Chunk(glm::vec3 position, const VertexBufferLayout &layout, uint32_t maxVertexCount,
-          const std::vector<uint32_t> &indices, glm::vec3 *playerPosition);
+    Chunk(glm::vec3 position, uint32_t maxVertexCount,
+          const std::vector<uint32_t> &indices, glm::vec3 *playerPosition,
+          const VertexBufferLayout &layout, int bindingIndex);
 
-    void GenerateMesh(IndexBuffer *ibo, IndexBuffer *t_ibo);
+    void GenerateMesh();
 
     Block GetBlock(uint32_t x, uint32_t y, uint32_t z) const;
 
     void SetBlock(uint32_t x, uint32_t y, uint32_t z, Block block);
 
-    void Render(const Renderer &renderer, VertexArray *vao, VertexArray *t_vao, IndexBuffer *ibo,
+    void Render(const Renderer &renderer, VertexArray *vao, IndexBuffer *ibo,
                 IndexBuffer *t_ibo);
 
     void RenderOutline(Renderer &renderer, VertexArray *vao, VertexBuffer *vbo,
@@ -92,10 +93,6 @@ private:
     void GenWaterCube(int i, int j, int k, std::vector<uint32_t> &target,
                       const std::array<uint8_t, 6> &textureCoords);
 
-//    std::unique_ptr<VertexArray> m_VAO;
-//    std::unique_ptr<VertexArray> m_TransparentVAO;
-//    std::unique_ptr<IndexBuffer> m_IBO;
-//    std::unique_ptr<IndexBuffer> m_TransparentIBO;
     std::unique_ptr<VertexBuffer> m_VBO;
     std::unique_ptr<VertexBuffer> m_TransparentVBO;
 
@@ -109,7 +106,6 @@ private:
     glm::vec3 *m_PlayerPosition;
     int m_MinHeight;
     int m_MaxHeight;
-    VertexBufferLayout m_Layout;
     size_t m_IBOCount;
     size_t m_TIBOCount;
 };

@@ -1,39 +1,31 @@
 #include "VertexBuffer.h"
 
-VertexBuffer::VertexBuffer()
+VertexBuffer::VertexBuffer(uint32_t stride, int bindingIndex):
+ m_Stride(stride), m_BindingIndex(bindingIndex)
 {
-	glGenBuffers(1, &m_RendererID);
+	glCreateBuffers(1, &m_Vbo);
 }
 
 VertexBuffer::~VertexBuffer()
 {
-	glDeleteBuffers(1, &m_RendererID);
+	glDeleteBuffers(1, &m_Vbo);
 }
 
 void VertexBuffer::CreateStatic(GLsizeiptr size, const void *data) const
 {
-	glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
-	glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
+    glNamedBufferData(m_Vbo, size, data, GL_STATIC_DRAW);
 }
 
 void VertexBuffer::CreateDynamic(GLsizeiptr size) const
 {
-	glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
-	glBufferData(GL_ARRAY_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
+    glNamedBufferData(m_Vbo, size, nullptr, GL_DYNAMIC_DRAW);
 }
 
-void VertexBuffer::Bind() const
-{
-	glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
-}
-
-void VertexBuffer::UnBind() const
-{
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+void VertexBuffer::Bind(GLuint vao) const {
+    glVertexArrayVertexBuffer(vao, m_BindingIndex, m_Vbo, 0, m_Stride);
 }
 
 void VertexBuffer::SendData(GLsizeiptr size, const void *data)
 {
-	this->Bind();
-	glBufferSubData(GL_ARRAY_BUFFER, 0, size, data);
+	glNamedBufferSubData(m_Vbo, 0, size, data);
 }

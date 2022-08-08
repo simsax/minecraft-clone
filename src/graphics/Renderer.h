@@ -16,6 +16,7 @@ public:
     void Clear() const;
     void SetViewMatrix(const glm::mat4& mv);
     void SetSkyColor(const glm::vec3& skyColor);
+    void SetDeltaTime(float deltaTime);
 
 private:
     std::unique_ptr<Shader> m_Shader;
@@ -26,4 +27,5 @@ private:
     glm::mat4 m_Proj;
     float m_Visibility;
     float m_Increment;
+    float m_DeltaTime;
 };

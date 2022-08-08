@@ -31,7 +31,7 @@ void Renderer::Init() {
 
     m_Texture = std::make_unique<Texture>(std::string(SOURCE_DIR) + "/res/textures/terrain.png");
     m_Visibility = 0.5f;
-    m_Increment = 0.002f;
+    m_Increment = 0.5f;
 }
 
 void Renderer::Draw(
@@ -44,8 +44,8 @@ void Renderer::Draw(
     m_Shader->SetUniform3fv("u_ChunkPos", chunkPos);
     m_Shader->SetUniform3fv("u_SkyColor", m_SkyColor);
     m_Texture->Bind(0);
-    vao.Bind();
-    ibo.Bind();
+    ibo.Bind(vao.GetId());
+    // vao is bound outside of this function since it's called in a loop
     glDrawElements(GL_TRIANGLES, ibo.GetCount(), type, nullptr);
 }
 
@@ -67,7 +67,7 @@ void Renderer::RenderOutline(
     if (m_Visibility < 0.5f || m_Visibility > 1.0f)
         m_Increment *= -1.0f;
 
-    m_Visibility += m_Increment;
+    m_Visibility += m_Increment * m_DeltaTime;
     glm::mat4 mvp = m_Proj * m_View;
 
     m_OutlineShader->Bind();
@@ -77,7 +77,7 @@ void Renderer::RenderOutline(
 //    m_OutlineShader->SetUniform1i("u_Outline", false);
     m_Texture->Bind(0);
     vao.Bind();
-    ibo.Bind();
+    ibo.Bind(vao.GetId());
     glDrawElements(GL_TRIANGLES, ibo.GetCount(), type, nullptr);
 //
 //    glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
@@ -103,4 +103,8 @@ void Renderer::RenderOutline(
 //    glStencilFunc(GL_ALWAYS, 0, 0xFF);
 //    glDisable(GL_STENCIL_TEST);
 //    glEnable(GL_DEPTH_TEST);
+}
+
+void Renderer::SetDeltaTime(float deltaTime) {
+    m_DeltaTime = deltaTime;
 }

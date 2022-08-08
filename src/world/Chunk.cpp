@@ -51,17 +51,19 @@ static void CreateQuad(std::vector<uint32_t> &target, const glm::uvec3 &position
 
 // the chunk has a border so that I know what faces to cull between chunks
 // (I only generate the mesh of the part inside the border)
-Chunk::Chunk(glm::vec3 position, const VertexBufferLayout &layout, uint32_t maxVertexCount,
-             const std::vector<uint32_t> &indices, glm::vec3 *playerPosition)
+Chunk::Chunk(glm::vec3 position, uint32_t maxVertexCount,
+             const std::vector<uint32_t> &indices, glm::vec3 *playerPosition,
+             const VertexBufferLayout &layout, int bindingIndex)
         : m_ChunkPosition(std::move(position)), m_Chunk(Matrix3D<Block, XSIZE, YSIZE, ZSIZE>()),
           m_MaxVertexCount(maxVertexCount), m_PlayerPosition(playerPosition), m_MinHeight(YSIZE),
-          m_MaxHeight(0), m_Layout(layout) {
-    m_VBO = std::make_unique<VertexBuffer>();
-    m_TransparentVBO = std::make_unique<VertexBuffer>();
+          m_MaxHeight(0) {
+    m_VBO = std::make_unique<VertexBuffer>(layout.GetStride(), bindingIndex);
+    m_TransparentVBO = std::make_unique<VertexBuffer>(layout.GetStride(), bindingIndex);
     m_VBO->CreateDynamic(sizeof(uint32_t) * maxVertexCount);
     m_TransparentVBO->CreateDynamic(sizeof(uint32_t) * maxVertexCount);
 
     m_Mesh.reserve(m_MaxVertexCount);
+    m_TransparentMesh.reserve(m_MaxVertexCount / 4);
     CreateHeightMap();
     FastFill();
     CreateSurfaceLayer();
@@ -241,7 +243,7 @@ void Chunk::GenWaterCube(
     }
 }
 
-void Chunk::GenerateMesh(IndexBuffer *ibo, IndexBuffer *t_ibo) {
+void Chunk::GenerateMesh() {
     if (m_Mesh.empty() && m_TransparentMesh.empty()) {
         if (m_MinHeight < 1)
             m_MinHeight = 1;
@@ -273,33 +275,15 @@ void Chunk::GenerateMesh(IndexBuffer *ibo, IndexBuffer *t_ibo) {
     }
 }
 
-/* void Chunk::UpdateMesh(uint32_t x, uint32_t y, uint32_t z, Block block) */
-/* { */
-/*     // take care of border (I think, maybe I also have to do for y or not do this at all) */
-/*     x += 1; */
-/*     z += 1; */
-/*     // check the blocks surrounding the modified block and figure out a way to edit the m_Mesh
- * accordingly */
-/*     for (uint32_t i = x - 1; i <= x + 1; i++) { */
-/*         for (uint32_t k = z - 1; k <= z + 1; k++) { */
-/*             for (uint32_t j = y - 1; j <= y + 1; j++) { */
-/*                 // to figure out */
-/*             } */
-/*         } */
-/*     } */
-/* } */
-
-void Chunk::Render(const Renderer &renderer, VertexArray *vao, VertexArray *t_vao, IndexBuffer *ibo,
+void Chunk::Render(const Renderer &renderer, VertexArray *vao, IndexBuffer *ibo,
                    IndexBuffer *t_ibo) {
-    ibo->Bind();
     ibo->SetCount(m_IBOCount);
-    vao->AddBuffer(*m_VBO, m_Layout);
+    m_VBO->Bind(vao->GetId());
     renderer.Draw(*vao, *ibo, GL_UNSIGNED_INT, m_ChunkPosition);
     if (!m_TransparentMesh.empty()) {
-        t_ibo->Bind();
         t_ibo->SetCount(m_TIBOCount);
-        t_vao->AddBuffer(*m_TransparentVBO, m_Layout);
-        renderer.Draw(*t_vao, *t_ibo, GL_UNSIGNED_INT, m_ChunkPosition);
+        m_TransparentVBO->Bind(vao->GetId());
+        renderer.Draw(*vao, *t_ibo, GL_UNSIGNED_INT, m_ChunkPosition);
     }
 }
 

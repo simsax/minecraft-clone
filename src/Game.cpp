@@ -74,6 +74,7 @@ void Game::OnUpdate(float deltaTime)
     ApplyGravity(deltaTime);
     Move(deltaTime);
     UpdateChunks();
+    m_Renderer.SetDeltaTime(deltaTime);
 }
 
 void Game::OnRender()
