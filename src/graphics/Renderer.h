@@ -8,9 +8,10 @@
 
 class Renderer {
 public:
+    Renderer();
     void Init();
     void Draw(const VertexArray& vao, const IndexBuffer& ibo, GLenum type,
-        const glm::vec3& chunkPos) const;
+        const glm::vec3& chunkPos, uint32_t offset);
     void RenderOutline(const VertexArray& vao, const IndexBuffer& ibo, GLenum type,
         const glm::vec3& chunkPos, int i, int j, int k);
     void Clear() const;
@@ -19,9 +20,9 @@ public:
     void SetDeltaTime(float deltaTime);
 
 private:
-    std::unique_ptr<Shader> m_Shader;
-    std::unique_ptr<Shader> m_OutlineShader;
-    std::unique_ptr<Texture> m_Texture;
+    Shader m_Shader;
+    Shader m_OutlineShader;
+    Texture m_Texture;
     glm::mat4 m_View;
     glm::vec3 m_SkyColor;
     glm::mat4 m_Proj;

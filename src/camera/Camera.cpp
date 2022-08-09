@@ -8,7 +8,7 @@
 #define HEIGHT 1080.0f
 #define WIDTH 1920.0f
 
-Camera::Camera(glm::vec3 position)
+Camera::Camera(const glm::vec3& position)
     : m_Frustum(ZNEAR, ZFAR, FOV, HEIGHT, WIDTH)
     , m_CameraPos(position)
     , m_CameraPreviousPos(position)

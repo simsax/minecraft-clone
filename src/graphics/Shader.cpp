@@ -5,13 +5,17 @@
 #include <string>
 #include <sstream>
 
-Shader::Shader(const std::string& vertexPath, const std::string& fragPath)
+Shader::Shader() :
+    m_RendererID(0)
 {
-    ShaderProgramSource source = ParseShader(vertexPath, fragPath);
-    m_RendererID = CreateShader(source.VertexSource, source.FragmentSource);
 }
 
 Shader::~Shader() { glDeleteProgram(m_RendererID); }
+
+void Shader::Init(const std::string &vertexPath, const std::string &fragPath) {
+    ShaderProgramSource source = ParseShader(vertexPath, fragPath);
+    m_RendererID = CreateShader(source.VertexSource, source.FragmentSource);
+}
 
 void Shader::Bind() const { glUseProgram(m_RendererID); }
 
@@ -37,8 +41,7 @@ void Shader::SetUniform4f(const std::string& name, float v0, float v1, float v2,
     glUniform4f(GetUniformLocation(name), v0, v1, v2, v3);
 }
 
-void Shader::SetUniformMat4f(const std::string& name, const glm::mat4& matrix)
-{
+void Shader::SetUniformMat4f(const std::string& name, const glm::mat4& matrix) {
     glUniformMatrix4fv(GetUniformLocation(name), 1, GL_FALSE, &matrix[0][0]);
 }
 

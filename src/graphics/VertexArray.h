@@ -7,10 +7,13 @@ class VertexArray
 public:
 	VertexArray();
 	~VertexArray();
+    VertexArray(const VertexArray&) = delete;
+    VertexArray& operator=(const VertexArray&) = delete;
 
     void AddLayout(const VertexBufferLayout& layout, GLuint bindingIndex);
 	void Bind() const;
     GLuint GetId() const;
+    void Init();
 
 private:
 	GLuint m_Vao;

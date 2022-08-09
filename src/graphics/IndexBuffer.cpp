@@ -4,11 +4,8 @@
 int8_t IndexBuffer::m_BufferCount = 0;
 int8_t IndexBuffer::m_CurrentlyBound = -1;
 
-IndexBuffer::IndexBuffer(GLsizeiptr size, const void* data)
-    : m_Count(0)
+void IndexBuffer::Init(GLsizeiptr size, const void *data)
 {
-    m_BindId = m_BufferCount;
-    m_BufferCount++;
     glCreateBuffers(1, &m_Ibo);
     glNamedBufferData(m_Ibo, size, data, GL_STATIC_DRAW);
 };
@@ -26,3 +23,8 @@ void IndexBuffer::Bind(GLuint vao) const {
 uint32_t IndexBuffer::GetCount() const { return m_Count; }
 
 void IndexBuffer::SetCount(uint32_t count) { m_Count = count; }
+
+IndexBuffer::IndexBuffer(): m_Ibo(0), m_Count(0) {
+    m_BindId = m_BufferCount;
+    m_BufferCount++;
+}

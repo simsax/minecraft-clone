@@ -61,24 +61,14 @@ ChunkManager::~ChunkManager() { /*
      lk.unlock();
      m_Cv.notify_one();
      m_Thread.join();	*/
-    delete m_IBO;
-    delete m_VAO;
-    delete m_OutlineIBO;
-    delete m_OutlineVAO;
-    delete m_OutlineVBO;
 }
 
 void ChunkManager::InitWorld() {
-    m_IBO = new IndexBuffer(m_Indices.size() * sizeof(uint32_t), m_Indices.data());
-    m_VAO = new VertexArray();
-    m_VAO->AddLayout(m_VertexLayout, m_BindingIndex);
-    m_OutlineVBO = new VertexBuffer(m_VertexLayout.GetStride(), m_BindingIndex);
-    m_OutlineVBO->CreateDynamic(sizeof(uint32_t) * 24);
-    std::vector<uint32_t> outlineIndices(m_Indices.begin(), m_Indices.begin() + 36);
-    m_OutlineIBO = new IndexBuffer(outlineIndices.size() * sizeof(uint32_t), outlineIndices.data());
-    m_OutlineVAO = new VertexArray();
-    m_OutlineVBO->Bind(m_OutlineVAO->GetId());
-    m_OutlineVAO->AddLayout(m_VertexLayout, m_BindingIndex);
+    m_IBO.Init(m_Indices.size() * sizeof(uint32_t), m_Indices.data());
+    m_VAO.Init();
+    m_VAO.AddLayout(m_VertexLayout, m_BindingIndex);
+    m_OutlineVBO.Init(m_VertexLayout.GetStride(), m_BindingIndex);
+    m_OutlineVBO.CreateDynamic(sizeof(uint32_t) * 24);
 
     GenerateChunks();
     while (!m_ChunksToLoad.empty())
@@ -97,8 +87,9 @@ void ChunkManager::Render(Renderer &renderer) {
 
     if (m_Selected) {
         Chunk* chunk = &m_ChunkMap.find(m_SelectedBlock.first)->second;
-        chunk->RenderOutline(renderer, m_OutlineVAO, m_OutlineVBO, m_OutlineIBO,
-                             m_SelectedBlock.second, m_OutlineMesh);
+        m_OutlineVBO.Bind(m_VAO.GetId());
+        chunk->RenderOutline(renderer, m_VAO, m_OutlineVBO, m_IBO,
+                             m_SelectedBlock.second);
     }
     // frustum culling
     m_Camera->UpdateFrustum();
@@ -106,7 +97,6 @@ void ChunkManager::Render(Renderer &renderer) {
         glm::vec3 center = chunk->GetCenterPosition();
         if (m_Camera->IsInFrustum(center))
             chunk->Render(renderer, m_VAO, m_IBO);
-//            RenderChunk(renderer, chunk);
     }
 }
 
@@ -174,7 +164,7 @@ void ChunkManager::LoadChunks() {
         //  create new chunk and cache it
         Chunk chunk(glm::vec3(coords.x * static_cast<int>(m_ChunkSize[0]), 0.0f,
                               coords.z * static_cast<int>(m_ChunkSize[2])),
-                    MAX_VERTEX_COUNT, m_Indices, m_Camera->GetPlayerPosition(), m_VertexLayout,
+                    MAX_VERTEX_COUNT, m_Indices, m_VertexLayout,
                     m_BindingIndex);
         chunk.GenerateMesh();
         m_ChunkMap.insert({coords, std::move(chunk)});

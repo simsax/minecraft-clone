@@ -4,11 +4,14 @@ int8_t VertexArray::m_BufferCount = 0;
 int8_t VertexArray::m_CurrentlyBound = -1;
 
 VertexArray::VertexArray()
-        : m_NumElements(0) {
+        : m_Vao(0), m_NumElements(0) {
     m_BindId = m_BufferCount;
     m_BufferCount++;
-    glCreateVertexArrays(1, &m_Vao);
 };
+
+void VertexArray::Init() {
+    glCreateVertexArrays(1, &m_Vao);
+}
 
 VertexArray::~VertexArray() { glDeleteVertexArrays(1, &m_Vao); };
 

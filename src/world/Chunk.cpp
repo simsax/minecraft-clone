@@ -51,19 +51,17 @@ static void CreateQuad(std::vector<uint32_t> &target, const glm::uvec3 &position
 
 // the chunk has a border so that I know what faces to cull between chunks
 // (I only generate the mesh of the part inside the border)
-Chunk::Chunk(glm::vec3 position, uint32_t maxVertexCount,
-             const std::vector<uint32_t> &indices, glm::vec3 *playerPosition,
+Chunk::Chunk(const glm::vec3& position, uint32_t maxVertexCount,
+             const std::vector<uint32_t> &indices,
              const VertexBufferLayout &layout, int bindingIndex)
-        : m_ChunkPosition(std::move(position)), m_Chunk(Matrix3D<Block, XSIZE, YSIZE, ZSIZE>()),
-          m_MaxVertexCount(maxVertexCount), m_PlayerPosition(playerPosition), m_MinHeight(YSIZE),
-          m_MaxHeight(0) {
-    m_VBO = std::make_unique<VertexBuffer>(layout.GetStride(), bindingIndex);
-    m_TransparentVBO = std::make_unique<VertexBuffer>(layout.GetStride(), bindingIndex);
-    m_VBO->CreateDynamic(sizeof(uint32_t) * maxVertexCount);
-    m_TransparentVBO->CreateDynamic(sizeof(uint32_t) * maxVertexCount);
+        : m_HeightMap({}), m_ChunkPosition(position), m_Chunk(Matrix3D<Block, XSIZE, YSIZE, ZSIZE>()),
+          m_MaxVertexCount(maxVertexCount), m_MinHeight(YSIZE),
+          m_MaxHeight(0), m_IBOCount(0), m_TIBOCount(0) {
+    m_VBO.Init(layout.GetStride(), bindingIndex);
+    m_VBO.CreateDynamic(sizeof(uint32_t) * maxVertexCount);
 
     m_Mesh.reserve(m_MaxVertexCount);
-    m_TransparentMesh.reserve(m_MaxVertexCount / 4);
+    m_TransparentMesh.reserve(maxVertexCount / 4);
     CreateHeightMap();
     FastFill();
     CreateSurfaceLayer();
@@ -263,43 +261,43 @@ void Chunk::GenerateMesh() {
         }
         // solid mesh
         size_t indexCount = m_Mesh.size() / 4 * 6; // num faces * 6
-        m_VBO->SendData(m_Mesh.size() * sizeof(uint32_t), m_Mesh.data());
         m_IBOCount = indexCount;
-        // transparent mesh
+        uint32_t solidSize = m_Mesh.size() * sizeof(uint32_t);
+        m_VBO.SendData(solidSize, m_Mesh.data(), 0);
+
         if (!m_TransparentMesh.empty()) {
             indexCount = m_TransparentMesh.size() / 4 * 6;
-            m_TransparentVBO->SendData(
-                    m_TransparentMesh.size() * sizeof(uint32_t), m_TransparentMesh.data());
             m_TIBOCount = indexCount;
+            m_VBO.SendData(
+                    m_TransparentMesh.size() * sizeof(uint32_t), m_TransparentMesh.data(),
+                    solidSize);
         }
     }
 }
 
-void Chunk::Render(const Renderer &renderer, VertexArray *vao, IndexBuffer *ibo) {
-    ibo->SetCount(m_IBOCount);
-    m_VBO->Bind(vao->GetId());
-    renderer.Draw(*vao, *ibo, GL_UNSIGNED_INT, m_ChunkPosition);
+void Chunk::Render(Renderer &renderer, const VertexArray& vao, IndexBuffer& ibo) {
+    ibo.SetCount(m_IBOCount);
+    m_VBO.Bind(vao.GetId());
+    renderer.Draw(vao, ibo, GL_UNSIGNED_INT, m_ChunkPosition, 0);
     if (!m_TransparentMesh.empty()) {
-        ibo->SetCount(m_TIBOCount);
-        m_TransparentVBO->Bind(vao->GetId());
-        renderer.Draw(*vao, *ibo, GL_UNSIGNED_INT, m_ChunkPosition);
+        ibo.SetCount(m_TIBOCount);
+        renderer.Draw(vao, ibo, GL_UNSIGNED_INT, m_ChunkPosition, m_Mesh.size());
     }
 }
 
-void Chunk::RenderOutline(Renderer &renderer, VertexArray *vao, VertexBuffer *vbo,
-                          IndexBuffer *ibo, const glm::vec3 &target,
-                          std::vector<uint32_t> &outlineMesh) {
+void Chunk::RenderOutline(Renderer &renderer, const VertexArray& vao, VertexBuffer& vbo,
+                          IndexBuffer &ibo, const glm::vec3 &target) {
     int i = target.x;
     int j = target.y;
     int k = target.z;
     if (m_Chunk(i, j, k) != Block::EMPTY && m_Chunk(i, j, k) != Block::WATER) {
-        outlineMesh.clear();
+        std::vector<uint32_t> outlineMesh;
         std::array<uint8_t, 6> textureCoords = s_TextureMap.at(m_Chunk(i, j, k));
         GenSolidCube(i, j, k, outlineMesh, textureCoords);
         size_t indexCount = outlineMesh.size() / 4 * 6;
-        vbo->SendData(outlineMesh.size() * sizeof(uint32_t), outlineMesh.data());
-        ibo->SetCount(indexCount);
-        renderer.RenderOutline(*vao, *ibo, GL_UNSIGNED_INT, m_ChunkPosition, i, j, k);
+        vbo.SendData(outlineMesh.size() * sizeof(uint32_t), outlineMesh.data(), 0);
+        ibo.SetCount(indexCount);
+        renderer.RenderOutline(vao, ibo, GL_UNSIGNED_INT, m_ChunkPosition, i, j, k);
     }
 }
 

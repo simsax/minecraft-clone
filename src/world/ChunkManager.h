@@ -28,8 +28,9 @@ private:
     std::array<uint32_t, 3> m_ChunkSize;
     std::future<std::vector<std::pair<ChunkCoord, Chunk>>> m_FutureChunks;
     VertexBufferLayout m_VertexLayout;
-    VertexArray* m_VAO;
-    IndexBuffer* m_IBO;
+    VertexArray m_VAO;
+    IndexBuffer m_IBO;
+    VertexBuffer m_OutlineVBO;
     std::vector<uint32_t> m_Indices;
     std::vector<Chunk*> m_ChunksToRender;
     std::queue<ChunkCoord> m_ChunksToLoad;
@@ -44,10 +45,6 @@ private:
     Camera* m_Camera;
     bool m_NewChunks;
     std::pair<ChunkCoord, glm::vec3> m_SelectedBlock;
-    IndexBuffer* m_OutlineIBO;
-    VertexBuffer* m_OutlineVBO;
-    VertexArray* m_OutlineVAO;
-    std::vector<uint32_t> m_OutlineMesh;
     bool m_Selected;
     int m_BindingIndex;
 };

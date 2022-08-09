@@ -1,20 +1,25 @@
 #include "Texture.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#include <limits>
 
 int8_t Texture::m_TextureCount = 0;
 int8_t Texture::m_CurrentlyBound = -1;
 
 Texture::Texture(std::string path)
     : m_TextureId(0)
-    , m_FilePath(std::move(path))
     , m_LocalBuffer(nullptr)
     , m_Width(0)
     , m_Height(0)
     , m_BPP(0)
+    , m_FilePath(std::move(path))
 {
     m_BindId = m_TextureCount;
     m_TextureCount++;
+}
+
+void Texture::Init()
+{
     // flip texture upside down because for opengl bottom left is the starting position
     stbi_set_flip_vertically_on_load(1);
     m_LocalBuffer = stbi_load(m_FilePath.c_str(), &m_Width, &m_Height, &m_BPP, 4);
@@ -34,7 +39,9 @@ Texture::Texture(std::string path)
         stbi_image_free(m_LocalBuffer);
 }
 
-Texture::~Texture() { glDeleteTextures(1, &m_TextureId); }
+Texture::~Texture() {
+    glDeleteTextures(1, &m_TextureId);
+}
 
 void Texture::Bind(GLuint slot) const
 {
@@ -42,4 +49,31 @@ void Texture::Bind(GLuint slot) const
         glBindTextureUnit(slot, m_TextureId);
         m_CurrentlyBound = m_BindId;
     }
+}
+
+Texture::Texture(Texture&& other)  noexcept {
+    this->m_TextureId = other.m_TextureId;
+    this->m_LocalBuffer = other.m_LocalBuffer;
+    this->m_Width = other.m_Width;
+    this->m_Height = other.m_Height;
+    this->m_BPP = other.m_BPP;
+    this->m_BindId = other.m_BindId;
+    this->m_FilePath = other.m_FilePath;
+    other.m_TextureId = std::numeric_limits<uint32_t>::max();
+    other.m_BindId = -1;
+}
+
+Texture &Texture::operator=(Texture &&other)  noexcept {
+   if (this != &other) {
+       this->m_TextureId = other.m_TextureId;
+       this->m_LocalBuffer = other.m_LocalBuffer;
+       this->m_Width = other.m_Width;
+       this->m_Height = other.m_Height;
+       this->m_BPP = other.m_BPP;
+       this->m_BindId = other.m_BindId;
+       this->m_FilePath = other.m_FilePath;
+       other.m_TextureId = std::numeric_limits<uint32_t>::max();
+       other.m_BindId = -1;
+   }
+   return *this;
 }

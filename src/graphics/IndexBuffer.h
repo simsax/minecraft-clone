@@ -4,9 +4,12 @@
 
 class IndexBuffer {
 public:
-    IndexBuffer(GLsizeiptr size, const void* data);
+    IndexBuffer();
     ~IndexBuffer();
+    IndexBuffer(const IndexBuffer&) = delete;
+    IndexBuffer& operator=(const IndexBuffer&) = delete;
 
+    void Init(GLsizeiptr size, const void* data);
     void Bind(GLuint vao) const;
     uint32_t GetCount() const;
     void SetCount(uint32_t count);

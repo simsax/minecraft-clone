@@ -10,9 +10,12 @@ struct ShaderProgramSource {
 
 class Shader {
 public:
-    Shader(const std::string& vertexPath, const std::string& fragPath);
+    Shader();
     ~Shader();
+    Shader(const Shader&) = delete;
+    Shader& operator=(const Shader&) = delete;
 
+    void Init(const std::string& vertexPath, const std::string& fragPath);
     void Bind() const;
     void Unbind() const;
 

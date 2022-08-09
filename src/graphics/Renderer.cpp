@@ -8,6 +8,16 @@
 #define HEIGHT 1080.0f
 #define WIDTH 1920.0f
 
+Renderer::Renderer() :
+        m_Texture(std::string(SOURCE_DIR) + "/res/textures/terrain.png"),
+        m_View(glm::mat4()),
+        m_SkyColor(glm::vec3()),
+        m_Proj(glm::mat4()),
+        m_Visibility(0.5f),
+        m_Increment(0.5f),
+        m_DeltaTime(0.0f)
+{}
+
 void Renderer::Clear() const { glClear(GL_COLOR_BUFFER_BIT); }
 
 void Renderer::SetViewMatrix(const glm::mat4 &view) { m_View = view; }
@@ -15,38 +25,34 @@ void Renderer::SetViewMatrix(const glm::mat4 &view) { m_View = view; }
 void Renderer::SetSkyColor(const glm::vec3 &skyColor) { m_SkyColor = skyColor; }
 
 void Renderer::Init() {
+    m_Texture.Init();
     m_Proj = glm::perspective(glm::radians(FOV), WIDTH / HEIGHT, ZNEAR, ZFAR);
-    m_Shader = std::make_unique<Shader>(std::string(SOURCE_DIR) + "/res/shaders/shader.vert",
+    m_Shader.Init(std::string(SOURCE_DIR) + "/res/shaders/shader.vert",
                                         std::string(SOURCE_DIR) + "/res/shaders/shader.frag");
-    m_Shader->Bind();
-    m_Shader->SetUniform1i("u_Texture", 0);
+    m_Shader.Bind();
+    m_Shader.SetUniform1i("u_Texture", 0);
 
-    m_OutlineShader
-            = std::make_unique<Shader>(std::string(SOURCE_DIR) + "/res/shaders/shader_outline.vert",
+    m_OutlineShader.Init(std::string(SOURCE_DIR) + "/res/shaders/shader_outline.vert",
                                        std::string(SOURCE_DIR) +
                                        "/res/shaders/shader_outline.frag");
 
-    m_OutlineShader->Bind();
-    m_OutlineShader->SetUniform1i("u_Texture", 0);
-
-    m_Texture = std::make_unique<Texture>(std::string(SOURCE_DIR) + "/res/textures/terrain.png");
-    m_Visibility = 0.5f;
-    m_Increment = 0.5f;
+    m_OutlineShader.Bind();
+    m_OutlineShader.SetUniform1i("u_Texture", 0);
 }
 
 void Renderer::Draw(
         const VertexArray &vao, const IndexBuffer &ibo, GLenum type,
-        const glm::vec3 &chunkPos) const {
+        const glm::vec3 &chunkPos, uint32_t offset) {
     glm::mat4 mvp = m_Proj * m_View;
-    m_Shader->Bind();
-    m_Shader->SetUniformMat4f("u_MVP", mvp);
-    m_Shader->SetUniformMat4f("u_MV", m_View);
-    m_Shader->SetUniform3fv("u_ChunkPos", chunkPos);
-    m_Shader->SetUniform3fv("u_SkyColor", m_SkyColor);
-    m_Texture->Bind(0);
+    m_Shader.Bind();
+    m_Shader.SetUniformMat4f("u_MVP", mvp);
+    m_Shader.SetUniformMat4f("u_MV", m_View);
+    m_Shader.SetUniform3fv("u_ChunkPos", chunkPos);
+    m_Shader.SetUniform3fv("u_SkyColor", m_SkyColor);
+    m_Texture.Bind(0);
     vao.Bind();
     ibo.Bind(vao.GetId());
-    glDrawElements(GL_TRIANGLES, ibo.GetCount(), type, nullptr);
+    glDrawElementsBaseVertex(GL_TRIANGLES, ibo.GetCount(), type, nullptr, offset);
 }
 
 void Renderer::RenderOutline(
@@ -70,12 +76,12 @@ void Renderer::RenderOutline(
     m_Visibility += m_Increment * m_DeltaTime;
     glm::mat4 mvp = m_Proj * m_View;
 
-    m_OutlineShader->Bind();
-    m_OutlineShader->SetUniformMat4f("u_MVP", mvp);
-    m_OutlineShader->SetUniform3fv("u_ChunkPos", chunkPos);
-    m_OutlineShader->SetUniform1f("u_Visibility", m_Visibility);
+    m_OutlineShader.Bind();
+    m_OutlineShader.SetUniformMat4f("u_MVP", mvp);
+    m_OutlineShader.SetUniform3fv("u_ChunkPos", chunkPos);
+    m_OutlineShader.SetUniform1f("u_Visibility", m_Visibility);
 //    m_OutlineShader->SetUniform1i("u_Outline", false);
-    m_Texture->Bind(0);
+    m_Texture.Bind(0);
     vao.Bind();
     ibo.Bind(vao.GetId());
     glDrawElements(GL_TRIANGLES, ibo.GetCount(), type, nullptr);
