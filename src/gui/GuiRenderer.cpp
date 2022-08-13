@@ -1,12 +1,7 @@
 #include "GuiRenderer.h"
 #include "glm/gtc/matrix_transform.hpp"
 #include "Config.h"
-
-#define ZNEAR 0.1f
-#define ZFAR 1000.0f
-#define FOV 45.0f
-#define HEIGHT 1080.0f
-#define WIDTH 1920.0f
+#include "../camera/Constants.h"
 
 static const std::array<float, 8> positions = {
     0.0f, 1.0f, // bottom left

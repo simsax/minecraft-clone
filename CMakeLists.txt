@@ -66,7 +66,7 @@ add_executable(${PROJECT_NAME}
         src/graphics/VertexBufferLayout.hpp
         src/graphics/Window.cpp
         src/utils/Physics.h
-        src/utils/Physics.cpp)
+        src/utils/Physics.cpp src/camera/Constants.h)
 
 add_subdirectory(extern/glfw)
 add_subdirectory(extern/glew)

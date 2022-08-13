@@ -1,15 +1,11 @@
 #include "Camera.h"
 #include "../utils/Physics.h"
 #include "glm/gtc/matrix_transform.hpp"
+#include "Constants.h"
 
-#define ZNEAR 0.1f
-#define ZFAR 1000.0f
-#define FOV 45.0f
-#define HEIGHT 1080.0f
-#define WIDTH 1920.0f
 
 Camera::Camera(const glm::vec3& position)
-    : m_Frustum(ZNEAR, ZFAR, FOV, HEIGHT, WIDTH)
+    : m_Frustum(ZNEAR, ZFAR, glm::radians(FOV), HEIGHT, WIDTH)
     , m_CameraPos(position)
     , m_CameraPreviousPos(position)
     , m_CameraFront(glm::vec3(0.0f, 0.0f, -1.0f))

@@ -10,5 +10,5 @@ uniform vec3 u_SkyColor;
 
 void main() {
 	texColor = texture(u_Texture, v_TexCoord);
-//	texColor = mix(vec4(u_SkyColor, 1.0f), texColor, visibility);
+	texColor = mix(vec4(u_SkyColor, 1.0f), texColor, visibility);
 }

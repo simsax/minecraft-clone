@@ -4,7 +4,6 @@
 Game::Game()
     : m_KeyPressed({})
     , m_Ground(false)
-    , m_Jump(false)
     , m_Camera(glm::vec3(0.0f, 0.0f, 0.0f))
     , m_ChunkManager(&m_Camera)
     , m_VerticalVelocity(0.0f)
@@ -40,7 +39,6 @@ void Game::Init()
 void Game::OnUpdate(float deltaTime)
 {
     HandleInput();
-    CheckJump();
     CheckRayCast();
     ApplyGravity(deltaTime);
     Move(deltaTime);
@@ -67,9 +65,9 @@ void Game::HandleInput()
         m_Camera.ToggleFlyMode();
         m_KeyPressed[GLFW_KEY_F] = false;
     }
-    if (m_KeyPressed[GLFW_KEY_SPACE] && m_Ground && !m_Camera.GetFlyMode() && !m_Jump) {
-        m_Jump = true;
-        m_KeyPressed[GLFW_KEY_SPACE] = false;
+    if (m_KeyPressed[GLFW_KEY_SPACE] && !m_Camera.GetFlyMode() && m_Ground) {
+        Jump();
+//        m_KeyPressed[GLFW_KEY_SPACE] = false;
     }
     if (m_KeyPressed[GLFW_KEY_G]) {
         m_ShowGui = !m_ShowGui;
@@ -245,13 +243,10 @@ void Game::CheckRayCast()
     }
 }
 
-void Game::CheckJump()
+void Game::Jump()
 {
-    if (m_Jump) {
-        m_VerticalVelocity += 10.0f;
-        m_Jump = false;
-        m_Ground = false;
-    }
+    m_VerticalVelocity += 10.0f;
+    m_Ground = false;
 }
 
 void Game::UpdateChunks()

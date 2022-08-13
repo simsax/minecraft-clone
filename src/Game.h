@@ -21,14 +21,13 @@ public:
 private:
     void CheckRayCast();
     void ApplyGravity(float deltaTime);
-    void CheckJump();
+    void Jump();
     void UpdateChunks();
     void Move(float deltaTime);
     void HandleInput();
 
     std::array<bool, GLFW_KEY_LAST> m_KeyPressed;
     bool m_Ground;
-    bool m_Jump;
     Camera m_Camera;
     Renderer m_Renderer;
     ChunkManager m_ChunkManager;

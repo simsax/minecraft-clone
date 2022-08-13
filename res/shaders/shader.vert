@@ -10,7 +10,7 @@ uniform mat4 u_MV;
 uniform vec3 u_ChunkPos;
 
 const float offset = 0.0625f;
-const float density = 0.006f;
+const float density = 0.003f;
 const float gradient = 10.0f;
 
 const vec2 texCoords[4] = vec2[4](
