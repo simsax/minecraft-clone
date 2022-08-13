@@ -43,20 +43,19 @@ struct ChunkCoord {
 };
 
 struct hash_fn {
-    std::size_t operator()(const ChunkCoord &coord) const;
+    std::size_t operator()(const ChunkCoord& coord) const;
 };
 
-bool operator==(const ChunkCoord &l, const ChunkCoord &r);
+bool operator==(const ChunkCoord& l, const ChunkCoord& r);
 
-bool operator!=(const ChunkCoord &l, const ChunkCoord &r);
+bool operator!=(const ChunkCoord& l, const ChunkCoord& r);
 
-int operator-(const ChunkCoord &l, const ChunkCoord &r);
+int operator-(const ChunkCoord& l, const ChunkCoord& r);
 
 class Chunk {
 public:
-    Chunk(const glm::vec3& position, uint32_t maxVertexCount,
-          const std::vector<uint32_t> &indices,
-          const VertexBufferLayout &layout, int bindingIndex);
+    Chunk(const glm::vec3& position, uint32_t maxVertexCount, const std::vector<uint32_t>& indices,
+        const VertexBufferLayout& layout, int bindingIndex);
 
     void GenerateMesh();
 
@@ -64,10 +63,10 @@ public:
 
     void SetBlock(uint32_t x, uint32_t y, uint32_t z, Block block);
 
-    void Render(Renderer &renderer, const VertexArray& vao, IndexBuffer& ibo);
+    void Render(Renderer& renderer, const VertexArray& vao, IndexBuffer& ibo);
 
-    void RenderOutline(Renderer &renderer, const VertexArray& vao, VertexBuffer& vbo,
-                       IndexBuffer& ibo, const glm::vec3 &target);
+    void RenderOutline(Renderer& renderer, const VertexArray& vao, VertexBuffer& vbo,
+        IndexBuffer& ibo, const glm::vec3& target);
 
     glm::vec3 GetPosition() const;
 
@@ -85,11 +84,11 @@ private:
 
     float Continentalness(int x, int y);
 
-    void GenSolidCube(int i, int j, int k, std::vector<uint32_t> &target,
-                      const std::array<uint8_t, 6> &textureCoords);
+    void GenSolidCube(int i, int j, int k, std::vector<uint32_t>& target,
+        const std::array<uint8_t, 6>& textureCoords);
 
-    void GenWaterCube(int i, int j, int k, std::vector<uint32_t> &target,
-                      const std::array<uint8_t, 6> &textureCoords);
+    void GenWaterCube(int i, int j, int k, std::vector<uint32_t>& target,
+        const std::array<uint8_t, 6>& textureCoords);
 
     VertexBuffer m_VBO;
 

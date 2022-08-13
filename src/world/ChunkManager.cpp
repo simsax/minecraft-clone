@@ -9,12 +9,20 @@ using namespace std::chrono_literals;
 #define MAX_INDEX_COUNT 18432 // each cube has 6 faces, each face has 6 indexes
 #define MAX_VERTEX_COUNT 12228 // each cube has 6 faces, each face has 4 vertices
 #define VIEW_DISTANCE 24 // how far the player sees
-#define MAX_CHUNK_TO_LOAD 1
+#define MAX_CHUNK_TO_LOAD 32
+#define PLAYER_HALF_WIDTH 0.3f
+#define PLAYER_TOP_HEIGHT 0.2f
+#define PLAYER_BOTTOM_HEIGHT 1.6f
+
+static int mod(int a, int b) {
+    int res = a % b;
+    return res >= 0 ? res : res + b;
+}
 
 ChunkManager::ChunkManager(Camera *camera)
         : m_ChunkSize({XSIZE - 2, YSIZE, ZSIZE - 2}), m_ViewDistance(VIEW_DISTANCE),
           m_Shutdown(false), m_LoadingChunks(false), m_Camera(camera), m_NewChunks(false),
-          m_Selected(false), m_BindingIndex(0)
+          m_BindingIndex(0), m_Raycast({})
 //	m_ThreadPool(ctpl::thread_pool(std::thread::hardware_concurrency()))
 {
     m_VertexLayout.Push<uint32_t>(1); // position + texture coords
@@ -56,11 +64,11 @@ ChunkManager::ChunkManager(Camera *camera)
 }
 
 ChunkManager::~ChunkManager() { /*
-     std::unique_lock<std::mutex> lk(m_Mtx);
-     m_Shutdown = true;
-     lk.unlock();
-     m_Cv.notify_one();
-     m_Thread.join();	*/
+std::unique_lock<std::mutex> lk(m_Mtx);
+m_Shutdown = true;
+lk.unlock();
+m_Cv.notify_one();
+m_Thread.join();	*/
 }
 
 void ChunkManager::InitWorld() {
@@ -85,11 +93,9 @@ void ChunkManager::Render(Renderer &renderer) {
         SortChunks();
     }
 
-    if (m_Selected) {
-        Chunk* chunk = &m_ChunkMap.find(m_SelectedBlock.first)->second;
+    if (m_Raycast.selected) {
         m_OutlineVBO.Bind(m_VAO.GetId());
-        chunk->RenderOutline(renderer, m_VAO, m_OutlineVBO, m_IBO,
-                             m_SelectedBlock.second);
+        m_Raycast.chunk->RenderOutline(renderer, m_VAO, m_OutlineVBO, m_IBO, m_Raycast.localVoxel);
     }
     // frustum culling
     m_Camera->UpdateFrustum();
@@ -164,8 +170,7 @@ void ChunkManager::LoadChunks() {
         //  create new chunk and cache it
         Chunk chunk(glm::vec3(coords.x * static_cast<int>(m_ChunkSize[0]), 0.0f,
                               coords.z * static_cast<int>(m_ChunkSize[2])),
-                    MAX_VERTEX_COUNT, m_Indices, m_VertexLayout,
-                    m_BindingIndex);
+                    MAX_VERTEX_COUNT, m_Indices, m_VertexLayout, m_BindingIndex);
         chunk.GenerateMesh();
         m_ChunkMap.insert({coords, std::move(chunk)});
         m_ChunksToRender.emplace_back(&m_ChunkMap.find(coords)->second);
@@ -201,7 +206,7 @@ int ChunkManager::SpawnHeight() {
         if (chunk->GetBlock(0, i, 0) == Block::EMPTY)
             break;
     }
-    return i;
+    return i + PLAYER_BOTTOM_HEIGHT + 3;
 }
 
 void ChunkManager::SortChunks() {
@@ -214,14 +219,156 @@ void ChunkManager::SortChunks() {
 
 void ChunkManager::SetNewChunks() { m_NewChunks = true; }
 
-void ChunkManager::SetSelectedBlock(const std::pair<ChunkCoord, glm::vec3> &target) {
-    m_SelectedBlock = target;
-    m_Selected = true;
+bool ChunkManager::IsVoxelSolid(const glm::vec3 &voxel) {
+    std::pair<ChunkCoord, glm::uvec3> target = GlobalToLocal(voxel);
+    m_Raycast.prevGlobalVoxel = m_Raycast.globalVoxel;
+    m_Raycast.globalVoxel = voxel;
+    m_Raycast.prevChunk = m_Raycast.chunk;
+    m_Raycast.prevChunkCoord = m_Raycast.chunkCoord;
+    m_Raycast.chunkCoord = target.first;
+    m_Raycast.prevLocalVoxel = m_Raycast.localVoxel;
+    m_Raycast.localVoxel = target.second;
+    if (m_ChunkMap.find(m_Raycast.chunkCoord) != m_ChunkMap.end()) {
+        m_Raycast.chunk = &m_ChunkMap.find(m_Raycast.chunkCoord)->second;
+
+        if (m_Raycast.chunk->GetBlock(m_Raycast.localVoxel[0], m_Raycast.localVoxel[1],
+                                      m_Raycast.localVoxel[2]) != Block::EMPTY) {
+            m_Raycast.selected = true;
+            return true;
+        }
+    }
+    m_Raycast.selected = false;
+    return false;
 }
 
-void ChunkManager::ClearSelectedBlock() { m_Selected = false; }
+void ChunkManager::DestroyBlock() {
+    m_Raycast.chunk->SetBlock(m_Raycast.localVoxel[0], m_Raycast.localVoxel[1],
+                              m_Raycast.localVoxel[2], Block::EMPTY);
+    UpdateChunk(m_Raycast.chunkCoord);
+    // check if the target is in the chunk border
+    if (m_Raycast.localVoxel[0] == 1 || m_Raycast.localVoxel[2] == 1 ||
+        m_Raycast.localVoxel[0] == m_ChunkSize[0]
+        || m_Raycast.localVoxel[2] == m_ChunkSize[2]) {
+        UpdateNeighbors(m_Raycast.globalVoxel, m_Raycast.chunkCoord, Block::EMPTY);
+    }
+}
+
+void ChunkManager::PlaceBlock(Block block) {
+    if (!physics::Intersect(
+            physics::CreatePlayerAabb(*m_Camera->GetPlayerPosition()),
+            physics::CreateBlockAabb(m_Raycast.prevGlobalVoxel)))
+        m_Raycast.prevChunk->SetBlock(m_Raycast.prevLocalVoxel[0], m_Raycast.prevLocalVoxel[1],
+                                  m_Raycast.prevLocalVoxel[2], block);
+    UpdateChunk(m_Raycast.prevChunkCoord);
+    // check if the target is in the chunk border
+    if (m_Raycast.prevLocalVoxel[0] == 1 || m_Raycast.prevLocalVoxel[2] == 1 ||
+        m_Raycast.prevLocalVoxel[0] == m_ChunkSize[0]
+        || m_Raycast.prevLocalVoxel[2] == m_ChunkSize[2]) {
+        UpdateNeighbors(m_Raycast.prevGlobalVoxel, m_Raycast.prevChunkCoord, block);
+    }
+}
+
+std::pair<ChunkCoord, glm::uvec3> ChunkManager::GlobalToLocal(const glm::vec3 &playerPosition) {
+    uint32_t chunkSize = m_ChunkSize[0];
+    ChunkCoord chunkCoord = CalculateChunkCoord(playerPosition);
+    uint32_t playerPosX = mod(static_cast<int>(std::floor(playerPosition.x) - 1), chunkSize) + 1;
+    uint32_t playerPosZ = mod(static_cast<int>(std::floor(playerPosition.z) - 1), chunkSize) + 1;
+    glm::uvec3 playerPos
+            = {playerPosX, static_cast<uint32_t>(std::floor(playerPosition.y)), playerPosZ};
+    return std::make_pair(chunkCoord, playerPos);
+}
+
+void
+ChunkManager::UpdateNeighbors(glm::vec3 currentVoxel, ChunkCoord targetLocalCoord, Block block) {
+    // take a step of 1 in every direction and update the neighboring chunks found
+    currentVoxel.x += 1;
+    std::pair<ChunkCoord, glm::uvec3> neighbor = GlobalToLocal(currentVoxel);
+    if (neighbor.first != targetLocalCoord) {
+        Chunk *neighborChunk = &m_ChunkMap.find(neighbor.first)->second;
+        neighborChunk->SetBlock(
+                neighbor.second[0] - 1, neighbor.second[1], neighbor.second[2], block);
+        UpdateChunk(neighbor.first);
+        currentVoxel.x -= 1;
+    } else {
+        currentVoxel.x -= 2;
+        neighbor = GlobalToLocal(currentVoxel);
+        if (neighbor.first != targetLocalCoord) {
+            Chunk *neighborChunk = &m_ChunkMap.find(neighbor.first)->second;
+            neighborChunk->SetBlock(
+                    neighbor.second[0] + 1, neighbor.second[1], neighbor.second[2], block);
+            UpdateChunk(neighbor.first);
+        }
+        currentVoxel.x += 1;
+    }
+    currentVoxel.z += 1;
+    neighbor = GlobalToLocal(currentVoxel);
+    if (neighbor.first != targetLocalCoord) {
+        Chunk *neighborChunk = &m_ChunkMap.find(neighbor.first)->second;
+        neighborChunk->SetBlock(
+                neighbor.second[0], neighbor.second[1], neighbor.second[2] - 1, block);
+        UpdateChunk(neighbor.first);
+        currentVoxel.z -= 1;
+    } else {
+        currentVoxel.z -= 2;
+        neighbor = GlobalToLocal(currentVoxel);
+        if (neighbor.first != targetLocalCoord) {
+            Chunk *neighborChunk = &m_ChunkMap.find(neighbor.first)->second;
+            neighborChunk->SetBlock(
+                    neighbor.second[0], neighbor.second[1], neighbor.second[2] + 1, block);
+            UpdateChunk(neighbor.first);
+        }
+        currentVoxel.z += 1;
+    }
+}
 
 
+bool ChunkManager::CalculateCollision(const glm::vec3& playerSpeed)
+{
+    glm::vec3* currentPosition = m_Camera->GetPlayerPosition();
+    glm::vec3 finalPosition = *currentPosition + playerSpeed;
+    int startX, endX, startY, endY, startZ, endZ;
+    if (finalPosition.x >= currentPosition->x) {
+        startX = std::floor(currentPosition->x - PLAYER_HALF_WIDTH);
+        endX = std::floor(finalPosition.x + PLAYER_HALF_WIDTH);
+    } else {
+        startX = std::floor(finalPosition.x - PLAYER_HALF_WIDTH);
+        endX = std::floor(currentPosition->x + PLAYER_HALF_WIDTH);
+    }
+    if (finalPosition.y >= currentPosition->y) {
+        startY = std::floor(currentPosition->y - PLAYER_BOTTOM_HEIGHT);
+        endY = std::floor(finalPosition.y + PLAYER_TOP_HEIGHT);
+    } else {
+        startY = std::floor(finalPosition.y - PLAYER_BOTTOM_HEIGHT);
+        endY = std::floor(currentPosition->y + PLAYER_TOP_HEIGHT);
+    }
+    if (finalPosition.z >= currentPosition->z) {
+        startZ = std::floor(currentPosition->z - PLAYER_HALF_WIDTH);
+        endZ = std::floor(finalPosition.z + PLAYER_HALF_WIDTH);
+    } else {
+        startZ = std::floor(finalPosition.z - PLAYER_HALF_WIDTH);
+        endZ = std::floor(currentPosition->z + PLAYER_HALF_WIDTH);
+    }
+
+    physics::Aabb playerBbox = physics::CreatePlayerAabb(*currentPosition);
+    for (int i = startX; i <= endX; i++) {
+        for (int j = startY; j <= endY; j++) {
+            for (int k = startZ; k <= endZ; k++) {
+                std::pair<ChunkCoord, glm::vec3> localPos = GlobalToLocal(glm::vec3(i, j, k));
+                if (m_ChunkMap.find(localPos.first) != m_ChunkMap.end()) {
+                    Chunk* chunk = &m_ChunkMap.find(localPos.first)->second;
+                    Block block = chunk->GetBlock(
+                            localPos.second[0], localPos.second[1], localPos.second[2]);
+                    if (block != Block::EMPTY && block != Block::WATER) {
+                        physics::Aabb blockBbox = physics::CreateBlockAabb(glm::vec3(i, j, k));
+                        physics::SnapAabb(playerBbox, blockBbox, playerSpeed, currentPosition);
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+    return false;
+}
 /*
 void ChunkManager::UpdateChunksToRender()
 {

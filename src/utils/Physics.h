@@ -4,6 +4,9 @@
 #include <string>
 
 namespace physics {
+
+const float GRAVITY = 37.0f;
+
 struct Aabb {
     float minX;
     float maxX;

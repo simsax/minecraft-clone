@@ -2,7 +2,7 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "Config.h"
 
-#define ZNEAR 0.2f
+#define ZNEAR 0.1f
 #define ZFAR 1000.0f
 #define FOV 45.0f
 #define HEIGHT 1080.0f

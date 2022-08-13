@@ -37,10 +37,9 @@ Aabb CreateBlockAabb(const glm::vec3& position)
 
 Aabb CreatePlayerAabb(const glm::vec3& position)
 {
-    const float eps = 0.0001f;
-    Aabb bbox = { position.x - PLAYER_HALF_WIDTH - eps, position.x + PLAYER_HALF_WIDTH + eps,
-        position.y - PLAYER_BOTTOM_HEIGHT - eps, position.y + PLAYER_TOP_HEIGHT + eps,
-        position.z - PLAYER_HALF_WIDTH - eps, position.z + PLAYER_HALF_WIDTH + eps };
+    Aabb bbox = { position.x - PLAYER_HALF_WIDTH, position.x + PLAYER_HALF_WIDTH,
+        position.y - PLAYER_BOTTOM_HEIGHT, position.y + PLAYER_TOP_HEIGHT,
+        position.z - PLAYER_HALF_WIDTH, position.z + PLAYER_HALF_WIDTH };
     return bbox;
 }
 
@@ -59,18 +58,19 @@ bool Intersect(Aabb a, Aabb b)
 
 void SnapAabb(Aabb player, Aabb block, const glm::vec3& playerSpeed, glm::vec3* currentPosition)
 {
+    constexpr float eps = 0.0001f;
     if (playerSpeed.x > 0)
-        currentPosition->x += block.minX - player.maxX;
+        currentPosition->x += block.minX - player.maxX - eps;
     else if (playerSpeed.x < 0)
-        currentPosition->x += block.maxX - player.minX;
+        currentPosition->x += block.maxX - player.minX + eps;
     if (playerSpeed.y > 0)
-        currentPosition->y += block.minY - player.maxY;
+        currentPosition->y += block.minY - player.maxY - eps;
     else if (playerSpeed.y < 0)
-        currentPosition->y += block.maxY - player.minY;
+        currentPosition->y += block.maxY - player.minY + eps;
     if (playerSpeed.z > 0)
-        currentPosition->z += block.minZ - player.maxZ;
+        currentPosition->z += block.minZ - player.maxZ - eps;
     else if (playerSpeed.z < 0)
-        currentPosition->z += block.maxZ - player.minZ;
+        currentPosition->z += block.maxZ - player.minZ + eps;
 }
 
 float AabbDistance(Aabb a, Aabb b)
