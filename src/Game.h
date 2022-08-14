@@ -33,10 +33,10 @@ private:
     ChunkManager m_ChunkManager;
     ChunkCoord m_LastChunk;
     ChunkCoord m_SortedChunk;
-    float m_VerticalVelocity;
     std::vector<Block> m_Blocks;
     int m_HoldingBlock;
     glm::vec3 m_SkyColor;
     GuiManager m_GuiManager;
     bool m_ShowGui;
+    float m_VerticalVelocity;
 };

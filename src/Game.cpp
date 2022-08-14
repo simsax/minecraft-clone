@@ -2,23 +2,15 @@
 #include <iostream>
 
 Game::Game()
-    : m_KeyPressed({})
-    , m_Ground(false)
-    , m_Camera(glm::vec3(0.0f, 0.0f, 0.0f))
-    , m_ChunkManager(&m_Camera)
-    , m_VerticalVelocity(0.0f)
-    , m_LastChunk({ 0, 0 })
-    , m_SortedChunk({ 0, 0 })
-    , m_Blocks(std::vector({ Block::DIRT, Block::GRASS, Block::SAND, Block::SNOW, Block::STONE,
-          Block::WOOD, Block::DIAMOND, Block::EMPTY, Block::EMPTY }))
-    , m_HoldingBlock(0)
-    , m_SkyColor(173.0f / 255.0f, 223.0f / 255.0f, 230.0f / 255.0f)
-    , m_ShowGui(true)
-{
+        : m_KeyPressed({}), m_Ground(false), m_Camera(glm::vec3(0.0f, 0.0f, 0.0f)),
+          m_ChunkManager(&m_Camera), m_LastChunk({0, 0}), m_SortedChunk({0, 0}),
+          m_Blocks(std::vector({Block::DIRT, Block::GRASS, Block::SAND, Block::SNOW, Block::STONE,
+                                Block::WOOD, Block::DIAMOND, Block::EMPTY, Block::EMPTY})),
+          m_HoldingBlock(0), m_SkyColor(173.0f / 255.0f, 223.0f / 255.0f, 230.0f / 255.0f),
+          m_ShowGui(true), m_VerticalVelocity(0.0f) {
 }
 
-void Game::Init()
-{
+void Game::Init() {
     glEnable(GL_DEPTH_TEST);
 
     glEnable(GL_BLEND);
@@ -33,11 +25,10 @@ void Game::Init()
     m_GuiManager.Init();
 
     // spawn player over a block
-    m_Camera.GetPlayerPosition()->y += static_cast<float>(m_ChunkManager.SpawnHeight());
+    m_Camera.GetPlayerPosition().y += static_cast<float>(m_ChunkManager.SpawnHeight());
 }
 
-void Game::OnUpdate(float deltaTime)
-{
+void Game::OnUpdate(float deltaTime) {
     HandleInput();
     CheckRayCast();
     ApplyGravity(deltaTime);
@@ -46,8 +37,7 @@ void Game::OnUpdate(float deltaTime)
     m_Renderer.SetDeltaTime(deltaTime);
 }
 
-void Game::OnRender()
-{
+void Game::OnRender() {
     glClearColor(m_SkyColor.x, m_SkyColor.y, m_SkyColor.z, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -58,8 +48,7 @@ void Game::OnRender()
         m_GuiManager.Render();
 }
 
-void Game::HandleInput()
-{
+void Game::HandleInput() {
     m_Camera.HandleInput(m_KeyPressed);
     if (m_KeyPressed[GLFW_KEY_F]) {
         m_Camera.ToggleFlyMode();
@@ -67,7 +56,6 @@ void Game::HandleInput()
     }
     if (m_KeyPressed[GLFW_KEY_SPACE] && !m_Camera.GetFlyMode() && m_Ground) {
         Jump();
-//        m_KeyPressed[GLFW_KEY_SPACE] = false;
     }
     if (m_KeyPressed[GLFW_KEY_G]) {
         m_ShowGui = !m_ShowGui;
@@ -77,8 +65,7 @@ void Game::HandleInput()
 
 void Game::ProcessMouse(float xoffset, float yoffset) { m_Camera.ProcessMouse(xoffset, yoffset); }
 
-void Game::PressKey(int key)
-{
+void Game::PressKey(int key) {
     if (key >= GLFW_KEY_1 && key <= GLFW_KEY_9) {
         m_HoldingBlock = key - GLFW_KEY_0 - 1;
         m_GuiManager.PressKey(m_HoldingBlock);
@@ -88,8 +75,7 @@ void Game::PressKey(int key)
 
 void Game::ReleaseKey(int key) { m_KeyPressed[key] = false; }
 
-void Game::Scroll(float offset)
-{
+void Game::Scroll(float offset) {
     m_HoldingBlock += static_cast<int>(offset);
     if (m_HoldingBlock < 0)
         m_HoldingBlock = 0;
@@ -98,108 +84,110 @@ void Game::Scroll(float offset)
     m_GuiManager.PressKey(m_HoldingBlock);
 }
 
-void Game::Move(float deltaTime)
-{
-    glm::vec3* currentPosition = m_Camera.GetPlayerPosition();
-    glm::vec3 playerSpeed
-        = m_Camera.GetCameraSpeed() * deltaTime; // the destination in the next frame
+void Game::Move(float deltaTime) {
+    glm::vec3 &currentPosition = m_Camera.GetPlayerPosition();
+    glm::vec3 playerSpeed = m_Camera.GetCameraSpeed();
+    playerSpeed.y += m_VerticalVelocity;
+    glm::vec3 endPosition = playerSpeed * deltaTime;
 
     bool collidedx, collidedy, collidedz;
-    if (playerSpeed.x < playerSpeed.y && playerSpeed.x < playerSpeed.z) {
-        collidedx = m_ChunkManager.CalculateCollision(glm::vec3(playerSpeed.x, 0, 0));
-        if (playerSpeed.y < playerSpeed.z) {
-            collidedy = m_ChunkManager.CalculateCollision(glm::vec3(0, playerSpeed.y, 0));
-            collidedz = m_ChunkManager.CalculateCollision(glm::vec3(0, 0, playerSpeed.z));
+    if (endPosition.x < endPosition.y && endPosition.x < endPosition.z) {
+        collidedx = m_ChunkManager.CalculateCollision(glm::vec3(endPosition.x, 0, 0));
+        if (endPosition.y < endPosition.z) {
+            collidedy = m_ChunkManager.CalculateCollision(glm::vec3(0, endPosition.y, 0));
+            collidedz = m_ChunkManager.CalculateCollision(glm::vec3(0, 0, endPosition.z));
         } else {
-            collidedz = m_ChunkManager.CalculateCollision(glm::vec3(0, 0, playerSpeed.z));
-            collidedy = m_ChunkManager.CalculateCollision(glm::vec3(0, playerSpeed.y, 0));
+            collidedz = m_ChunkManager.CalculateCollision(glm::vec3(0, 0, endPosition.z));
+            collidedy = m_ChunkManager.CalculateCollision(glm::vec3(0, endPosition.y, 0));
         }
-    } else if (playerSpeed.y < playerSpeed.z) {
-        collidedy = m_ChunkManager.CalculateCollision(glm::vec3(0, playerSpeed.y, 0));
-        if (playerSpeed.x < playerSpeed.z) {
-            collidedx = m_ChunkManager.CalculateCollision(glm::vec3(playerSpeed.x, 0, 0));
-            collidedz = m_ChunkManager.CalculateCollision(glm::vec3(0, 0, playerSpeed.z));
+    } else if (endPosition.y < endPosition.z) {
+        collidedy = m_ChunkManager.CalculateCollision(glm::vec3(0, endPosition.y, 0));
+        if (endPosition.x < endPosition.z) {
+            collidedx = m_ChunkManager.CalculateCollision(glm::vec3(endPosition.x, 0, 0));
+            collidedz = m_ChunkManager.CalculateCollision(glm::vec3(0, 0, endPosition.z));
         } else {
-            collidedz = m_ChunkManager.CalculateCollision(glm::vec3(0, 0, playerSpeed.z));
-            collidedx = m_ChunkManager.CalculateCollision(glm::vec3(playerSpeed.x, 0, 0));
+            collidedz = m_ChunkManager.CalculateCollision(glm::vec3(0, 0, endPosition.z));
+            collidedx = m_ChunkManager.CalculateCollision(glm::vec3(endPosition.x, 0, 0));
         }
     } else {
-        collidedz = m_ChunkManager.CalculateCollision(glm::vec3(0, 0, playerSpeed.z));
-        if (playerSpeed.x < playerSpeed.y) {
-            collidedx = m_ChunkManager.CalculateCollision(glm::vec3(playerSpeed.x, 0, 0));
-            collidedy = m_ChunkManager.CalculateCollision(glm::vec3(0, playerSpeed.y, 0));
+        collidedz = m_ChunkManager.CalculateCollision(glm::vec3(0, 0, endPosition.z));
+        if (endPosition.x < endPosition.y) {
+            collidedx = m_ChunkManager.CalculateCollision(glm::vec3(endPosition.x, 0, 0));
+            collidedy = m_ChunkManager.CalculateCollision(glm::vec3(0, endPosition.y, 0));
         } else {
-            collidedy = m_ChunkManager.CalculateCollision(glm::vec3(0, playerSpeed.y, 0));
-            collidedx = m_ChunkManager.CalculateCollision(glm::vec3(playerSpeed.x, 0, 0));
+            collidedy = m_ChunkManager.CalculateCollision(glm::vec3(0, endPosition.y, 0));
+            collidedx = m_ChunkManager.CalculateCollision(glm::vec3(endPosition.x, 0, 0));
         }
     }
 
     if (collidedx)
-        playerSpeed.x = 0;
+        endPosition.x = 0;
     if (collidedy) {
-        if (!m_Camera.GetFlyMode() && playerSpeed.y < 0) {
+        if (!m_Camera.GetFlyMode() && endPosition.y < 0) {
             m_Ground = true;
         }
-        playerSpeed.y = 0;
+        endPosition.y = 0;
     } else {
         m_Ground = false;
     }
     if (collidedz)
-        playerSpeed.z = 0;
+        endPosition.z = 0;
 
-    *currentPosition += playerSpeed;
+    currentPosition += endPosition;
 
     // don't let the player go outside of world borders
-    if (currentPosition->y < 0)
-        currentPosition->y = 0;
-    else if (currentPosition->y > m_ChunkManager.GetChunkSize()[1] - 1)
-        currentPosition->y = m_ChunkManager.GetChunkSize()[1] - 1;
+    if (currentPosition.y < 0)
+        currentPosition.y = 0;
+    else if (currentPosition.y > m_ChunkManager.GetChunkSize()[1] - 1)
+        currentPosition.y = m_ChunkManager.GetChunkSize()[1] - 1;
 }
 
-void Game::ApplyGravity(float deltaTime)
-{
+void Game::ApplyGravity(float deltaTime) {
     if (!m_Camera.GetFlyMode()) {
         if (!m_Ground)
             m_VerticalVelocity += -physics::GRAVITY * deltaTime;
         else
             m_VerticalVelocity = -physics::GRAVITY * deltaTime;
-        glm::vec3 velocity = m_Camera.GetCameraSpeed();
-        m_Camera.SetCameraSpeed(glm::vec3(velocity.x, velocity.y + m_VerticalVelocity, velocity.z));
     }
 }
 
-void Game::CheckRayCast()
-{
-    glm::vec3* playerPos = m_Camera.GetPlayerPosition();
+void Game::Jump() {
+    constexpr float jump = 10.0f;
+    m_VerticalVelocity = jump;
+    m_Ground = false;
+}
+
+void Game::CheckRayCast() {
+    glm::vec3 &playerPos = m_Camera.GetPlayerPosition();
     glm::vec3 playerDir = m_Camera.GetPlayerDirection();
     float Sx = std::abs(1 / playerDir.x);
     float Sy = std::abs(1 / playerDir.y);
     float Sz = std::abs(1 / playerDir.z);
     glm::vec3 currentVoxel
-        = { std::floor(playerPos->x), std::floor(playerPos->y), std::floor(playerPos->z) };
+            = {std::floor(playerPos.x), std::floor(playerPos.y), std::floor(playerPos.z)};
     glm::vec3 rayLength;
     glm::vec3 step;
 
     if (playerDir.x < 0) {
         step.x = -1;
-        rayLength.x = (playerPos->x - currentVoxel.x) * Sx;
+        rayLength.x = (playerPos.x - currentVoxel.x) * Sx;
     } else {
         step.x = 1;
-        rayLength.x = (currentVoxel.x + 1 - playerPos->x) * Sx;
+        rayLength.x = (currentVoxel.x + 1 - playerPos.x) * Sx;
     }
     if (playerDir.y < 0) {
         step.y = -1;
-        rayLength.y = (playerPos->y - currentVoxel.y) * Sy;
+        rayLength.y = (playerPos.y - currentVoxel.y) * Sy;
     } else {
         step.y = 1;
-        rayLength.y = (currentVoxel.y + 1 - playerPos->y) * Sy;
+        rayLength.y = (currentVoxel.y + 1 - playerPos.y) * Sy;
     }
     if (playerDir.z < 0) {
         step.z = -1;
-        rayLength.z = (playerPos->z - currentVoxel.z) * Sz;
+        rayLength.z = (playerPos.z - currentVoxel.z) * Sz;
     } else {
         step.z = 1;
-        rayLength.z = (currentVoxel.z + 1 - playerPos->z) * Sz;
+        rayLength.z = (currentVoxel.z + 1 - playerPos.z) * Sz;
     }
 
     bool voxelFound = false;
@@ -243,15 +231,8 @@ void Game::CheckRayCast()
     }
 }
 
-void Game::Jump()
-{
-    m_VerticalVelocity += 10.0f;
-    m_Ground = false;
-}
-
-void Game::UpdateChunks()
-{
-    ChunkCoord currentChunk = m_ChunkManager.CalculateChunkCoord(*m_Camera.GetPlayerPosition());
+void Game::UpdateChunks() {
+    ChunkCoord currentChunk = m_ChunkManager.CalculateChunkCoord(m_Camera.GetPlayerPosition());
     if (m_SortedChunk != currentChunk) {
         m_SortedChunk = currentChunk;
         m_ChunkManager.SetNewChunks();
@@ -263,5 +244,5 @@ void Game::UpdateChunks()
 }
 
 glm::vec3 Game::GetPlayerPosition() {
-    return *m_Camera.GetPlayerPosition();
+    return m_Camera.GetPlayerPosition();
 }

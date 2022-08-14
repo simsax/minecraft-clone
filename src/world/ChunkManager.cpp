@@ -178,7 +178,7 @@ void ChunkManager::LoadChunks() {
 }
 
 void ChunkManager::GenerateChunks() {
-    ChunkCoord chunkCoord = CalculateChunkCoord(*m_Camera->GetPlayerPosition());
+    ChunkCoord chunkCoord = CalculateChunkCoord(m_Camera->GetPlayerPosition());
     m_ChunksToRender.clear();
 
     //	std::unique_lock<std::mutex> lk(m_Mtx);
@@ -210,7 +210,7 @@ int ChunkManager::SpawnHeight() {
 }
 
 void ChunkManager::SortChunks() {
-    glm::vec3 playerPos = *m_Camera->GetPlayerPosition() * glm::vec3(1.0f, 0, 1.0f);
+    glm::vec3 playerPos = m_Camera->GetPlayerPosition() * glm::vec3(1.0f, 0, 1.0f);
     std::sort(m_ChunksToRender.begin(), m_ChunksToRender.end(), [&playerPos](Chunk *a, Chunk *b) {
         return glm::length2(playerPos - a->GetCenterPosition())
                > glm::length2(playerPos - b->GetCenterPosition());
@@ -255,7 +255,7 @@ void ChunkManager::DestroyBlock() {
 
 void ChunkManager::PlaceBlock(Block block) {
     if (!physics::Intersect(
-            physics::CreatePlayerAabb(*m_Camera->GetPlayerPosition()),
+            physics::CreatePlayerAabb(m_Camera->GetPlayerPosition()),
             physics::CreateBlockAabb(m_Raycast.prevGlobalVoxel)))
         m_Raycast.prevChunk->SetBlock(m_Raycast.prevLocalVoxel[0], m_Raycast.prevLocalVoxel[1],
                                   m_Raycast.prevLocalVoxel[2], block);
@@ -324,32 +324,32 @@ ChunkManager::UpdateNeighbors(glm::vec3 currentVoxel, ChunkCoord targetLocalCoor
 
 bool ChunkManager::CalculateCollision(const glm::vec3& playerSpeed)
 {
-    glm::vec3* currentPosition = m_Camera->GetPlayerPosition();
-    glm::vec3 finalPosition = *currentPosition + playerSpeed;
+    glm::vec3& currentPosition = m_Camera->GetPlayerPosition();
+    glm::vec3 finalPosition = currentPosition + playerSpeed;
     int startX, endX, startY, endY, startZ, endZ;
-    if (finalPosition.x >= currentPosition->x) {
-        startX = std::floor(currentPosition->x - PLAYER_HALF_WIDTH);
+    if (finalPosition.x >= currentPosition.x) {
+        startX = std::floor(currentPosition.x - PLAYER_HALF_WIDTH);
         endX = std::floor(finalPosition.x + PLAYER_HALF_WIDTH);
     } else {
         startX = std::floor(finalPosition.x - PLAYER_HALF_WIDTH);
-        endX = std::floor(currentPosition->x + PLAYER_HALF_WIDTH);
+        endX = std::floor(currentPosition.x + PLAYER_HALF_WIDTH);
     }
-    if (finalPosition.y >= currentPosition->y) {
-        startY = std::floor(currentPosition->y - PLAYER_BOTTOM_HEIGHT);
+    if (finalPosition.y >= currentPosition.y) {
+        startY = std::floor(currentPosition.y - PLAYER_BOTTOM_HEIGHT);
         endY = std::floor(finalPosition.y + PLAYER_TOP_HEIGHT);
     } else {
         startY = std::floor(finalPosition.y - PLAYER_BOTTOM_HEIGHT);
-        endY = std::floor(currentPosition->y + PLAYER_TOP_HEIGHT);
+        endY = std::floor(currentPosition.y + PLAYER_TOP_HEIGHT);
     }
-    if (finalPosition.z >= currentPosition->z) {
-        startZ = std::floor(currentPosition->z - PLAYER_HALF_WIDTH);
+    if (finalPosition.z >= currentPosition.z) {
+        startZ = std::floor(currentPosition.z - PLAYER_HALF_WIDTH);
         endZ = std::floor(finalPosition.z + PLAYER_HALF_WIDTH);
     } else {
         startZ = std::floor(finalPosition.z - PLAYER_HALF_WIDTH);
-        endZ = std::floor(currentPosition->z + PLAYER_HALF_WIDTH);
+        endZ = std::floor(currentPosition.z + PLAYER_HALF_WIDTH);
     }
 
-    physics::Aabb playerBbox = physics::CreatePlayerAabb(*currentPosition);
+    physics::Aabb playerBbox = physics::CreatePlayerAabb(currentPosition);
     for (int i = startX; i <= endX; i++) {
         for (int j = startY; j <= endY; j++) {
             for (int k = startZ; k <= endZ; k++) {

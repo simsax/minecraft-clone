@@ -12,13 +12,11 @@ public:
     void ProcessMouse(float xoffset, float yoffset);
     void ToggleFlyMode();
     bool GetFlyMode() const;
-    void SetCameraSpeed(const glm::vec3& speed);
     void Move(float deltaTime);
     glm::mat4 GetViewMatrix() const;
-    glm::vec3* GetPlayerPosition();
-    glm::vec3 GetPreviousPlayerPosition() const;
+    glm::vec3& GetPlayerPosition();
     glm::vec3 GetPlayerDirection() const;
-    glm::vec3 GetCameraSpeed() const;
+    glm::vec3 GetCameraSpeed();
     void UpdateFrustum();
     bool IsInFrustum(const glm::vec3& point);
 
@@ -26,7 +24,6 @@ private:
     frustum::Frustum m_Frustum;
     std::array<frustum::Plane, 6> m_FrustumPlanes;
     glm::vec3 m_CameraPos;
-    glm::vec3 m_CameraPreviousPos;
     glm::vec3 m_CameraFront;
     glm::vec3 m_CameraUp;
     glm::vec3 m_CameraSpeed;
