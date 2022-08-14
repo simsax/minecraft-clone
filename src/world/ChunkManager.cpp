@@ -1,5 +1,4 @@
 #include "ChunkManager.h"
-#include "time.h"
 #include "glm/gtx/norm.hpp"
 #include <iostream>
 #include "../utils/Timer.h"

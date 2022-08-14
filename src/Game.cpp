@@ -89,20 +89,22 @@ void Game::Move(float deltaTime) {
     glm::vec3 playerSpeed = m_Camera.GetCameraSpeed();
     playerSpeed.y += m_VerticalVelocity;
     glm::vec3 distance = playerSpeed * deltaTime;
+    glm::vec3 absDistance = glm::vec3(std::abs(distance.x), std::abs(distance.y),
+                                      std::abs(distance.z));
 
     bool collidedx, collidedy, collidedz;
-    if (distance.x < distance.y && distance.x < distance.z) {
+    if (absDistance.x < absDistance.y && absDistance.x < absDistance.z) {
         collidedx = m_ChunkManager.CalculateCollision(glm::vec3(distance.x, 0, 0));
-        if (distance.y < distance.z) {
+        if (absDistance.y < absDistance.z) {
             collidedy = m_ChunkManager.CalculateCollision(glm::vec3(0, distance.y, 0));
             collidedz = m_ChunkManager.CalculateCollision(glm::vec3(0, 0, distance.z));
         } else {
             collidedz = m_ChunkManager.CalculateCollision(glm::vec3(0, 0, distance.z));
             collidedy = m_ChunkManager.CalculateCollision(glm::vec3(0, distance.y, 0));
         }
-    } else if (distance.y < distance.z) {
+    } else if (absDistance.y < absDistance.z) {
         collidedy = m_ChunkManager.CalculateCollision(glm::vec3(0, distance.y, 0));
-        if (distance.x < distance.z) {
+        if (absDistance.x < absDistance.z) {
             collidedx = m_ChunkManager.CalculateCollision(glm::vec3(distance.x, 0, 0));
             collidedz = m_ChunkManager.CalculateCollision(glm::vec3(0, 0, distance.z));
         } else {
@@ -111,7 +113,7 @@ void Game::Move(float deltaTime) {
         }
     } else {
         collidedz = m_ChunkManager.CalculateCollision(glm::vec3(0, 0, distance.z));
-        if (distance.x < distance.y) {
+        if (absDistance.x < absDistance.y) {
             collidedx = m_ChunkManager.CalculateCollision(glm::vec3(distance.x, 0, 0));
             collidedy = m_ChunkManager.CalculateCollision(glm::vec3(0, distance.y, 0));
         } else {
