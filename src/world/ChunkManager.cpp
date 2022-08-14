@@ -256,15 +256,16 @@ void ChunkManager::DestroyBlock() {
 void ChunkManager::PlaceBlock(Block block) {
     if (!physics::Intersect(
             physics::CreatePlayerAabb(m_Camera->GetPlayerPosition()),
-            physics::CreateBlockAabb(m_Raycast.prevGlobalVoxel)))
+            physics::CreateBlockAabb(m_Raycast.prevGlobalVoxel))) {
         m_Raycast.prevChunk->SetBlock(m_Raycast.prevLocalVoxel[0], m_Raycast.prevLocalVoxel[1],
-                                  m_Raycast.prevLocalVoxel[2], block);
-    UpdateChunk(m_Raycast.prevChunkCoord);
-    // check if the target is in the chunk border
-    if (m_Raycast.prevLocalVoxel[0] == 1 || m_Raycast.prevLocalVoxel[2] == 1 ||
-        m_Raycast.prevLocalVoxel[0] == m_ChunkSize[0]
-        || m_Raycast.prevLocalVoxel[2] == m_ChunkSize[2]) {
-        UpdateNeighbors(m_Raycast.prevGlobalVoxel, m_Raycast.prevChunkCoord, block);
+                                      m_Raycast.prevLocalVoxel[2], block);
+        UpdateChunk(m_Raycast.prevChunkCoord);
+        // check if the target is in the chunk border
+        if (m_Raycast.prevLocalVoxel[0] == 1 || m_Raycast.prevLocalVoxel[2] == 1 ||
+            m_Raycast.prevLocalVoxel[0] == m_ChunkSize[0]
+            || m_Raycast.prevLocalVoxel[2] == m_ChunkSize[2]) {
+            UpdateNeighbors(m_Raycast.prevGlobalVoxel, m_Raycast.prevChunkCoord, block);
+        }
     }
 }
 

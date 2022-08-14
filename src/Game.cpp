@@ -88,52 +88,52 @@ void Game::Move(float deltaTime) {
     glm::vec3 &currentPosition = m_Camera.GetPlayerPosition();
     glm::vec3 playerSpeed = m_Camera.GetCameraSpeed();
     playerSpeed.y += m_VerticalVelocity;
-    glm::vec3 endPosition = playerSpeed * deltaTime;
+    glm::vec3 distance = playerSpeed * deltaTime;
 
     bool collidedx, collidedy, collidedz;
-    if (endPosition.x < endPosition.y && endPosition.x < endPosition.z) {
-        collidedx = m_ChunkManager.CalculateCollision(glm::vec3(endPosition.x, 0, 0));
-        if (endPosition.y < endPosition.z) {
-            collidedy = m_ChunkManager.CalculateCollision(glm::vec3(0, endPosition.y, 0));
-            collidedz = m_ChunkManager.CalculateCollision(glm::vec3(0, 0, endPosition.z));
+    if (distance.x < distance.y && distance.x < distance.z) {
+        collidedx = m_ChunkManager.CalculateCollision(glm::vec3(distance.x, 0, 0));
+        if (distance.y < distance.z) {
+            collidedy = m_ChunkManager.CalculateCollision(glm::vec3(0, distance.y, 0));
+            collidedz = m_ChunkManager.CalculateCollision(glm::vec3(0, 0, distance.z));
         } else {
-            collidedz = m_ChunkManager.CalculateCollision(glm::vec3(0, 0, endPosition.z));
-            collidedy = m_ChunkManager.CalculateCollision(glm::vec3(0, endPosition.y, 0));
+            collidedz = m_ChunkManager.CalculateCollision(glm::vec3(0, 0, distance.z));
+            collidedy = m_ChunkManager.CalculateCollision(glm::vec3(0, distance.y, 0));
         }
-    } else if (endPosition.y < endPosition.z) {
-        collidedy = m_ChunkManager.CalculateCollision(glm::vec3(0, endPosition.y, 0));
-        if (endPosition.x < endPosition.z) {
-            collidedx = m_ChunkManager.CalculateCollision(glm::vec3(endPosition.x, 0, 0));
-            collidedz = m_ChunkManager.CalculateCollision(glm::vec3(0, 0, endPosition.z));
+    } else if (distance.y < distance.z) {
+        collidedy = m_ChunkManager.CalculateCollision(glm::vec3(0, distance.y, 0));
+        if (distance.x < distance.z) {
+            collidedx = m_ChunkManager.CalculateCollision(glm::vec3(distance.x, 0, 0));
+            collidedz = m_ChunkManager.CalculateCollision(glm::vec3(0, 0, distance.z));
         } else {
-            collidedz = m_ChunkManager.CalculateCollision(glm::vec3(0, 0, endPosition.z));
-            collidedx = m_ChunkManager.CalculateCollision(glm::vec3(endPosition.x, 0, 0));
+            collidedz = m_ChunkManager.CalculateCollision(glm::vec3(0, 0, distance.z));
+            collidedx = m_ChunkManager.CalculateCollision(glm::vec3(distance.x, 0, 0));
         }
     } else {
-        collidedz = m_ChunkManager.CalculateCollision(glm::vec3(0, 0, endPosition.z));
-        if (endPosition.x < endPosition.y) {
-            collidedx = m_ChunkManager.CalculateCollision(glm::vec3(endPosition.x, 0, 0));
-            collidedy = m_ChunkManager.CalculateCollision(glm::vec3(0, endPosition.y, 0));
+        collidedz = m_ChunkManager.CalculateCollision(glm::vec3(0, 0, distance.z));
+        if (distance.x < distance.y) {
+            collidedx = m_ChunkManager.CalculateCollision(glm::vec3(distance.x, 0, 0));
+            collidedy = m_ChunkManager.CalculateCollision(glm::vec3(0, distance.y, 0));
         } else {
-            collidedy = m_ChunkManager.CalculateCollision(glm::vec3(0, endPosition.y, 0));
-            collidedx = m_ChunkManager.CalculateCollision(glm::vec3(endPosition.x, 0, 0));
+            collidedy = m_ChunkManager.CalculateCollision(glm::vec3(0, distance.y, 0));
+            collidedx = m_ChunkManager.CalculateCollision(glm::vec3(distance.x, 0, 0));
         }
     }
 
     if (collidedx)
-        endPosition.x = 0;
+        distance.x = 0;
     if (collidedy) {
-        if (!m_Camera.GetFlyMode() && endPosition.y < 0) {
+        if (!m_Camera.GetFlyMode() && distance.y < 0) {
             m_Ground = true;
         }
-        endPosition.y = 0;
+        distance.y = 0;
     } else {
         m_Ground = false;
     }
     if (collidedz)
-        endPosition.z = 0;
+        distance.z = 0;
 
-    currentPosition += endPosition;
+    currentPosition += distance;
 
     // don't let the player go outside of world borders
     if (currentPosition.y < 0)
