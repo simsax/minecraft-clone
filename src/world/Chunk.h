@@ -9,6 +9,7 @@
 #include "../graphics/VertexBufferLayout.hpp"
 #include "glm/glm.hpp"
 #include "GL/glew.h"
+#include "ChunkManager.h"
 #include <array>
 #include <memory>
 #include <unordered_map>
@@ -55,7 +56,8 @@ int operator-(const ChunkCoord& l, const ChunkCoord& r);
 class Chunk {
 public:
     Chunk(const glm::vec3& position, uint32_t maxVertexCount, const std::vector<uint32_t>& indices,
-        const VertexBufferLayout& layout, int bindingIndex);
+        const VertexBufferLayout& layout, int bindingIndex, ChunkManager& chunkManager,
+        const std::vector<std::pair<Block, glm::uvec3>>& blocksToSet);
 
     void GenerateMesh();
 
@@ -71,22 +73,19 @@ public:
     glm::vec3 GetPosition() const;
 
     glm::vec3 GetCenterPosition() const;
+    void SetBlocks(const std::vector<std::pair<Block, glm::uvec3>>& blocksToSet);
 
 private:
     static const std::unordered_map<Block, std::array<uint8_t, 6>> s_TextureMap;
 
     /* void UpdateMesh(uint32_t x, uint32_t y, uint32_t z, Block block); */
     void CreateHeightMap();
-
     void FastFill();
-
     void CreateSurfaceLayer();
-
+    void CreateTrees(int i, int j, int k);
     float Continentalness(int x, int y);
-
     void GenSolidCube(int i, int j, int k, std::vector<uint32_t>& target,
         const std::array<uint8_t, 6>& textureCoords);
-
     void GenWaterCube(int i, int j, int k, std::vector<uint32_t>& target,
         const std::array<uint8_t, 6>& textureCoords);
 
@@ -103,4 +102,5 @@ private:
     int m_MaxHeight;
     size_t m_IBOCount;
     size_t m_TIBOCount;
+    ChunkManager& m_ChunkManager;
 };

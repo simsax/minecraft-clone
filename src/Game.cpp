@@ -52,6 +52,7 @@ void Game::HandleInput() {
     m_Camera.HandleInput(m_KeyPressed);
     if (m_KeyPressed[GLFW_KEY_F]) {
         m_Camera.ToggleFlyMode();
+        m_VerticalVelocity = 0.0f;
         m_KeyPressed[GLFW_KEY_F] = false;
     }
     if (m_KeyPressed[GLFW_KEY_SPACE] && !m_Camera.GetFlyMode() && m_Ground) {

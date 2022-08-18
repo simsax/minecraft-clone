@@ -18,8 +18,8 @@ Camera::Camera(const glm::vec3& position)
 
 void Camera::HandleInput(const std::array<bool, GLFW_KEY_LAST>& keyPressed)
 {
-//     float speed = 25.0f;
-    float speed = 5.0f;
+     float speed = 25.0f;
+//    float speed = 5.0f;
     m_CameraSpeed = glm::vec3(0.0f);
     if (keyPressed[GLFW_KEY_LEFT_SHIFT]) // sprint
         speed *= 2;
