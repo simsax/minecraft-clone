@@ -6,6 +6,13 @@
 #include <map>
 #include "../camera/Camera.h"
 
+enum class Dir {
+    NORTH,
+    EAST,
+    SOUTH,
+    WEST
+};
+
 bool operator==(const ChunkCoord &l, const ChunkCoord &r) { return l.x == r.x && l.z == r.z; }
 
 bool operator!=(const ChunkCoord &l, const ChunkCoord &r) { return l.x != r.x || l.z != r.z; }
@@ -53,12 +60,11 @@ static void CreateQuad(std::vector<uint32_t> &target, const glm::uvec3 &position
 // (I only generate the mesh of the part inside the border)
 Chunk::Chunk(const glm::vec3 &position, uint32_t maxVertexCount,
              const std::vector<uint32_t> &indices, const VertexBufferLayout &layout,
-             int bindingIndex, ChunkManager &chunkManager,
-             const std::vector<std::pair<Block, glm::uvec3>>& blocksToSet)
+             int bindingIndex)
         : m_HeightMap({}), m_ChunkPosition(position),
           m_Chunk(Matrix3D<Block, XSIZE, YSIZE, ZSIZE>()), m_MaxVertexCount(maxVertexCount),
-          m_MinHeight(YSIZE), m_MaxHeight(0), m_IBOCount(0), m_TIBOCount(0),
-          m_ChunkManager(chunkManager) {
+          m_MinHeight(YSIZE), m_MaxHeight(0), m_IBOCount(0), m_TIBOCount(0)
+{
     m_VBO.Init(layout.GetStride(), bindingIndex);
     m_VBO.CreateDynamic(sizeof(uint32_t) * maxVertexCount);
 
@@ -66,8 +72,6 @@ Chunk::Chunk(const glm::vec3 &position, uint32_t maxVertexCount,
     m_TransparentMesh.reserve(maxVertexCount / 4);
     CreateHeightMap();
     FastFill();
-    CreateSurfaceLayer();
-    SetBlocks(blocksToSet);
 }
 
 float Chunk::Continentalness(int x, int y) {
@@ -136,7 +140,8 @@ void Chunk::FastFill() {
            level_size * (YSIZE - m_MaxHeight - 1));
 }
 
-void Chunk::CreateSurfaceLayer() {
+BlockVec Chunk::CreateSurfaceLayer(const BlockVec& blocksToSet) {
+    BlockVec blockVec = {};
     constexpr int water_level = 63;
     constexpr int snow_level = 120;
     if (m_MaxHeight < water_level)
@@ -183,14 +188,16 @@ void Chunk::CreateSurfaceLayer() {
                             m_Chunk(i, j, k) = Block::EMPTY;
                     }
                     if (j < snow_level)
-                        CreateTrees(i, j, k);
+                        CreateTrees(i, j, k, blockVec);
                 }
             }
         }
     }
+    SetBlocks(blocksToSet);
+    return blockVec;
 }
 
-void Chunk::CreateTrees(int i, int j, int k) {
+void Chunk::CreateTrees(int i, int j, int k, BlockVec& blockVec) {
     float noise_chance
             = m_Noise.OctaveNoise(i + m_ChunkPosition.x + 22.2f, k + m_ChunkPosition.z + 22.2f,
                                   4, 0.008f);
@@ -199,8 +206,6 @@ void Chunk::CreateTrees(int i, int j, int k) {
         i != 0 && k != 0 && i != XSIZE - 1 && k != ZSIZE - 1 &&
         m_Chunk(i, j - 1, k) == Block::GRASS) {
         if ((float) std::rand() / (float) RAND_MAX < 0.005f) {
-//        if (i % 2 == 0 && k % 2 == 0) {
-//            m_Chunk(i, j, k) = Block::WOOD;
             int height;
             for (height = j; height < treeHeight; height++) {
                 if (height > 255)
@@ -211,8 +216,8 @@ void Chunk::CreateTrees(int i, int j, int k) {
             const int top = height + 1;
             for (leaves_height = height - 2; leaves_height <= top; leaves_height++) {
                 int size = 2;
-                if (leaves_height == top)
-                    size = 1;
+//                if (leaves_height == top)
+//                    size = 1;
                 for (int x = -size; x <= size; x++) {
                     for (int z = -size; z <= size; z++) {
                         const int leafx = i + x;
@@ -221,10 +226,10 @@ void Chunk::CreateTrees(int i, int j, int k) {
                             && m_Chunk(leafx, leaves_height, leafz) != Block::WOOD)
                             m_Chunk(leafx, leaves_height, leafz) = Block::LEAVES;
                         // farlo anche per il tronco
-                        if (leafx <= 0 || leafz <= 0 || leafx >= XSIZE - 1 || leafz >= ZSIZE - 1) {
-                            m_ChunkManager.AddBlocks(m_ChunkPosition,
-                                                     glm::uvec3(leafx, leaves_height, leafz),
-                                                     Block::LEAVES);
+                        if (leafx <= 1 || leafz <= 1 || leafx >= XSIZE - 2 || leafz >= ZSIZE - 2) {
+                            blockVec.emplace_back(Block::LEAVES,
+                                                     glm::vec3(leafx, leaves_height, leafz)
+                                                    );
                         }
                     }
                 }
@@ -407,9 +412,9 @@ const std::unordered_map<Block, std::array<uint8_t, 6>> Chunk::s_TextureMap = { 
         {Block::BEDROCK,     {1,  14, 1,  14, 1,  14}}
 };
 
-void Chunk::SetBlocks(const std::vector<std::pair<Block, glm::uvec3>> &blocksToSet) {
-    for (const auto& pair : blocksToSet) {
-        glm::uvec3 pos = pair.second;
-        m_Chunk(pos.x, pos.y, pos.z) = pair.first;
+void Chunk::SetBlocks(const BlockVec& blocksToSet) {
+    for (const auto &[block, vec] : blocksToSet) {
+        glm::uvec3 pos = vec;
+        m_Chunk(pos.x, pos.y, pos.z) = block;
     }
 }

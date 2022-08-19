@@ -11,7 +11,6 @@ class ChunkManager {
 public:
     explicit ChunkManager(Camera *camera);
 
-    ~ChunkManager();
     ChunkManager(const ChunkManager&) = delete;
     ChunkManager& operator=(const ChunkManager&) = delete;
 
@@ -39,7 +38,6 @@ public:
     void DestroyBlock();
     void PlaceBlock(Block block);
     bool CalculateCollision(const glm::vec3 &playerSpeed);
-    void AddBlocks(const ChunkCoord& chunkCoord, glm::uvec3 localVoxel, Block block);
 
 private:
     struct Raycast {
@@ -57,10 +55,11 @@ private:
     void SortChunks();
     void LoadChunks();
     std::pair<ChunkCoord, glm::uvec3> GlobalToLocal(const glm::vec3 &playerPosition);
-    void UpdateNeighbors(glm::vec3 currentVoxel, ChunkCoord targetLocalCoord, Block block);
-    void UpdateNeighbors2(const glm::uvec3& voxel, const ChunkCoord& chunkCoord, Block block);
+    void UpdateNeighbors(const glm::uvec3& voxel, const ChunkCoord& chunkCoord, Block block);
+    void AddBlocks(const ChunkCoord& chunkCoord, BlockVec& blockVec);
+    void UpdateWorld(const ChunkCoord& chunkCoord, const glm::vec3& voxel, Block block);
 
-    std::array<uint32_t , 3> m_ChunkSize;
+    std::array<uint32_t, 3> m_ChunkSize;
     // std::future<std::vector<std::pair<ChunkCoord, Chunk>>> m_FutureChunks;
     std::unordered_map<ChunkCoord, Chunk, hash_fn> m_ChunkMap;
     VertexBufferLayout m_VertexLayout;
@@ -71,7 +70,7 @@ private:
     std::vector<Chunk *> m_ChunksToRender;
     std::queue<ChunkCoord> m_ChunksToLoad;
     std::unordered_set<ChunkCoord, hash_fn> m_ChunksToUpload;
-    std::unordered_map<ChunkCoord, std::vector<std::pair<Block, glm::uvec3>>, hash_fn> m_BlocksToSet;
+    std::unordered_map<ChunkCoord, BlockVec, hash_fn> m_BlocksToSet;
     int m_ViewDistance;
     // std::vector<std::future<Chunk>> m_ChunksLoaded;
     // std::thread m_Thread;
