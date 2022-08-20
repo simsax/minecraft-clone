@@ -44,52 +44,71 @@ struct ChunkCoord {
 };
 
 struct hash_fn {
-    std::size_t operator()(const ChunkCoord& coord) const;
+    std::size_t operator()(const ChunkCoord &coord) const;
 };
 
-bool operator==(const ChunkCoord& l, const ChunkCoord& r);
+bool operator==(const ChunkCoord &l, const ChunkCoord &r);
 
-bool operator!=(const ChunkCoord& l, const ChunkCoord& r);
+bool operator!=(const ChunkCoord &l, const ChunkCoord &r);
 
-int operator-(const ChunkCoord& l, const ChunkCoord& r);
+int operator-(const ChunkCoord &l, const ChunkCoord &r);
 
 using BlockVec = std::vector<std::pair<Block, glm::vec3>>;
 
 class Chunk {
 public:
-    Chunk(const glm::vec3& position, uint32_t maxVertexCount, const std::vector<uint32_t>& indices,
-        const VertexBufferLayout& layout, int bindingIndex);
+    using ChunkMap = std::unordered_map<ChunkCoord, Chunk, hash_fn>;
 
-    // delete copy constructor and copy assignment
-    // get rid of pointers and use refrences in chunk manager
-    // then do the change, passing the chunkmap reference to each chunk
-    // finally, convert everything to cubic 32x32x32 chunks
+    Chunk(const ChunkCoord &coords, const glm::vec3 &position, uint32_t maxVertexCount,
+          const std::vector<uint32_t> &indices,
+          const VertexBufferLayout &layout, int bindingIndex, ChunkMap &chunkMap);
+
 
     void GenerateMesh();
+
     Block GetBlock(uint32_t x, uint32_t y, uint32_t z) const;
+
     void SetBlock(uint32_t x, uint32_t y, uint32_t z, Block block);
-    void Render(Renderer& renderer, const VertexArray& vao, IndexBuffer& ibo);
-    void RenderOutline(Renderer& renderer, const VertexArray& vao, VertexBuffer& vbo,
-        IndexBuffer& ibo, const glm::vec3& target);
+
+    void Render(Renderer &renderer, const VertexArray &vao, IndexBuffer &ibo);
+
+    void RenderOutline(Renderer &renderer, const VertexArray &vao, VertexBuffer &vbo,
+                       IndexBuffer &ibo, const glm::vec3 &target);
+
     glm::vec3 GetPosition() const;
+
     glm::vec3 GetCenterPosition() const;
-    BlockVec CreateSurfaceLayer(const BlockVec& blocksToSet);
-    void CreateTrees(int i, int j, int k, BlockVec& blockVec);
+
+    BlockVec CreateSurfaceLayer(const BlockVec &blocksToSet);
+
+    void CreateTrees(int i, int j, int k, BlockVec &blockVec);
 
 private:
     void CreateHeightMap();
+
     void FastFill();
+
     float Continentalness(int x, int y);
-    void GenSolidCube(int i, int j, int k, std::vector<uint32_t>& target,
-        const std::array<uint8_t, 6>& textureCoords);
-    void GenWaterCube(int i, int j, int k, std::vector<uint32_t>& target,
-        const std::array<uint8_t, 6>& textureCoords);
-    void SetBlocks(const BlockVec& blocksToSet);
+
+    template<typename... Args>
+    void GenCube(int i, int j, int k, std::vector<uint32_t> &target,
+                 const std::array<uint8_t, 6> &textureCoords,
+                 const std::array<Chunk *, 4> &neighbors,
+                 Args... neighborBlocks);
+
+    void SetBlocks(const BlockVec &blocksToSet);
+
+    bool FindNeighbors(std::array<Chunk *, 4> &neighbors);
+
+    template<typename... Args>
+    bool
+    CheckNeighbor(const Chunk *const chunk, const glm::uvec3 &position, Args... neighborBlocks);
 
     static const std::unordered_map<Block, std::array<uint8_t, 6>> s_TextureMap;
     VertexBuffer m_VBO;
     std::array<int, XSIZE * ZSIZE> m_HeightMap;
     Noise m_Noise;
+    ChunkCoord m_Coords;
     glm::vec3 m_ChunkPosition;
     Matrix3D<Block, XSIZE, YSIZE, ZSIZE> m_Chunk;
     std::vector<uint32_t> m_Mesh;
@@ -99,5 +118,5 @@ private:
     int m_MaxHeight;
     size_t m_IBOCount;
     size_t m_TIBOCount;
-    std::array<Chunk*, 4> m_Neighbors;
+    ChunkMap &m_ChunkMap;
 };

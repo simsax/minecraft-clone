@@ -90,36 +90,35 @@ void Game::Move(float deltaTime) {
     glm::vec3 playerSpeed = m_Camera.GetCameraSpeed();
     playerSpeed.y += m_VerticalVelocity;
     glm::vec3 distance = playerSpeed * deltaTime;
-    glm::vec3 absDistance = glm::vec3(std::abs(distance.x), std::abs(distance.y),
-                                      std::abs(distance.z));
+    glm::vec3 absDistance = {std::abs(distance.x), std::abs(distance.y), std::abs(distance.z)};
 
     bool collidedx, collidedy, collidedz;
     if (absDistance.x < absDistance.y && absDistance.x < absDistance.z) {
-        collidedx = m_ChunkManager.CalculateCollision(glm::vec3(distance.x, 0, 0));
+        collidedx = m_ChunkManager.CalculateCollision({distance.x, 0, 0});
         if (absDistance.y < absDistance.z) {
-            collidedy = m_ChunkManager.CalculateCollision(glm::vec3(0, distance.y, 0));
-            collidedz = m_ChunkManager.CalculateCollision(glm::vec3(0, 0, distance.z));
+            collidedy = m_ChunkManager.CalculateCollision({0, distance.y, 0});
+            collidedz = m_ChunkManager.CalculateCollision({0, 0, distance.z});
         } else {
-            collidedz = m_ChunkManager.CalculateCollision(glm::vec3(0, 0, distance.z));
-            collidedy = m_ChunkManager.CalculateCollision(glm::vec3(0, distance.y, 0));
+            collidedz = m_ChunkManager.CalculateCollision({0, 0, distance.z});
+            collidedy = m_ChunkManager.CalculateCollision({0, distance.y, 0});
         }
     } else if (absDistance.y < absDistance.z) {
-        collidedy = m_ChunkManager.CalculateCollision(glm::vec3(0, distance.y, 0));
+        collidedy = m_ChunkManager.CalculateCollision({0, distance.y, 0});
         if (absDistance.x < absDistance.z) {
-            collidedx = m_ChunkManager.CalculateCollision(glm::vec3(distance.x, 0, 0));
-            collidedz = m_ChunkManager.CalculateCollision(glm::vec3(0, 0, distance.z));
+            collidedx = m_ChunkManager.CalculateCollision({distance.x, 0, 0});
+            collidedz = m_ChunkManager.CalculateCollision({0, 0, distance.z});
         } else {
-            collidedz = m_ChunkManager.CalculateCollision(glm::vec3(0, 0, distance.z));
-            collidedx = m_ChunkManager.CalculateCollision(glm::vec3(distance.x, 0, 0));
+            collidedz = m_ChunkManager.CalculateCollision({0, 0, distance.z});
+            collidedx = m_ChunkManager.CalculateCollision({distance.x, 0, 0});
         }
     } else {
-        collidedz = m_ChunkManager.CalculateCollision(glm::vec3(0, 0, distance.z));
+        collidedz = m_ChunkManager.CalculateCollision({0, 0, distance.z});
         if (absDistance.x < absDistance.y) {
-            collidedx = m_ChunkManager.CalculateCollision(glm::vec3(distance.x, 0, 0));
-            collidedy = m_ChunkManager.CalculateCollision(glm::vec3(0, distance.y, 0));
+            collidedx = m_ChunkManager.CalculateCollision({distance.x, 0, 0});
+            collidedy = m_ChunkManager.CalculateCollision({0, distance.y, 0});
         } else {
-            collidedy = m_ChunkManager.CalculateCollision(glm::vec3(0, distance.y, 0));
-            collidedx = m_ChunkManager.CalculateCollision(glm::vec3(distance.x, 0, 0));
+            collidedy = m_ChunkManager.CalculateCollision({0, distance.y, 0});
+            collidedx = m_ChunkManager.CalculateCollision({distance.x, 0, 0});
         }
     }
 

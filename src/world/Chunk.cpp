@@ -6,13 +6,6 @@
 #include <map>
 #include "../camera/Camera.h"
 
-enum class Dir {
-    NORTH,
-    EAST,
-    SOUTH,
-    WEST
-};
-
 bool operator==(const ChunkCoord &l, const ChunkCoord &r) { return l.x == r.x && l.z == r.z; }
 
 bool operator!=(const ChunkCoord &l, const ChunkCoord &r) { return l.x != r.x || l.z != r.z; }
@@ -56,15 +49,12 @@ static void CreateQuad(std::vector<uint32_t> &target, const glm::uvec3 &position
     target.emplace_back(v3);
 }
 
-// the chunk has a border so that I know what faces to cull between chunks
-// (I only generate the mesh of the part inside the border)
-Chunk::Chunk(const glm::vec3 &position, uint32_t maxVertexCount,
+Chunk::Chunk(const ChunkCoord &coords, const glm::vec3 &position, uint32_t maxVertexCount,
              const std::vector<uint32_t> &indices, const VertexBufferLayout &layout,
-             int bindingIndex)
-        : m_HeightMap({}), m_ChunkPosition(position),
+             int bindingIndex, ChunkMap &chunkMap)
+        : m_HeightMap({}), m_Coords(coords), m_ChunkPosition(position),
           m_Chunk(Matrix3D<Block, XSIZE, YSIZE, ZSIZE>()), m_MaxVertexCount(maxVertexCount),
-          m_MinHeight(YSIZE), m_MaxHeight(0), m_IBOCount(0), m_TIBOCount(0)
-{
+          m_MinHeight(YSIZE), m_MaxHeight(0), m_IBOCount(0), m_TIBOCount(0), m_ChunkMap(chunkMap) {
     m_VBO.Init(layout.GetStride(), bindingIndex);
     m_VBO.CreateDynamic(sizeof(uint32_t) * maxVertexCount);
 
@@ -140,7 +130,7 @@ void Chunk::FastFill() {
            level_size * (YSIZE - m_MaxHeight - 1));
 }
 
-BlockVec Chunk::CreateSurfaceLayer(const BlockVec& blocksToSet) {
+BlockVec Chunk::CreateSurfaceLayer(const BlockVec &blocksToSet) {
     BlockVec blockVec = {};
     constexpr int water_level = 63;
     constexpr int snow_level = 120;
@@ -197,7 +187,7 @@ BlockVec Chunk::CreateSurfaceLayer(const BlockVec& blocksToSet) {
     return blockVec;
 }
 
-void Chunk::CreateTrees(int i, int j, int k, BlockVec& blockVec) {
+void Chunk::CreateTrees(int i, int j, int k, BlockVec &blockVec) {
     float noise_chance
             = m_Noise.OctaveNoise(i + m_ChunkPosition.x + 22.2f, k + m_ChunkPosition.z + 22.2f,
                                   4, 0.008f);
@@ -228,8 +218,8 @@ void Chunk::CreateTrees(int i, int j, int k, BlockVec& blockVec) {
                         // farlo anche per il tronco
                         if (leafx <= 1 || leafz <= 1 || leafx >= XSIZE - 2 || leafz >= ZSIZE - 2) {
                             blockVec.emplace_back(Block::LEAVES,
-                                                     glm::vec3(leafx, leaves_height, leafz)
-                                                    );
+                                                  glm::vec3(leafx, leaves_height, leafz)
+                            );
                         }
                     }
                 }
@@ -240,109 +230,116 @@ void Chunk::CreateTrees(int i, int j, int k, BlockVec& blockVec) {
     }
 }
 
-void Chunk::GenSolidCube(
-        int i, int j, int k, std::vector<uint32_t> &target,
-        const std::array<uint8_t, 6> &textureCoords) {
-    if (j > 0 && (m_Chunk(i, j - 1, k) == Block::EMPTY
-                  || m_Chunk(i, j - 1, k) == Block::WATER
-                  || m_Chunk(i, j - 1, k) == Block::LEAVES)) {
-        CreateQuad(target, glm::vec3(i, j, k), glm::uvec2(textureCoords[4], textureCoords[5]), // D
-                   glm::uvec4(0, 0, 1, 1), glm::uvec4(0), glm::uvec4(1, 0, 0, 1));
+template<typename... Args>
+bool
+Chunk::CheckNeighbor(const Chunk *const chunk, const glm::uvec3 &position, Args... neighborBlocks) {
+    const uint32_t i = position.x;
+    const uint32_t j = position.y;
+    const uint32_t k = position.z;
+
+    if (((chunk->m_Chunk(i, j, k) == neighborBlocks) || ...))
+        return true;
+    else
+        return false;
+}
+
+template<typename... Args>
+void Chunk::GenCube(int i, int j, int k, std::vector<uint32_t> &target,
+                    const std::array<uint8_t, 6> &textureCoords,
+                    const std::array<Chunk *, 4> &neighbors,
+                    Args... neighborBlocks) {
+    constexpr int west = 0;
+    constexpr int east = 1;
+    constexpr int north = 2;
+    constexpr int south = 3;
+
+    if (j > 0 && ((m_Chunk(i, j - 1, k) == neighborBlocks) || ...)) {
+        CreateQuad(target, {i, j, k}, {textureCoords[4], textureCoords[5]}, // D
+                   {0, 0, 1, 1}, glm::uvec4(0), {1, 0, 0, 1});
     }
-    if (j < YSIZE - 1
-        && (m_Chunk(i, j + 1, k) == Block::EMPTY
-            || m_Chunk(i, j + 1, k) == Block::WATER
-            || m_Chunk(i, j + 1, k) == Block::LEAVES)) {
-        CreateQuad(target, glm::vec3(i, j, k), glm::uvec2(textureCoords[0], textureCoords[1]), // U
-                   glm::uvec4(0, 1, 1, 0), glm::uvec4(1), glm::uvec4(1, 1, 0, 0));
+    if (j < YSIZE - 1 && ((m_Chunk(i, j + 1, k) == neighborBlocks) || ...)) {
+        CreateQuad(target, {i, j, k}, {textureCoords[0], textureCoords[1]}, // U
+                   {0, 1, 1, 0}, glm::uvec4(1), {1, 1, 0, 0});
     }
-    if (m_Chunk(i, j, k - 1) == Block::EMPTY
-        || m_Chunk(i, j, k - 1) == Block::WATER
-        || m_Chunk(i, j, k - 1) == Block::LEAVES) {
-        CreateQuad(target, glm::vec3(i, j, k), glm::uvec2(textureCoords[2], textureCoords[3]), // B
-                   glm::uvec4(1, 0, 0, 1), glm::uvec4(0, 0, 1, 1), glm::uvec4(0));
+    if ((k == 0 && CheckNeighbor(neighbors[north], {i, j, ZSIZE - 1}, neighborBlocks...))
+        || ((m_Chunk(i, j, k - 1) == neighborBlocks) || ...)) {
+        CreateQuad(target, {i, j, k}, {textureCoords[2], textureCoords[3]}, // B
+                   {1, 0, 0, 1}, {0, 0, 1, 1}, glm::uvec4(0));
     }
-    if (m_Chunk(i, j, k + 1) == Block::EMPTY
-        || m_Chunk(i, j, k + 1) == Block::WATER
-        || m_Chunk(i, j, k + 1) == Block::LEAVES) {
-        CreateQuad(target, glm::vec3(i, j, k), glm::uvec2(textureCoords[2], textureCoords[3]), // F
-                   glm::uvec4(0, 1, 1, 0), glm::uvec4(0, 0, 1, 1), glm::uvec4(1));
+    if ((k == ZSIZE - 1 && CheckNeighbor(neighbors[south], {i, j, 0}, neighborBlocks...))
+        || ((m_Chunk(i, j, k + 1) == neighborBlocks) || ...)) {
+        CreateQuad(target, {i, j, k}, {textureCoords[2], textureCoords[3]}, // F
+                   {0, 1, 1, 0}, {0, 0, 1, 1}, glm::uvec4(1));
     }
-    if (m_Chunk(i - 1, j, k) == Block::EMPTY
-        || m_Chunk(i - 1, j, k) == Block::WATER
-        || m_Chunk(i - 1, j, k) == Block::LEAVES) {
-        CreateQuad(target, glm::vec3(i, j, k), glm::uvec2(textureCoords[2], textureCoords[3]), // L
-                   glm::uvec4(0), glm::uvec4(0, 0, 1, 1), glm::uvec4(0, 1, 1, 0));
+    if ((i == 0 && CheckNeighbor(neighbors[north], {XSIZE - 1, j, k}, neighborBlocks...))
+        || ((m_Chunk(i - 1, j, k) == neighborBlocks) || ...)) {
+        CreateQuad(target, {i, j, k}, {textureCoords[2], textureCoords[3]}, // L
+                   glm::uvec4(0), {0, 0, 1, 1}, {0, 1, 1, 0});
     }
-    if (m_Chunk(i + 1, j, k) == Block::EMPTY
-        || m_Chunk(i + 1, j, k) == Block::WATER
-        || m_Chunk(i + 1, j, k) == Block::LEAVES) {
-        CreateQuad(target, glm::vec3(i, j, k), glm::uvec2(textureCoords[2], textureCoords[3]), // R
-                   glm::uvec4(1), glm::uvec4(0, 0, 1, 1), glm::uvec4(1, 0, 0, 1));
+    if ((i == XSIZE - 1 && CheckNeighbor(neighbors[east], {0, j, k}, neighborBlocks...))
+        || ((m_Chunk(i + 1, j, k) == neighborBlocks) || ...)) {
+        CreateQuad(target, {i, j, k}, {textureCoords[2], textureCoords[3]}, // R
+                   glm::uvec4(1), {0, 0, 1, 1}, {1, 0, 0, 1});
     }
 }
 
-void Chunk::GenWaterCube(
-        int i, int j, int k, std::vector<uint32_t> &target,
-        const std::array<uint8_t, 6> &textureCoords) {
-    if (j > 0 && (m_Chunk(i, j - 1, k) == Block::EMPTY
-                  || m_Chunk(i, j - 1, k) == Block::LEAVES)) {
-        CreateQuad(target, glm::vec3(i, j, k), glm::uvec2(textureCoords[4], textureCoords[5]), // D
-                   glm::uvec4(0, 0, 1, 1), glm::uvec4(0), glm::uvec4(1, 0, 0, 1));
-    }
-    if (j < YSIZE - 1 && ((m_Chunk(i, j + 1, k) == Block::EMPTY) ||
-                          m_Chunk(i, j + 1, k) == Block::LEAVES)) {
-        CreateQuad(target, glm::vec3(i, j, k), glm::uvec2(textureCoords[0], textureCoords[1]), // U
-                   glm::uvec4(0, 1, 1, 0), glm::uvec4(1), glm::uvec4(1, 1, 0, 0));
-    }
-    if (m_Chunk(i, j, k - 1) == Block::EMPTY || m_Chunk(i, j, k - 1) == Block::LEAVES) {
-        CreateQuad(target, glm::vec3(i, j, k), glm::uvec2(textureCoords[2], textureCoords[3]), // B
-                   glm::uvec4(1, 0, 0, 1), glm::uvec4(0, 0, 1, 1), glm::uvec4(0));
-    }
-    if (m_Chunk(i, j, k + 1) == Block::EMPTY || m_Chunk(i, j, k + 1) == Block::LEAVES) {
-        CreateQuad(target, glm::vec3(i, j, k), glm::uvec2(textureCoords[2], textureCoords[3]), // F
-                   glm::uvec4(0, 1, 1, 0), glm::uvec4(0, 0, 1, 1), glm::uvec4(1));
-    }
-    if (m_Chunk(i - 1, j, k) == Block::EMPTY || m_Chunk(i - 1, j, k) == Block::LEAVES) {
-        CreateQuad(target, glm::vec3(i, j, k), glm::uvec2(textureCoords[2], textureCoords[3]), // L
-                   glm::uvec4(0), glm::uvec4(0, 0, 1, 1), glm::uvec4(0, 1, 1, 0));
-    }
-    if (m_Chunk(i + 1, j, k) == Block::EMPTY || m_Chunk(i + 1, j, k) == Block::LEAVES) {
-        CreateQuad(target, glm::vec3(i, j, k), glm::uvec2(textureCoords[2], textureCoords[3]), // R
-                   glm::uvec4(1), glm::uvec4(0, 0, 1, 1), glm::uvec4(1, 0, 0, 1));
-    }
+bool Chunk::FindNeighbors(std::array<Chunk *, 4> &neighbors) {
+    int n = 0;
+    for (int i = -1; i <= 1; i += 2)
+        if (const auto it = m_ChunkMap.find({m_Coords.x + i, m_Coords.z});
+                it != m_ChunkMap.end()) {
+            neighbors[n++] = &it->second;
+        } else { // border chunk, don't generate the mesh
+            return false;
+        }
+    for (int i = -1; i <= 1; i += 2)
+        if (const auto it = m_ChunkMap.find({m_Coords.x, m_Coords.z + i});
+                it != m_ChunkMap.end()) {
+            neighbors[n++] = &it->second;
+        } else { // border chunk, don't generate the mesh
+            return false;
+        }
+    return true;
 }
 
 void Chunk::GenerateMesh() {
     if (m_Mesh.empty() && m_TransparentMesh.empty()) {
-        if (m_MinHeight < 1)
-            m_MinHeight = 1;
-        for (int j = m_MinHeight - 1; j <= m_MaxHeight; j++) {
-            for (int i = 1; i < XSIZE - 1; i++) {
-                for (int k = 1; k < ZSIZE - 1; k++) {
-                    if (m_Chunk(i, j, k) != Block::EMPTY) {
-                        std::array<uint8_t, 6> textureCoords = s_TextureMap.at(m_Chunk(i, j, k));
-                        if (m_Chunk(i, j, k) != Block::WATER && m_Chunk(i, j, k) != Block::LEAVES) {
-                            GenSolidCube(i, j, k, m_Mesh, textureCoords);
-                        } else {
-                            GenWaterCube(i, j, k, m_TransparentMesh, textureCoords);
+        // retrieve the 4 pointers from the map and continue only if all of them exist
+        std::array<Chunk *, 4> neighbors = {nullptr}; // west, east, north, south
+        if (FindNeighbors(neighbors)) {
+            if (m_MinHeight < 1)
+                m_MinHeight = 1;
+            for (int j = m_MinHeight - 1; j <= m_MaxHeight; j++) {
+                for (int i = 0; i < XSIZE; i++) {
+                    for (int k = 0; k < ZSIZE; k++) {
+                        if (m_Chunk(i, j, k) != Block::EMPTY) {
+                            std::array<uint8_t, 6> textureCoords = s_TextureMap.at(
+                                    m_Chunk(i, j, k));
+                            if (m_Chunk(i, j, k) != Block::WATER &&
+                                m_Chunk(i, j, k) != Block::LEAVES) {
+                                GenCube(i, j, k, m_Mesh, textureCoords, neighbors,
+                                        Block::EMPTY, Block::LEAVES, Block::WATER);
+                            } else {
+                                GenCube(i, j, k, m_TransparentMesh, textureCoords, neighbors,
+                                        Block::EMPTY, Block::LEAVES);
+                            }
                         }
                     }
                 }
             }
-        }
-        // solid mesh
-        size_t indexCount = m_Mesh.size() / 4 * 6; // num faces * 6
-        m_IBOCount = indexCount;
-        uint32_t solidSize = m_Mesh.size() * sizeof(uint32_t);
-        m_VBO.SendData(solidSize, m_Mesh.data(), 0);
+            // solid mesh
+            size_t indexCount = m_Mesh.size() / 4 * 6; // num faces * 6
+            m_IBOCount = indexCount;
+            uint32_t solidSize = m_Mesh.size() * sizeof(uint32_t);
+            m_VBO.SendData(solidSize, m_Mesh.data(), 0);
 
-        if (!m_TransparentMesh.empty()) {
-            indexCount = m_TransparentMesh.size() / 4 * 6;
-            m_TIBOCount = indexCount;
-            m_VBO.SendData(
-                    m_TransparentMesh.size() * sizeof(uint32_t), m_TransparentMesh.data(),
-                    solidSize);
+            if (!m_TransparentMesh.empty()) {
+                indexCount = m_TransparentMesh.size() / 4 * 6;
+                m_TIBOCount = indexCount;
+                m_VBO.SendData(
+                        m_TransparentMesh.size() * sizeof(uint32_t), m_TransparentMesh.data(),
+                        solidSize);
+            }
         }
     }
 }
@@ -359,18 +356,22 @@ void Chunk::Render(Renderer &renderer, const VertexArray &vao, IndexBuffer &ibo)
 
 void Chunk::RenderOutline(Renderer &renderer, const VertexArray &vao, VertexBuffer &vbo,
                           IndexBuffer &ibo, const glm::vec3 &target) {
-    int i = target.x;
-    int j = target.y;
-    int k = target.z;
-    if (m_Chunk(i, j, k) != Block::EMPTY && m_Chunk(i, j, k) != Block::WATER
-        && m_Chunk(i, j, k) != Block::LEAVES) {
-        std::vector<uint32_t> outlineMesh;
-        std::array<uint8_t, 6> textureCoords = s_TextureMap.at(m_Chunk(i, j, k));
-        GenSolidCube(i, j, k, outlineMesh, textureCoords);
-        size_t indexCount = outlineMesh.size() / 4 * 6;
-        vbo.SendData(outlineMesh.size() * sizeof(uint32_t), outlineMesh.data(), 0);
-        ibo.SetCount(indexCount);
-        renderer.RenderOutline(vao, ibo, GL_UNSIGNED_INT, m_ChunkPosition, i, j, k);
+    std::array<Chunk *, 4> neighbors = {nullptr};
+    if (FindNeighbors(neighbors)) {
+        int i = target.x;
+        int j = target.y;
+        int k = target.z;
+        if (m_Chunk(i, j, k) != Block::EMPTY && m_Chunk(i, j, k) != Block::WATER
+            && m_Chunk(i, j, k) != Block::LEAVES) {
+            std::vector<uint32_t> outlineMesh;
+            std::array<uint8_t, 6> textureCoords = s_TextureMap.at(m_Chunk(i, j, k));
+            GenCube(i, j, k, outlineMesh, textureCoords, neighbors, Block::EMPTY, Block::LEAVES,
+                    Block::WATER);
+            size_t indexCount = outlineMesh.size() / 4 * 6;
+            vbo.SendData(outlineMesh.size() * sizeof(uint32_t), outlineMesh.data(), 0);
+            ibo.SetCount(indexCount);
+            renderer.RenderOutline(vao, ibo, GL_UNSIGNED_INT, m_ChunkPosition, i, j, k);
+        }
     }
 }
 
@@ -391,7 +392,7 @@ void Chunk::SetBlock(uint32_t x, uint32_t y, uint32_t z, Block block) {
 glm::vec3 Chunk::GetPosition() const { return m_ChunkPosition; }
 
 glm::vec3 Chunk::GetCenterPosition() const {
-    return glm::vec3(m_ChunkPosition.x + XSIZE / 2, 0, m_ChunkPosition.z + ZSIZE / 2);
+    return {m_ChunkPosition.x + XSIZE / 2, 0, m_ChunkPosition.z + ZSIZE / 2};
 }
 
 const std::unordered_map<Block, std::array<uint8_t, 6>> Chunk::s_TextureMap = { // top, side, bottom
@@ -412,8 +413,8 @@ const std::unordered_map<Block, std::array<uint8_t, 6>> Chunk::s_TextureMap = { 
         {Block::BEDROCK,     {1,  14, 1,  14, 1,  14}}
 };
 
-void Chunk::SetBlocks(const BlockVec& blocksToSet) {
-    for (const auto &[block, vec] : blocksToSet) {
+void Chunk::SetBlocks(const BlockVec &blocksToSet) {
+    for (const auto &[block, vec]: blocksToSet) {
         glm::uvec3 pos = vec;
         m_Chunk(pos.x, pos.y, pos.z) = block;
     }

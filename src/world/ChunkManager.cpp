@@ -19,7 +19,7 @@ static int mod(int a, int b) {
 }
 
 ChunkManager::ChunkManager(Camera *camera)
-        : m_ChunkSize({XSIZE - 2, YSIZE, ZSIZE - 2}), m_ViewDistance(VIEW_DISTANCE),
+        : m_ChunkSize({XSIZE, YSIZE, ZSIZE}), m_ViewDistance(VIEW_DISTANCE),
           m_Camera(camera), m_SortChunks(false), m_ChunksReadyToMesh(false),
           m_BindingIndex(0), m_Raycast({}), m_LastChunk({0, 0}), m_CurrentChunk({0, 0})
 {
@@ -105,9 +105,9 @@ void ChunkManager::LoadChunks() {
         if (const auto it = m_BlocksToSet.find(coords); it != m_BlocksToSet.end()) {
             blockList = it->second;
         }
-        Chunk chunk(glm::vec3(coords.x * static_cast<int>(m_ChunkSize[0]), 0.0f,
-                              coords.z * static_cast<int>(m_ChunkSize[2])),
-                    MAX_VERTEX_COUNT, m_Indices, m_VertexLayout, m_BindingIndex);
+        Chunk chunk(coords, {coords.x * static_cast<int>(m_ChunkSize[0]), 0.0f,
+                              coords.z * static_cast<int>(m_ChunkSize[2])},
+                    MAX_VERTEX_COUNT, m_Indices, m_VertexLayout, m_BindingIndex, m_ChunkMap);
         BlockVec blocksToSet = chunk.CreateSurfaceLayer(blockList);
         AddBlocks(coords, blocksToSet);
         m_ChunkMap.insert({coords, std::move(chunk)});
@@ -217,10 +217,9 @@ void ChunkManager::PlaceBlock(Block block) {
 }
 
 std::pair<ChunkCoord, glm::uvec3> ChunkManager::GlobalToLocal(const glm::vec3 &playerPosition) {
-    uint32_t chunkSize = m_ChunkSize[0];
     ChunkCoord chunkCoord = CalculateChunkCoord(playerPosition);
-    uint32_t playerPosX = mod(static_cast<int>(std::floor(playerPosition.x) - 1), chunkSize) + 1;
-    uint32_t playerPosZ = mod(static_cast<int>(std::floor(playerPosition.z) - 1), chunkSize) + 1;
+    uint32_t playerPosX = mod(static_cast<int>(std::floor(playerPosition.x) - 1), m_ChunkSize[0]) + 1;
+    uint32_t playerPosZ = mod(static_cast<int>(std::floor(playerPosition.z) - 1), m_ChunkSize[2]) + 1;
     glm::uvec3 playerPos
             = {playerPosX, static_cast<uint32_t>(std::floor(playerPosition.y)), playerPosZ};
     return std::make_pair(chunkCoord, playerPos);
@@ -257,13 +256,13 @@ bool ChunkManager::CalculateCollision(const glm::vec3& playerSpeed)
     for (int i = startX; i <= endX; i++) {
         for (int j = startY; j <= endY; j++) {
             for (int k = startZ; k <= endZ; k++) {
-                std::pair<ChunkCoord, glm::vec3> localPos = GlobalToLocal(glm::vec3(i, j, k));
+                std::pair<ChunkCoord, glm::vec3> localPos = GlobalToLocal({i, j, k});
                 if (const auto it = m_ChunkMap.find(localPos.first); it != m_ChunkMap.end()) {
                     Chunk* chunk = &it->second;
                     Block block = chunk->GetBlock(
                             localPos.second[0], localPos.second[1], localPos.second[2]);
                     if (block != Block::EMPTY && block != Block::WATER) {
-                        physics::Aabb blockBbox = physics::CreateBlockAabb(glm::vec3(i, j, k));
+                        physics::Aabb blockBbox = physics::CreateBlockAabb({i, j, k});
                         physics::SnapAabb(playerBbox, blockBbox, playerSpeed, currentPosition);
                         return true;
                     }
