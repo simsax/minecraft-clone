@@ -271,7 +271,7 @@ void Chunk::GenCube(int i, int j, int k, std::vector<uint32_t> &target,
         CreateQuad(target, {i, j, k}, {textureCoords[2], textureCoords[3]}, // F
                    {0, 1, 1, 0}, {0, 0, 1, 1}, glm::uvec4(1));
     }
-    if ((i == 0 && CheckNeighbor(neighbors[north], {XSIZE - 1, j, k}, neighborBlocks...))
+    if ((i == 0 && CheckNeighbor(neighbors[west], {XSIZE - 1, j, k}, neighborBlocks...))
         || ((m_Chunk(i - 1, j, k) == neighborBlocks) || ...)) {
         CreateQuad(target, {i, j, k}, {textureCoords[2], textureCoords[3]}, // L
                    glm::uvec4(0), {0, 0, 1, 1}, {0, 1, 1, 0});
