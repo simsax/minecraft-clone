@@ -62,7 +62,6 @@ public:
 
     // delete copy constructor and copy assignment
     // get rid of pointers and use refrences in chunk manager
-    // first commit this code
     // then do the change, passing the chunkmap reference to each chunk
     // finally, convert everything to cubic 32x32x32 chunks
 
@@ -100,5 +99,5 @@ private:
     int m_MaxHeight;
     size_t m_IBOCount;
     size_t m_TIBOCount;
-//    std::array<const Chunk* const, 4> m_Neighbors;
+    std::array<Chunk*, 4> m_Neighbors;
 };

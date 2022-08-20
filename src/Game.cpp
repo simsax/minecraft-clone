@@ -3,7 +3,7 @@
 
 Game::Game()
         : m_KeyPressed({}), m_Ground(false), m_Camera(glm::vec3(0.0f, 0.0f, 0.0f)),
-          m_ChunkManager(&m_Camera), m_LastChunk({0, 0}), m_SortedChunk({0, 0}),
+          m_ChunkManager(&m_Camera),
           m_Blocks(std::vector({Block::DIRT, Block::GRASS, Block::SAND, Block::SNOW, Block::STONE,
                                 Block::WOOD, Block::DIAMOND, Block::EMPTY, Block::EMPTY})),
           m_HoldingBlock(0), m_SkyColor(173.0f / 255.0f, 223.0f / 255.0f, 230.0f / 255.0f),
@@ -235,15 +235,7 @@ void Game::CheckRayCast() {
 }
 
 void Game::UpdateChunks() {
-    ChunkCoord currentChunk = m_ChunkManager.CalculateChunkCoord(m_Camera.GetPlayerPosition());
-    if (m_SortedChunk != currentChunk) {
-        m_SortedChunk = currentChunk;
-        m_ChunkManager.SetNewChunks();
-    }
-    if (m_LastChunk - currentChunk >= m_ChunkManager.GetViewDistance() / 3) {
-        m_ChunkManager.GenerateChunks();
-        m_LastChunk = currentChunk;
-    }
+    m_ChunkManager.UpdateChunks();
 }
 
 glm::vec3 Game::GetPlayerPosition() {

@@ -20,8 +20,8 @@ static int mod(int a, int b) {
 
 ChunkManager::ChunkManager(Camera *camera)
         : m_ChunkSize({XSIZE - 2, YSIZE, ZSIZE - 2}), m_ViewDistance(VIEW_DISTANCE),
-          m_Shutdown(false), m_LoadingChunks(false), m_Camera(camera), m_NewChunks(false),
-          m_BindingIndex(0), m_Raycast({})
+          m_Camera(camera), m_SortChunks(false), m_ChunksReadyToMesh(false),
+          m_BindingIndex(0), m_Raycast({}), m_LastChunk({0, 0}), m_CurrentChunk({0, 0})
 {
     m_VertexLayout.Push<uint32_t>(1); // position + texture coords
 
@@ -59,8 +59,9 @@ void ChunkManager::InitWorld() {
 
 void ChunkManager::Render(Renderer &renderer) {
     LoadChunks();
-    if (m_NewChunks) {
-        m_NewChunks = false;
+    MeshChunks();
+    if (m_SortChunks) {
+        m_SortChunks = false;
         SortChunks();
     }
 
@@ -76,10 +77,6 @@ void ChunkManager::Render(Renderer &renderer) {
             chunk->Render(renderer, m_VAO, m_IBO);
     }
 }
-
-void ChunkManager::UpdateChunk(ChunkCoord chunk) { m_ChunksToUpload.insert(chunk); }
-
-int ChunkManager::GetViewDistance() const { return m_ViewDistance; }
 
 std::array<uint32_t, 3> ChunkManager::GetChunkSize() const { return m_ChunkSize; }
 
@@ -99,35 +96,42 @@ void ChunkManager::LoadChunks() {
         uploaded = true;
     }
 
-    for (int n = 0; n < MAX_CHUNK_TO_LOAD && !m_ChunksToLoad.empty() && !uploaded; n++) {
+    for (int n = 0; !m_ChunksToLoad.empty() && !uploaded && n < MAX_CHUNK_TO_LOAD; n++) {
         ChunkCoord coords = m_ChunksToLoad.front();
         m_ChunksToLoad.pop();
-        m_NewChunks = true;
-        // m_ChunksLoaded.push_back(m_ThreadPool.push(meshFun, coords));
+        m_SortChunks = true;
         //  create new chunk and cache it
         BlockVec blockList = {};
         if (const auto it = m_BlocksToSet.find(coords); it != m_BlocksToSet.end()) {
-//            std::cout << "Block list:\n";
             blockList = it->second;
         }
         Chunk chunk(glm::vec3(coords.x * static_cast<int>(m_ChunkSize[0]), 0.0f,
                               coords.z * static_cast<int>(m_ChunkSize[2])),
                     MAX_VERTEX_COUNT, m_Indices, m_VertexLayout, m_BindingIndex);
-        for (const auto& [block, vec] : blockList) {
-        }
         BlockVec blocksToSet = chunk.CreateSurfaceLayer(blockList);
         AddBlocks(coords, blocksToSet);
-        chunk.GenerateMesh();
         m_ChunkMap.insert({coords, std::move(chunk)});
-        m_ChunksToRender.emplace_back(&m_ChunkMap.at(coords));
+        m_ChunksToMesh.push(&m_ChunkMap.at(coords));
     }
+    if (m_ChunksToLoad.empty())
+        m_ChunksReadyToMesh = true;
+}
+
+void ChunkManager::MeshChunks() {
+    for (int n = 0; m_ChunksReadyToMesh && !m_ChunksToMesh.empty() && n < MAX_CHUNK_TO_LOAD; n++) {
+        Chunk* chunk = m_ChunksToMesh.front();
+        m_ChunksToMesh.pop();
+        chunk->GenerateMesh();
+        m_ChunksToRender.emplace_back(chunk);
+    }
+    if (m_ChunksToMesh.empty())
+        m_ChunksReadyToMesh = false;
 }
 
 void ChunkManager::GenerateChunks() {
     ChunkCoord chunkCoord = CalculateChunkCoord(m_Camera->GetPlayerPosition());
     m_ChunksToRender.clear();
 
-    //	std::unique_lock<std::mutex> lk(m_Mtx);
     // load chunks
     for (int i = -m_ViewDistance + chunkCoord.x; i <= m_ViewDistance + chunkCoord.x; i++) {
         for (int j = -m_ViewDistance + chunkCoord.z; j <= m_ViewDistance + chunkCoord.z; j++) {
@@ -141,7 +145,6 @@ void ChunkManager::GenerateChunks() {
             }
         }
     }
-    //	m_Cv.notify_one();
 }
 
 int ChunkManager::SpawnHeight() {
@@ -162,8 +165,6 @@ void ChunkManager::SortChunks() {
                > glm::length2(playerPos - b->GetCenterPosition());
     });
 }
-
-void ChunkManager::SetNewChunks() { m_NewChunks = true; }
 
 bool ChunkManager::IsVoxelSolid(const glm::vec3 &voxel) {
     std::pair<ChunkCoord, glm::uvec3> target = GlobalToLocal(voxel);
@@ -190,7 +191,7 @@ bool ChunkManager::IsVoxelSolid(const glm::vec3 &voxel) {
 void ChunkManager::DestroyBlock() {
     m_Raycast.chunk->SetBlock(m_Raycast.localVoxel[0], m_Raycast.localVoxel[1],
                               m_Raycast.localVoxel[2], Block::EMPTY);
-    UpdateChunk(m_Raycast.chunkCoord);
+    m_ChunksToUpload.insert(m_Raycast.chunkCoord);
     // check if the target is in the chunk border
     if (m_Raycast.localVoxel[0] == 1 || m_Raycast.localVoxel[2] == 1 ||
         m_Raycast.localVoxel[0] == m_ChunkSize[0]
@@ -205,7 +206,7 @@ void ChunkManager::PlaceBlock(Block block) {
             physics::CreateBlockAabb(m_Raycast.prevGlobalVoxel))) {
         m_Raycast.prevChunk->SetBlock(m_Raycast.prevLocalVoxel[0], m_Raycast.prevLocalVoxel[1],
                                       m_Raycast.prevLocalVoxel[2], block);
-        UpdateChunk(m_Raycast.prevChunkCoord);
+        m_ChunksToUpload.insert(m_Raycast.prevChunkCoord);
         // check if the target is in the chunk border
         if (m_Raycast.prevLocalVoxel[0] == 1 || m_Raycast.prevLocalVoxel[2] == 1 ||
             m_Raycast.prevLocalVoxel[0] == m_ChunkSize[0]
@@ -337,10 +338,22 @@ void ChunkManager::UpdateWorld(const ChunkCoord &chunkCoord, const glm::vec3 &vo
     if (const auto it = m_ChunkMap.find(chunkCoord); it != m_ChunkMap.end()) {
         Chunk *neighborChunk = &it->second;
         neighborChunk->SetBlock(voxel.x, voxel.y, voxel.z, block);
-        UpdateChunk(chunkCoord);
+        m_ChunksToUpload.insert(chunkCoord);
         UpdateNeighbors(voxel, chunkCoord, block);
     }
     else {
         m_BlocksToSet[chunkCoord].emplace_back(block, voxel);
+    }
+}
+
+void ChunkManager::UpdateChunks() {
+    ChunkCoord currentChunk = CalculateChunkCoord(m_Camera->GetPlayerPosition());
+    if (m_CurrentChunk != currentChunk) {
+        m_CurrentChunk = currentChunk;
+        m_SortChunks = true;
+    }
+    if (m_LastChunk - currentChunk >= m_ViewDistance / 3) {
+        GenerateChunks();
+        m_LastChunk = currentChunk;
     }
 }

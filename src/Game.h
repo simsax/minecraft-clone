@@ -31,8 +31,6 @@ private:
     Camera m_Camera;
     Renderer m_Renderer;
     ChunkManager m_ChunkManager;
-    ChunkCoord m_LastChunk;
-    ChunkCoord m_SortedChunk;
     std::vector<Block> m_Blocks;
     int m_HoldingBlock;
     glm::vec3 m_SkyColor;
