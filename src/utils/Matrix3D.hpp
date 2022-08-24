@@ -1,5 +1,6 @@
 #include <stdexcept>
 #include <cstring>
+#include <iostream>
 
 template <typename T, size_t X, size_t Y, size_t Z> class Matrix3D {
 public:
@@ -45,6 +46,7 @@ template <typename T, size_t X, size_t Y, size_t Z> inline Matrix3D<T, X, Y, Z>:
 
 template <typename T, size_t X, size_t Y, size_t Z> inline Matrix3D<T, X, Y, Z>::~Matrix3D()
 {
+//    std::cout << "deleting...\n";
     delete[] m_Data;
 }
 

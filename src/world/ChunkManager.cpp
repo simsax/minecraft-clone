@@ -7,6 +7,7 @@ using namespace std::chrono_literals;
 
 #define MAX_INDEX_COUNT 18432 // each cube has 6 faces, each face has 6 indexes
 #define MAX_VERTEX_COUNT 12228 // each cube has 6 faces, each face has 4 vertices
+//#define VIEW_DISTANCE 8 // how far the player sees
 #define VIEW_DISTANCE 24 // how far the player sees
 #define MAX_CHUNK_TO_LOAD 32
 #define PLAYER_HALF_WIDTH 0.3f
@@ -21,8 +22,7 @@ static int mod(int a, int b) {
 ChunkManager::ChunkManager(Camera *camera)
         : m_ChunkSize({XSIZE, YSIZE, ZSIZE}), m_ViewDistance(VIEW_DISTANCE),
           m_Camera(camera), m_SortChunks(false), m_ChunksReadyToMesh(false),
-          m_BindingIndex(0), m_Raycast({}), m_LastChunk({0, 0}), m_CurrentChunk({0, 0})
-{
+          m_BindingIndex(0), m_Raycast({}), m_LastChunk({0, 0}), m_CurrentChunk({0, 0}) {
     m_VertexLayout.Push<uint32_t>(1); // position + texture coords
 
     m_ChunksToRender.reserve(
@@ -75,28 +75,22 @@ void ChunkManager::Render(Renderer &renderer) {
         glm::vec3 center = chunk->GetCenterPosition();
         if (m_Camera->IsInFrustum(center))
             chunk->Render(renderer, m_VAO, m_IBO);
+//        if (chunk->GetCenterPosition() == glm::vec3(7.5,0,-7.5)) {
+//            chunk->Render(renderer, m_VAO, m_IBO);
+//        }
     }
 }
 
 std::array<uint32_t, 3> ChunkManager::GetChunkSize() const { return m_ChunkSize; }
 
 ChunkCoord ChunkManager::CalculateChunkCoord(const glm::vec3 &position) {
-    int chunkPosX = static_cast<int>(std::floor((position.x - 1) / m_ChunkSize[0]));
-    int chunkPosZ = static_cast<int>(std::floor((position.z - 1) / m_ChunkSize[2]));
+    int chunkPosX = static_cast<int>(std::floor(position.x / m_ChunkSize[0]));
+    int chunkPosZ = static_cast<int>(std::floor(position.z / m_ChunkSize[2]));
     return {chunkPosX, chunkPosZ};
 }
 
 void ChunkManager::LoadChunks() {
-    bool uploaded = false;
-    while (!m_ChunksToUpload.empty()) {
-        auto iterator = m_ChunksToUpload.begin();
-        auto node = m_ChunksToUpload.extract(iterator);
-        ChunkCoord coords = node.value();
-        m_ChunkMap.at(coords).GenerateMesh();
-        uploaded = true;
-    }
-
-    for (int n = 0; !m_ChunksToLoad.empty() && !uploaded && n < MAX_CHUNK_TO_LOAD; n++) {
+    for (int n = 0; !m_ChunksToLoad.empty() && n < MAX_CHUNK_TO_LOAD; n++) {
         ChunkCoord coords = m_ChunksToLoad.front();
         m_ChunksToLoad.pop();
         m_SortChunks = true;
@@ -106,35 +100,57 @@ void ChunkManager::LoadChunks() {
             blockList = it->second;
         }
         Chunk chunk(coords, {coords.x * static_cast<int>(m_ChunkSize[0]), 0.0f,
-                              coords.z * static_cast<int>(m_ChunkSize[2])},
-                    MAX_VERTEX_COUNT, m_Indices, m_VertexLayout, m_BindingIndex, m_ChunkMap);
-        BlockVec blocksToSet = chunk.CreateSurfaceLayer(blockList);
-        AddBlocks(coords, blocksToSet);
+                             coords.z * static_cast<int>(m_ChunkSize[2])},
+                    MAX_VERTEX_COUNT, m_Indices, m_VertexLayout, m_BindingIndex, &m_ChunkMap);
+//        BlockVec blocksToSet = chunk.CreateSurfaceLayer(blockList);
+//        AddBlocks(coords, blocksToSet);
         m_ChunkMap.insert({coords, std::move(chunk)});
         m_ChunksToMesh.push(&m_ChunkMap.at(coords));
+
+        if (m_ChunksToLoad.empty())
+            m_ChunksReadyToMesh = true;
     }
-    if (m_ChunksToLoad.empty())
-        m_ChunksReadyToMesh = true;
 }
 
 void ChunkManager::MeshChunks() {
-    for (int n = 0; m_ChunksReadyToMesh && !m_ChunksToMesh.empty() && n < MAX_CHUNK_TO_LOAD; n++) {
-        Chunk* chunk = m_ChunksToMesh.front();
-        m_ChunksToMesh.pop();
-        chunk->GenerateMesh();
-        m_ChunksToRender.emplace_back(chunk);
+    bool uploaded = false;
+    while (!m_ChunksToUpload.empty()) {
+        auto iterator = m_ChunksToUpload.begin();
+        auto node = m_ChunksToUpload.extract(iterator);
+        ChunkCoord coords = node.value();
+        m_ChunkMap.at(coords).GenerateMesh();
+        uploaded = true;
     }
-    if (m_ChunksToMesh.empty())
+
+    for (int n = 0; !uploaded && m_ChunksReadyToMesh && !m_ChunksToMesh.empty() &&
+                    n < MAX_CHUNK_TO_LOAD; n++) {
+        Chunk *chunk = m_ChunksToMesh.front();
+        m_ChunksToMesh.pop();
+        if (!chunk->GenerateMesh())
+            m_ChunksInBorder.push(chunk);
+        else
+            m_ChunksToRender.emplace_back(chunk);
+    }
+    if (m_ChunksToMesh.empty()) {
         m_ChunksReadyToMesh = false;
+        m_ChunksToMesh = std::move(m_ChunksInBorder);
+    }
 }
 
 void ChunkManager::GenerateChunks() {
-    ChunkCoord chunkCoord = CalculateChunkCoord(m_Camera->GetPlayerPosition());
+//    std::cout << "Chunks in RAM: " << m_ChunkMap.size() << "\n";
+    ChunkCoord playerChunk = CalculateChunkCoord(m_Camera->GetPlayerPosition());
+
+    // remove chunks outside of render distance (should be further than this when I'll add serialization)
+//    for (auto& chunk : m_ChunksToRender) {
+//        if (chunk->NotVisible(playerChunk, m_ViewDistance))
+//            m_ChunkMap.erase(chunk->GetCoord());
+//    }
     m_ChunksToRender.clear();
 
     // load chunks
-    for (int i = -m_ViewDistance + chunkCoord.x; i <= m_ViewDistance + chunkCoord.x; i++) {
-        for (int j = -m_ViewDistance + chunkCoord.z; j <= m_ViewDistance + chunkCoord.z; j++) {
+    for (int i = -m_ViewDistance + playerChunk.x; i <= m_ViewDistance + playerChunk.x; i++) {
+        for (int j = -m_ViewDistance + playerChunk.z; j <= m_ViewDistance + playerChunk.z; j++) {
             ChunkCoord coords = {i, j};
             // check if this chunk hasn't already been generated
             if (!m_ChunkMap.contains(coords)) {
@@ -218,16 +234,17 @@ void ChunkManager::PlaceBlock(Block block) {
 
 std::pair<ChunkCoord, glm::uvec3> ChunkManager::GlobalToLocal(const glm::vec3 &playerPosition) {
     ChunkCoord chunkCoord = CalculateChunkCoord(playerPosition);
-    uint32_t playerPosX = mod(static_cast<int>(std::floor(playerPosition.x) - 1), m_ChunkSize[0]) + 1;
-    uint32_t playerPosZ = mod(static_cast<int>(std::floor(playerPosition.z) - 1), m_ChunkSize[2]) + 1;
+    uint32_t playerPosX =
+            mod(static_cast<int>(std::floor(playerPosition.x) - 1), m_ChunkSize[0]) + 1;
+    uint32_t playerPosZ =
+            mod(static_cast<int>(std::floor(playerPosition.z) - 1), m_ChunkSize[2]) + 1;
     glm::uvec3 playerPos
             = {playerPosX, static_cast<uint32_t>(std::floor(playerPosition.y)), playerPosZ};
     return std::make_pair(chunkCoord, playerPos);
 }
 
-bool ChunkManager::CalculateCollision(const glm::vec3& playerSpeed)
-{
-    glm::vec3& currentPosition = m_Camera->GetPlayerPosition();
+bool ChunkManager::CalculateCollision(const glm::vec3 &playerSpeed) {
+    glm::vec3 &currentPosition = m_Camera->GetPlayerPosition();
     glm::vec3 finalPosition = currentPosition + playerSpeed;
     int startX, endX, startY, endY, startZ, endZ;
     if (finalPosition.x >= currentPosition.x) {
@@ -258,7 +275,7 @@ bool ChunkManager::CalculateCollision(const glm::vec3& playerSpeed)
             for (int k = startZ; k <= endZ; k++) {
                 std::pair<ChunkCoord, glm::vec3> localPos = GlobalToLocal({i, j, k});
                 if (const auto it = m_ChunkMap.find(localPos.first); it != m_ChunkMap.end()) {
-                    Chunk* chunk = &it->second;
+                    Chunk *chunk = &it->second;
                     Block block = chunk->GetBlock(
                             localPos.second[0], localPos.second[1], localPos.second[2]);
                     if (block != Block::EMPTY && block != Block::WATER) {
@@ -273,10 +290,10 @@ bool ChunkManager::CalculateCollision(const glm::vec3& playerSpeed)
     return false;
 }
 
-void ChunkManager::AddBlocks(const ChunkCoord& chunkCoord, BlockVec& blockVec) {
-    for (auto& [block, localVoxel] : blockVec) {
+void ChunkManager::AddBlocks(const ChunkCoord &chunkCoord, BlockVec &blockVec) {
+    for (auto &[block, localVoxel]: blockVec) {
         ChunkCoord neighbor = chunkCoord;
-        auto& v = localVoxel;
+        auto &v = localVoxel;
         if (localVoxel.x <= 1) {
             neighbor.x -= 1 + static_cast<int>(v.x / (XSIZE - 1));
             v.x = mod(static_cast<int>(v.x) - 2, XSIZE);
@@ -302,7 +319,7 @@ void ChunkManager::AddBlocks(const ChunkCoord& chunkCoord, BlockVec& blockVec) {
 }
 
 void
-ChunkManager::UpdateNeighbors(const glm::uvec3& voxel, const ChunkCoord& chunkCoord, Block block) {
+ChunkManager::UpdateNeighbors(const glm::uvec3 &voxel, const ChunkCoord &chunkCoord, Block block) {
 //    std::cout << "voxel: " << voxel.x << "," << voxel.y << "," << voxel.z << "\n";
 //    std::cout << "chunk: " << chunkCoord.x << "," << chunkCoord.z << "\n";
     if (voxel.x == 1) {
@@ -339,8 +356,7 @@ void ChunkManager::UpdateWorld(const ChunkCoord &chunkCoord, const glm::vec3 &vo
         neighborChunk->SetBlock(voxel.x, voxel.y, voxel.z, block);
         m_ChunksToUpload.insert(chunkCoord);
         UpdateNeighbors(voxel, chunkCoord, block);
-    }
-    else {
+    } else {
         m_BlocksToSet[chunkCoord].emplace_back(block, voxel);
     }
 }

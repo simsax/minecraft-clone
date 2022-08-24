@@ -15,7 +15,7 @@ public:
 	void CreateStatic(GLsizeiptr size, const void *data) const;
 	void CreateDynamic(GLsizeiptr size) const;
 	void Bind(GLuint vao) const;
-	void SendData(GLsizeiptr size, const void *data, uint32_t offset);
+	void SendData(GLsizeiptr size, const void *data, uint32_t offset) const;
 
 private:
 	uint32_t m_Vbo;

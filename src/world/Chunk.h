@@ -13,11 +13,10 @@
 #include <memory>
 #include <unordered_map>
 #include <vector>
-#include <optional>
 
-#define XSIZE 16
-#define YSIZE 256
-#define ZSIZE 16
+#define XSIZE 15
+#define YSIZE 255
+#define ZSIZE 15
 
 enum class Block : uint8_t {
     EMPTY,
@@ -61,10 +60,14 @@ public:
 
     Chunk(const ChunkCoord &coords, const glm::vec3 &position, uint32_t maxVertexCount,
           const std::vector<uint32_t> &indices,
-          const VertexBufferLayout &layout, int bindingIndex, ChunkMap &chunkMap);
+          const VertexBufferLayout &layout, int bindingIndex, ChunkMap *chunkMap);
 
+    Chunk(const Chunk&) = delete;
+    Chunk& operator=(const Chunk&) = delete;
+    Chunk(Chunk&& other) = default;
+    Chunk& operator=(Chunk&& other) = default;
 
-    void GenerateMesh();
+    bool GenerateMesh();
 
     Block GetBlock(uint32_t x, uint32_t y, uint32_t z) const;
 
@@ -75,13 +78,13 @@ public:
     void RenderOutline(Renderer &renderer, const VertexArray &vao, VertexBuffer &vbo,
                        IndexBuffer &ibo, const glm::vec3 &target);
 
-    glm::vec3 GetPosition() const;
-
     glm::vec3 GetCenterPosition() const;
 
     BlockVec CreateSurfaceLayer(const BlockVec &blocksToSet);
 
     void CreateTrees(int i, int j, int k, BlockVec &blockVec);
+    ChunkCoord GetCoord() const;
+    bool NotVisible(ChunkCoord playerChunk, int radius) const;
 
 private:
     void CreateHeightMap();
@@ -94,7 +97,7 @@ private:
     void GenCube(int i, int j, int k, std::vector<uint32_t> &target,
                  const std::array<uint8_t, 6> &textureCoords,
                  const std::array<Chunk *, 4> &neighbors,
-                 Args... neighborBlocks);
+                 Args... voidBlocks);
 
     void SetBlocks(const BlockVec &blocksToSet);
 
@@ -102,7 +105,7 @@ private:
 
     template<typename... Args>
     bool
-    CheckNeighbor(const Chunk *const chunk, const glm::uvec3 &position, Args... neighborBlocks);
+    CheckNeighbor(const Chunk *chunk, const glm::uvec3 &position, Args... voidBlocks);
 
     static const std::unordered_map<Block, std::array<uint8_t, 6>> s_TextureMap;
     VertexBuffer m_VBO;
@@ -118,5 +121,6 @@ private:
     int m_MaxHeight;
     size_t m_IBOCount;
     size_t m_TIBOCount;
-    ChunkMap &m_ChunkMap;
+    ChunkMap *m_ChunkMap;
+    glm::vec3 m_CenterPosition;
 };

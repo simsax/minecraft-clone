@@ -54,8 +54,9 @@ private:
     IndexBuffer m_IBO;
     VertexBuffer m_OutlineVBO;
     std::vector<uint32_t> m_Indices;
-    std::vector<Chunk *> m_ChunksToRender;
-    std::queue<Chunk *> m_ChunksToMesh;
+    std::vector<Chunk*> m_ChunksToRender;
+    std::queue<Chunk*> m_ChunksToMesh;
+    std::queue<Chunk*> m_ChunksInBorder;
     std::queue<ChunkCoord> m_ChunksToLoad;
     std::unordered_set<ChunkCoord, hash_fn> m_ChunksToUpload;
     std::unordered_map<ChunkCoord, BlockVec, hash_fn> m_BlocksToSet;

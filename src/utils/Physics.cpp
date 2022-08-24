@@ -1,11 +1,10 @@
 #include "Physics.h"
+#include "../world/Chunk.h"
 
 #define BLOCK_SIZE 1.0f
 #define PLAYER_HALF_WIDTH 0.3f
 #define PLAYER_TOP_HEIGHT 0.2f
 #define PLAYER_BOTTOM_HEIGHT 1.6f
-#define CHUNK_HALF_WIDTH 7.0f
-#define CHUNK_HEIGHT 255.0f
 
 namespace physics {
 
@@ -45,6 +44,8 @@ Aabb CreatePlayerAabb(const glm::vec3& position)
 
 Aabb CreateChunkAabb(const glm::vec3& position)
 {
+    constexpr float CHUNK_HALF_WIDTH = XSIZE / 2.0f;
+    constexpr float CHUNK_HEIGHT = YSIZE;
     Aabb bbox = { position.x - CHUNK_HALF_WIDTH, position.x + CHUNK_HALF_WIDTH, position.y,
         position.y + CHUNK_HEIGHT, position.z - CHUNK_HALF_WIDTH, position.z + CHUNK_HALF_WIDTH };
     return bbox;

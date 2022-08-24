@@ -30,8 +30,8 @@ void Game::Init() {
 
 void Game::OnUpdate(float deltaTime) {
     HandleInput();
-    CheckRayCast();
-    ApplyGravity(deltaTime);
+//    CheckRayCast();
+//    ApplyGravity(deltaTime);
     Move(deltaTime);
     UpdateChunks();
     m_Renderer.SetDeltaTime(deltaTime);
@@ -90,50 +90,50 @@ void Game::Move(float deltaTime) {
     glm::vec3 playerSpeed = m_Camera.GetCameraSpeed();
     playerSpeed.y += m_VerticalVelocity;
     glm::vec3 distance = playerSpeed * deltaTime;
-    glm::vec3 absDistance = {std::abs(distance.x), std::abs(distance.y), std::abs(distance.z)};
-
-    bool collidedx, collidedy, collidedz;
-    if (absDistance.x < absDistance.y && absDistance.x < absDistance.z) {
-        collidedx = m_ChunkManager.CalculateCollision({distance.x, 0, 0});
-        if (absDistance.y < absDistance.z) {
-            collidedy = m_ChunkManager.CalculateCollision({0, distance.y, 0});
-            collidedz = m_ChunkManager.CalculateCollision({0, 0, distance.z});
-        } else {
-            collidedz = m_ChunkManager.CalculateCollision({0, 0, distance.z});
-            collidedy = m_ChunkManager.CalculateCollision({0, distance.y, 0});
-        }
-    } else if (absDistance.y < absDistance.z) {
-        collidedy = m_ChunkManager.CalculateCollision({0, distance.y, 0});
-        if (absDistance.x < absDistance.z) {
-            collidedx = m_ChunkManager.CalculateCollision({distance.x, 0, 0});
-            collidedz = m_ChunkManager.CalculateCollision({0, 0, distance.z});
-        } else {
-            collidedz = m_ChunkManager.CalculateCollision({0, 0, distance.z});
-            collidedx = m_ChunkManager.CalculateCollision({distance.x, 0, 0});
-        }
-    } else {
-        collidedz = m_ChunkManager.CalculateCollision({0, 0, distance.z});
-        if (absDistance.x < absDistance.y) {
-            collidedx = m_ChunkManager.CalculateCollision({distance.x, 0, 0});
-            collidedy = m_ChunkManager.CalculateCollision({0, distance.y, 0});
-        } else {
-            collidedy = m_ChunkManager.CalculateCollision({0, distance.y, 0});
-            collidedx = m_ChunkManager.CalculateCollision({distance.x, 0, 0});
-        }
-    }
-
-    if (collidedx)
-        distance.x = 0;
-    if (collidedy) {
-        if (!m_Camera.GetFlyMode() && distance.y < 0) {
-            m_Ground = true;
-        }
-        distance.y = 0;
-    } else {
-        m_Ground = false;
-    }
-    if (collidedz)
-        distance.z = 0;
+//    glm::vec3 absDistance = {std::abs(distance.x), std::abs(distance.y), std::abs(distance.z)};
+//
+//    bool collidedx, collidedy, collidedz;
+//    if (absDistance.x < absDistance.y && absDistance.x < absDistance.z) {
+//        collidedx = m_ChunkManager.CalculateCollision({distance.x, 0, 0});
+//        if (absDistance.y < absDistance.z) {
+//            collidedy = m_ChunkManager.CalculateCollision({0, distance.y, 0});
+//            collidedz = m_ChunkManager.CalculateCollision({0, 0, distance.z});
+//        } else {
+//            collidedz = m_ChunkManager.CalculateCollision({0, 0, distance.z});
+//            collidedy = m_ChunkManager.CalculateCollision({0, distance.y, 0});
+//        }
+//    } else if (absDistance.y < absDistance.z) {
+//        collidedy = m_ChunkManager.CalculateCollision({0, distance.y, 0});
+//        if (absDistance.x < absDistance.z) {
+//            collidedx = m_ChunkManager.CalculateCollision({distance.x, 0, 0});
+//            collidedz = m_ChunkManager.CalculateCollision({0, 0, distance.z});
+//        } else {
+//            collidedz = m_ChunkManager.CalculateCollision({0, 0, distance.z});
+//            collidedx = m_ChunkManager.CalculateCollision({distance.x, 0, 0});
+//        }
+//    } else {
+//        collidedz = m_ChunkManager.CalculateCollision({0, 0, distance.z});
+//        if (absDistance.x < absDistance.y) {
+//            collidedx = m_ChunkManager.CalculateCollision({distance.x, 0, 0});
+//            collidedy = m_ChunkManager.CalculateCollision({0, distance.y, 0});
+//        } else {
+//            collidedy = m_ChunkManager.CalculateCollision({0, distance.y, 0});
+//            collidedx = m_ChunkManager.CalculateCollision({distance.x, 0, 0});
+//        }
+//    }
+//
+//    if (collidedx)
+//        distance.x = 0;
+//    if (collidedy) {
+//        if (!m_Camera.GetFlyMode() && distance.y < 0) {
+//            m_Ground = true;
+//        }
+//        distance.y = 0;
+//    } else {
+//        m_Ground = false;
+//    }
+//    if (collidedz)
+//        distance.z = 0;
 
     currentPosition += distance;
 
