@@ -14,9 +14,10 @@
 #include <unordered_map>
 #include <vector>
 
-#define XSIZE 15
-#define YSIZE 255
-#define ZSIZE 15
+// X and Z must be powers of 2
+#define XSIZE 16
+#define YSIZE 256
+#define ZSIZE 16
 
 enum class Block : uint8_t {
     EMPTY,

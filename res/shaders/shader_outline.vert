@@ -16,12 +16,11 @@ vec2(0.0f, 1.0f)
 );
 
 void main() {
-	float x = float((in_VertexCoord & 0x7800000u) >> 23) + u_ChunkPos.x;
-	float y = float((in_VertexCoord & 0x7F8000u) >> 15) + u_ChunkPos.y;
-	float z = float((in_VertexCoord & 0x7800u) >> 11) + u_ChunkPos.z;
-	gl_Position = u_MVP * vec4(x, y, z, 1.0f);
-	vec2 texCoord = vec2((in_VertexCoord & 0x3C0u) >> 6u,
-	(in_VertexCoord & 0x3Cu) >> 2u);
-	uint index = in_VertexCoord & 3u;
+	float x = float(in_VertexCoord >> 24 & 0x1Fu) + u_ChunkPos.x;
+	float y = float(in_VertexCoord >> 15 & 0x1FFu) + u_ChunkPos.y;
+	float z = float(in_VertexCoord >> 10 & 0x1Fu) + u_ChunkPos.z;
+	vec2 texCoord = vec2(in_VertexCoord >> 6 & 0xFu,
+	in_VertexCoord >> 2 & 0xFu);
+	uint index = in_VertexCoord & 0x3u;
 	v_TexCoord = (texCoord + texCoords[index]) * offset;
 }

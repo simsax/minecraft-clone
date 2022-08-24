@@ -21,7 +21,7 @@ std::size_t hash_fn::operator()(const ChunkCoord &coord) const {
 }
 
 static std::array<uint32_t, 4> GenerateTextCoords(const glm::uvec2 &textureCoords) {
-    uint32_t t0 = (textureCoords[0] << 4 | textureCoords[1]) << 2;
+    uint32_t t0 = (textureCoords[0] << 6) | (textureCoords[1] << 2);
     uint32_t t1 = t0 | 1;
     uint32_t t2 = t0 | 2;
     uint32_t t3 = t0 | 3;
@@ -36,8 +36,8 @@ static void CreateQuad(std::vector<uint32_t> &target, const glm::uvec3 &position
     std::array<uint32_t, vertices> t = GenerateTextCoords({textureCoords[0], textureCoords[1]});
 
     for (int i = 0; i < vertices; i++) {
-        uint32_t v = (position[0] + offsetx[i]) << 23 | (position[1] + offsety[i]) << 15
-                     | (position[2] + offsetz[i]) << 11 | t[i];
+        uint32_t v = (position[0] + offsetx[i]) << 24 | (position[1] + offsety[i]) << 15
+                     | (position[2] + offsetz[i]) << 10 | t[i];
         target.emplace_back(v);
     }
 }
@@ -117,31 +117,14 @@ void Chunk::CreateHeightMap() {
     }
 }
 
-# if 1
 void Chunk::FastFill() {
     constexpr int height = 63;
     constexpr int level_size = XSIZE * ZSIZE;
-//    memset(m_Chunk.GetRawPtr(), (int) Block::BEDROCK, level_size);
-//    memset(m_Chunk.GetRawPtr() + level_size, (int) Block::STONE, level_size * (height - 1));
-//    memset(m_Chunk.GetRawPtr() + level_size * (height), (int) Block::EMPTY,
-//           level_size * (YSIZE - height - 1));
-    for (int j = 0; j < YSIZE; j++)
-        for (int i = 0; i < XSIZE; i++)
-            for (int k = 0; k < ZSIZE; k++)
-                if (j < height)
-                    m_Chunk(i,j,k) = Block::STONE;
-                else
-                    m_Chunk(i,j,k) = Block::EMPTY;
+    auto begin = m_Chunk.GetRawPtr();
+    std::fill(begin, begin + level_size, Block::BEDROCK);
+    std::fill(begin + level_size, begin + level_size * m_MinHeight, Block::STONE);
+    std::fill(begin + level_size * (m_MaxHeight + 1), begin + level_size * YSIZE, Block::EMPTY);
 }
-# else
-void Chunk::FastFill() {
-    constexpr int level_size = XSIZE * ZSIZE;
-    memset(m_Chunk.GetRawPtr(), (int) Block::BEDROCK, level_size);
-    memset(m_Chunk.GetRawPtr() + level_size, (int) Block::STONE, level_size * (m_MinHeight - 1));
-    memset(m_Chunk.GetRawPtr() + level_size * (m_MaxHeight + 1), (int) Block::EMPTY,
-           level_size * (YSIZE - m_MaxHeight - 1));
-}
-#endif
 
 BlockVec Chunk::CreateSurfaceLayer(const BlockVec &blocksToSet) {
     BlockVec blockVec = {};
@@ -149,8 +132,7 @@ BlockVec Chunk::CreateSurfaceLayer(const BlockVec &blocksToSet) {
     constexpr int snow_level = 120;
     if (m_MaxHeight < water_level)
         m_MaxHeight = water_level;
-//    for (int j = 0; j < YSIZE; j++) {
-        for (int j = m_MinHeight; j <= m_MaxHeight; j++) {
+    for (int j = m_MinHeight; j <= m_MaxHeight; j++) {
         int index = 0;
         for (int i = 0; i < XSIZE; i++) {
             for (int k = 0; k < ZSIZE; k++) {
@@ -316,16 +298,13 @@ bool Chunk::FindNeighbors(std::array<Chunk *, 4> &neighbors) {
 bool Chunk::GenerateMesh() {
     if (m_Mesh.empty() && m_TransparentMesh.empty()) {
         // retrieve the 4 pointers from the map and continue only if all of them exist
-        std::array<Chunk *, 4> neighbors = {nullptr}; // west, east, north, south
+        std::array<Chunk *, 4> neighbors = {nullptr}; // west, north, east, south
         if (FindNeighbors(neighbors)) {
             if (m_MinHeight < 1)
                 m_MinHeight = 1;
-//            for (int j = m_MinHeight - 1; j <= m_MaxHeight; j++) {
-            for (int j = 0; j < YSIZE; j++) {
+            for (int j = m_MinHeight - 1; j <= m_MaxHeight; j++) {
                 for (int i = 0; i < XSIZE; i++) {
                     for (int k = 0; k < ZSIZE; k++) {
-//                        if (m_Coords.x == 0 && m_Coords.z == -1 && j == 64)
-//                            std::cout << static_cast<int>(m_Chunk(i,j+1,k)) << "\n";
                         if (m_Chunk(i, j, k) != Block::EMPTY) {
                             std::array<uint8_t, 6> textureCoords = s_TextureMap.at(
                                     m_Chunk(i, j, k));

@@ -1,13 +1,13 @@
+#pragma once
 #include <stdexcept>
 #include <cstring>
-#include <iostream>
 
 template <typename T, size_t X, size_t Y, size_t Z> class Matrix3D {
 public:
     Matrix3D();
     ~Matrix3D();
     Matrix3D(const Matrix3D& other);
-    Matrix3D(Matrix3D&& other);
+    Matrix3D(Matrix3D&& other) noexcept ;
     Matrix3D& operator=(Matrix3D other);
     T* GetRawPtr();
 
@@ -60,7 +60,7 @@ inline Matrix3D<T, X, Y, Z>::Matrix3D(const Matrix3D& other)
 }
 
 template <typename T, size_t X, size_t Y, size_t Z>
-inline Matrix3D<T, X, Y, Z>::Matrix3D(Matrix3D&& other)
+inline Matrix3D<T, X, Y, Z>::Matrix3D(Matrix3D&& other) noexcept
     : m_Log2Z(0)
     , m_Log2XZSize(0)
     , m_Data(nullptr)

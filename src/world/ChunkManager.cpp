@@ -7,7 +7,6 @@ using namespace std::chrono_literals;
 
 #define MAX_INDEX_COUNT 18432 // each cube has 6 faces, each face has 6 indexes
 #define MAX_VERTEX_COUNT 12228 // each cube has 6 faces, each face has 4 vertices
-//#define VIEW_DISTANCE 8 // how far the player sees
 #define VIEW_DISTANCE 24 // how far the player sees
 #define MAX_CHUNK_TO_LOAD 32
 #define PLAYER_HALF_WIDTH 0.3f
@@ -75,7 +74,7 @@ void ChunkManager::Render(Renderer &renderer) {
         glm::vec3 center = chunk->GetCenterPosition();
         if (m_Camera->IsInFrustum(center))
             chunk->Render(renderer, m_VAO, m_IBO);
-//        if (chunk->GetCenterPosition() == glm::vec3(7.5,0,-7.5)) {
+//        if (chunk->GetCenterPosition() == glm::vec3(8,0,-8)) {
 //            chunk->Render(renderer, m_VAO, m_IBO);
 //        }
     }
@@ -102,8 +101,8 @@ void ChunkManager::LoadChunks() {
         Chunk chunk(coords, {coords.x * static_cast<int>(m_ChunkSize[0]), 0.0f,
                              coords.z * static_cast<int>(m_ChunkSize[2])},
                     MAX_VERTEX_COUNT, m_Indices, m_VertexLayout, m_BindingIndex, &m_ChunkMap);
-//        BlockVec blocksToSet = chunk.CreateSurfaceLayer(blockList);
-//        AddBlocks(coords, blocksToSet);
+        BlockVec blocksToSet = chunk.CreateSurfaceLayer(blockList);
+        AddBlocks(coords, blocksToSet);
         m_ChunkMap.insert({coords, std::move(chunk)});
         m_ChunksToMesh.push(&m_ChunkMap.at(coords));
 
