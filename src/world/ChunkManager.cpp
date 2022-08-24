@@ -74,9 +74,9 @@ void ChunkManager::Render(Renderer &renderer) {
         glm::vec3 center = chunk->GetCenterPosition();
         if (m_Camera->IsInFrustum(center))
             chunk->Render(renderer, m_VAO, m_IBO);
-//        if (chunk->GetCenterPosition() == glm::vec3(8,0,-8)) {
-//            chunk->Render(renderer, m_VAO, m_IBO);
-//        }
+        if (chunk->GetCenterPosition() == glm::vec3(8,0,-8)) {
+            chunk->Render(renderer, m_VAO, m_IBO);
+        }
     }
 }
 
@@ -102,7 +102,7 @@ void ChunkManager::LoadChunks() {
                              coords.z * static_cast<int>(m_ChunkSize[2])},
                     MAX_VERTEX_COUNT, m_Indices, m_VertexLayout, m_BindingIndex, &m_ChunkMap);
         BlockVec blocksToSet = chunk.CreateSurfaceLayer(blockList);
-        AddBlocks(coords, blocksToSet);
+//        AddBlocks(coords, blocksToSet);
         m_ChunkMap.insert({coords, std::move(chunk)});
         m_ChunksToMesh.push(&m_ChunkMap.at(coords));
 
@@ -117,7 +117,9 @@ void ChunkManager::MeshChunks() {
         auto iterator = m_ChunksToUpload.begin();
         auto node = m_ChunksToUpload.extract(iterator);
         ChunkCoord coords = node.value();
-        m_ChunkMap.at(coords).GenerateMesh();
+        auto chunk = &m_ChunkMap.at(coords);
+        chunk->ClearMesh();
+        chunk->GenerateMesh();
         uploaded = true;
     }
 
@@ -192,7 +194,6 @@ bool ChunkManager::IsVoxelSolid(const glm::vec3 &voxel) {
     m_Raycast.localVoxel = target.second;
     if (const auto it = m_ChunkMap.find(m_Raycast.chunkCoord); it != m_ChunkMap.end()) {
         m_Raycast.chunk = &it->second;
-
         if (m_Raycast.chunk->GetBlock(m_Raycast.localVoxel[0], m_Raycast.localVoxel[1],
                                       m_Raycast.localVoxel[2]) != Block::EMPTY) {
             m_Raycast.selected = true;
@@ -208,11 +209,7 @@ void ChunkManager::DestroyBlock() {
                               m_Raycast.localVoxel[2], Block::EMPTY);
     m_ChunksToUpload.insert(m_Raycast.chunkCoord);
     // check if the target is in the chunk border
-    if (m_Raycast.localVoxel[0] == 1 || m_Raycast.localVoxel[2] == 1 ||
-        m_Raycast.localVoxel[0] == m_ChunkSize[0]
-        || m_Raycast.localVoxel[2] == m_ChunkSize[2]) {
-        UpdateNeighbors(m_Raycast.localVoxel, m_Raycast.chunkCoord, Block::EMPTY);
-    }
+    UpdateNeighbors(m_Raycast.localVoxel, m_Raycast.chunkCoord);
 }
 
 void ChunkManager::PlaceBlock(Block block) {
@@ -223,20 +220,16 @@ void ChunkManager::PlaceBlock(Block block) {
                                       m_Raycast.prevLocalVoxel[2], block);
         m_ChunksToUpload.insert(m_Raycast.prevChunkCoord);
         // check if the target is in the chunk border
-        if (m_Raycast.prevLocalVoxel[0] == 1 || m_Raycast.prevLocalVoxel[2] == 1 ||
-            m_Raycast.prevLocalVoxel[0] == m_ChunkSize[0]
-            || m_Raycast.prevLocalVoxel[2] == m_ChunkSize[2]) {
-            UpdateNeighbors(m_Raycast.prevLocalVoxel, m_Raycast.prevChunkCoord, block);
-        }
+        UpdateNeighbors(m_Raycast.prevLocalVoxel, m_Raycast.prevChunkCoord);
     }
 }
 
 std::pair<ChunkCoord, glm::uvec3> ChunkManager::GlobalToLocal(const glm::vec3 &playerPosition) {
     ChunkCoord chunkCoord = CalculateChunkCoord(playerPosition);
     uint32_t playerPosX =
-            mod(static_cast<int>(std::floor(playerPosition.x) - 1), m_ChunkSize[0]) + 1;
+            mod(static_cast<int>(std::floor(playerPosition.x)), m_ChunkSize[0]);
     uint32_t playerPosZ =
-            mod(static_cast<int>(std::floor(playerPosition.z) - 1), m_ChunkSize[2]) + 1;
+            mod(static_cast<int>(std::floor(playerPosition.z)), m_ChunkSize[2]);
     glm::uvec3 playerPos
             = {playerPosX, static_cast<uint32_t>(std::floor(playerPosition.y)), playerPosZ};
     return std::make_pair(chunkCoord, playerPos);
@@ -317,36 +310,20 @@ void ChunkManager::AddBlocks(const ChunkCoord &chunkCoord, BlockVec &blockVec) {
     }
 }
 
-void
-ChunkManager::UpdateNeighbors(const glm::uvec3 &voxel, const ChunkCoord &chunkCoord, Block block) {
-//    std::cout << "voxel: " << voxel.x << "," << voxel.y << "," << voxel.z << "\n";
-//    std::cout << "chunk: " << chunkCoord.x << "," << chunkCoord.z << "\n";
-    if (voxel.x == 1) {
-        auto v = voxel;
-        auto c = chunkCoord;
+void ChunkManager::UpdateNeighbors(const glm::uvec3 &voxel, const ChunkCoord &chunkCoord) {
+    auto c = chunkCoord;
+    if (voxel.x == 0)
         c.x -= 1;
-        v.x = XSIZE - 1;
-        UpdateWorld(c, v, block);
-    } else if (voxel.x == XSIZE - 2) {
-        auto v = voxel;
-        auto c = chunkCoord;
+    else if (voxel.x == XSIZE - 1)
         c.x += 1;
-        v.x = 0;
-        UpdateWorld(c, v, block);
-    }
-    if (voxel.z == 1) {
-        auto v = voxel;
-        auto c = chunkCoord;
+    m_ChunksToUpload.insert(c);
+
+    c = chunkCoord;
+    if (voxel.z == 0)
         c.z -= 1;
-        v.z = ZSIZE - 1;
-        UpdateWorld(c, v, block);
-    } else if (voxel.z == ZSIZE - 2) {
-        auto v = voxel;
-        auto c = chunkCoord;
+    else if (voxel.z == ZSIZE - 1)
         c.z += 1;
-        v.z = 0;
-        UpdateWorld(c, v, block);
-    }
+    m_ChunksToUpload.insert(c);
 }
 
 void ChunkManager::UpdateWorld(const ChunkCoord &chunkCoord, const glm::vec3 &voxel, Block block) {
@@ -354,7 +331,7 @@ void ChunkManager::UpdateWorld(const ChunkCoord &chunkCoord, const glm::vec3 &vo
         Chunk *neighborChunk = &it->second;
         neighborChunk->SetBlock(voxel.x, voxel.y, voxel.z, block);
         m_ChunksToUpload.insert(chunkCoord);
-        UpdateNeighbors(voxel, chunkCoord, block);
+        UpdateNeighbors(voxel, chunkCoord);
     } else {
         m_BlocksToSet[chunkCoord].emplace_back(block, voxel);
     }

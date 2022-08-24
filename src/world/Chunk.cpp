@@ -374,13 +374,20 @@ void Chunk::RenderOutline(Renderer &renderer, const VertexArray &vao, VertexBuff
 Block Chunk::GetBlock(uint32_t x, uint32_t y, uint32_t z) const { return m_Chunk(x, y, z); }
 
 void Chunk::SetBlock(uint32_t x, uint32_t y, uint32_t z, Block block) {
+#ifndef NDEBUG
     if (x >= XSIZE || y >= YSIZE || z >= ZSIZE)
         throw std::logic_error("Chunk coordinates out of bound.");
+#endif
     m_Chunk(x, y, z) = block;
     if (y < m_MinHeight)
         m_MinHeight = y;
     else if (y > m_MaxHeight)
         m_MaxHeight = y;
+
+    ClearMesh();
+}
+
+void Chunk::ClearMesh() {
     m_Mesh.clear();
     m_TransparentMesh.clear();
 }

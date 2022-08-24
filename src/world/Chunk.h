@@ -14,7 +14,6 @@
 #include <unordered_map>
 #include <vector>
 
-// X and Z must be powers of 2
 #define XSIZE 16
 #define YSIZE 256
 #define ZSIZE 16
@@ -86,6 +85,7 @@ public:
     void CreateTrees(int i, int j, int k, BlockVec &blockVec);
     ChunkCoord GetCoord() const;
     bool NotVisible(ChunkCoord playerChunk, int radius) const;
+    void ClearMesh();
 
 private:
     void CreateHeightMap();
