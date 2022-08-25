@@ -87,6 +87,8 @@ public:
     bool NotVisible(ChunkCoord playerChunk, int radius) const;
     void ClearMesh();
 
+    void UpdateMeshHeighLimit(uint32_t height);
+
 private:
     void CreateHeightMap();
 

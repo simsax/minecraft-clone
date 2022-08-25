@@ -205,11 +205,14 @@ bool ChunkManager::IsVoxelSolid(const glm::vec3 &voxel) {
 }
 
 void ChunkManager::DestroyBlock() {
-    m_Raycast.chunk->SetBlock(m_Raycast.localVoxel[0], m_Raycast.localVoxel[1],
-                              m_Raycast.localVoxel[2], Block::EMPTY);
-    m_ChunksToUpload.insert(m_Raycast.chunkCoord);
-    // check if the target is in the chunk border
-    UpdateNeighbors(m_Raycast.localVoxel, m_Raycast.chunkCoord);
+    if (m_Raycast.chunk->GetBlock(m_Raycast.localVoxel[0], m_Raycast.localVoxel[1],
+                              m_Raycast.localVoxel[2]) != Block::BEDROCK) {
+        m_Raycast.chunk->SetBlock(m_Raycast.localVoxel[0], m_Raycast.localVoxel[1],
+                                  m_Raycast.localVoxel[2], Block::EMPTY);
+        m_ChunksToUpload.insert(m_Raycast.chunkCoord);
+        // check if the target is in the chunk border
+        UpdateNeighbors(m_Raycast.localVoxel, m_Raycast.chunkCoord);
+    }
 }
 
 void ChunkManager::PlaceBlock(Block block) {
@@ -311,19 +314,21 @@ void ChunkManager::AddBlocks(const ChunkCoord &chunkCoord, BlockVec &blockVec) {
 }
 
 void ChunkManager::UpdateNeighbors(const glm::uvec3 &voxel, const ChunkCoord &chunkCoord) {
-    auto c = chunkCoord;
+    auto neighborCoord = chunkCoord;
     if (voxel.x == 0)
-        c.x -= 1;
+        neighborCoord.x -= 1;
     else if (voxel.x == XSIZE - 1)
-        c.x += 1;
-    m_ChunksToUpload.insert(c);
+        neighborCoord.x += 1;
+    m_ChunksToUpload.insert(neighborCoord);
+    m_ChunkMap.at(neighborCoord).UpdateMeshHeighLimit(voxel.y);
 
-    c = chunkCoord;
+    neighborCoord = chunkCoord;
     if (voxel.z == 0)
-        c.z -= 1;
+        neighborCoord.z -= 1;
     else if (voxel.z == ZSIZE - 1)
-        c.z += 1;
-    m_ChunksToUpload.insert(c);
+        neighborCoord.z += 1;
+    m_ChunksToUpload.insert(neighborCoord);
+    m_ChunkMap.at(neighborCoord).UpdateMeshHeighLimit(voxel.y);
 }
 
 void ChunkManager::UpdateWorld(const ChunkCoord &chunkCoord, const glm::vec3 &voxel, Block block) {

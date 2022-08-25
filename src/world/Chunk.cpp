@@ -387,6 +387,13 @@ void Chunk::SetBlock(uint32_t x, uint32_t y, uint32_t z, Block block) {
     ClearMesh();
 }
 
+/*
+ * m_MinHeigh non viene aggiornato dato che
+ * non aggiorno il chunk vicino. Quindi, quando piazzo o rimuovo un blocco
+ * sul bordo, devo passargli la coordinata y di quel blocco (credo)
+ * Potrebbe esistere una soluzione migliore
+ */
+
 void Chunk::ClearMesh() {
     m_Mesh.clear();
     m_TransparentMesh.clear();
@@ -431,4 +438,11 @@ bool Chunk::NotVisible(ChunkCoord playerChunk, int radius) const {
         return true;
     else
         return false;
+}
+
+void Chunk::UpdateMeshHeighLimit(uint32_t height) {
+    if (height > m_MaxHeight)
+        m_MaxHeight = height;
+    else if (height < m_MinHeight)
+        m_MinHeight = height;
 }
