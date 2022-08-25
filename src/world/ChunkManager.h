@@ -44,7 +44,6 @@ private:
     std::pair<ChunkCoord, glm::uvec3> GlobalToLocal(const glm::vec3 &playerPosition);
     void UpdateNeighbors(const glm::uvec3& voxel, const ChunkCoord& chunkCoord);
     void AddBlocks(const ChunkCoord& chunkCoord, BlockVec& blockVec);
-    void UpdateWorld(const ChunkCoord& chunkCoord, const glm::vec3& voxel, Block block);
     void GenerateChunks();
 
     std::array<uint32_t, 3> m_ChunkSize;

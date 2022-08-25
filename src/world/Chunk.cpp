@@ -118,7 +118,6 @@ void Chunk::CreateHeightMap() {
 }
 
 void Chunk::FastFill() {
-    constexpr int height = 63;
     constexpr int level_size = XSIZE * ZSIZE;
     auto begin = m_Chunk.GetRawPtr();
     std::fill(begin, begin + level_size, Block::BEDROCK);
@@ -173,8 +172,8 @@ BlockVec Chunk::CreateSurfaceLayer(const BlockVec &blocksToSet) {
                         else
                             m_Chunk(i, j, k) = Block::EMPTY;
                     }
-//                    if (j < snow_level)
-//                        CreateTrees(i, j, k, blockVec);
+                    if (j < snow_level)
+                        CreateTrees(i, j, k, blockVec);
                 }
             }
         }
@@ -188,9 +187,7 @@ void Chunk::CreateTrees(int i, int j, int k, BlockVec &blockVec) {
             = m_Noise.OctaveNoise(i + m_ChunkPosition.x + 22.2f, k + m_ChunkPosition.z + 22.2f,
                                   4, 0.008f);
     const int treeHeight = 5 + j;
-    if (j > 0 && noise_chance >= 0.1 &&
-        i != 0 && k != 0 && i != XSIZE - 1 && k != ZSIZE - 1 &&
-        m_Chunk(i, j - 1, k) == Block::GRASS) {
+    if (j > 0 && noise_chance >= 0.1 && m_Chunk(i, j - 1, k) == Block::GRASS) {
         if ((float) std::rand() / (float) RAND_MAX < 0.005f) {
             int height;
             for (height = j; height < treeHeight; height++) {
@@ -201,18 +198,18 @@ void Chunk::CreateTrees(int i, int j, int k, BlockVec &blockVec) {
             int leaves_height;
             const int top = height + 1;
             for (leaves_height = height - 2; leaves_height <= top; leaves_height++) {
-                int size = 2;
+                constexpr int size = 2;
 //                if (leaves_height == top)
 //                    size = 1;
                 for (int x = -size; x <= size; x++) {
                     for (int z = -size; z <= size; z++) {
                         const int leafx = i + x;
                         const int leafz = k + z;
-                        if (leafx >= 0 && leafz >= 0 && leafx < XSIZE && leafz < ZSIZE
-                            && m_Chunk(leafx, leaves_height, leafz) != Block::WOOD)
-                            m_Chunk(leafx, leaves_height, leafz) = Block::LEAVES;
-                        // farlo anche per il tronco
-                        if (leafx <= 1 || leafz <= 1 || leafx >= XSIZE - 2 || leafz >= ZSIZE - 2) {
+                        if (leafx >= 0 && leafz >= 0 && leafx < XSIZE && leafz < ZSIZE) {
+                            if (m_Chunk(leafx, leaves_height, leafz) != Block::WOOD)
+                                m_Chunk(leafx, leaves_height, leafz) = Block::LEAVES;
+                        }
+                        else {
                             blockVec.emplace_back(Block::LEAVES,
                                                   glm::vec3(leafx, leaves_height, leafz)
                             );
@@ -387,13 +384,6 @@ void Chunk::SetBlock(uint32_t x, uint32_t y, uint32_t z, Block block) {
     ClearMesh();
 }
 
-/*
- * m_MinHeigh non viene aggiornato dato che
- * non aggiorno il chunk vicino. Quindi, quando piazzo o rimuovo un blocco
- * sul bordo, devo passargli la coordinata y di quel blocco (credo)
- * Potrebbe esistere una soluzione migliore
- */
-
 void Chunk::ClearMesh() {
     m_Mesh.clear();
     m_TransparentMesh.clear();
@@ -406,7 +396,7 @@ glm::vec3 Chunk::GetCenterPosition() const {
 void Chunk::SetBlocks(const BlockVec &blocksToSet) {
     for (const auto &[block, vec]: blocksToSet) {
         glm::uvec3 pos = vec;
-        m_Chunk(pos.x, pos.y, pos.z) = block;
+        SetBlock(pos.x, pos.y, pos.z, block);
     }
 }
 

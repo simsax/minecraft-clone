@@ -97,12 +97,19 @@ void ChunkManager::LoadChunks() {
         BlockVec blockList = {};
         if (const auto it = m_BlocksToSet.find(coords); it != m_BlocksToSet.end()) {
             blockList = it->second;
+            m_BlocksToSet.erase(it);
         }
+//        if (!blockList.empty()) {
+//            for (auto&[block,vox] : blockList) {
+//                std::cout << vox.x << "," << vox.y << "," << vox.z << "\n";
+//            }
+//            std::cout << "\n";
+//        }
         Chunk chunk(coords, {coords.x * static_cast<int>(m_ChunkSize[0]), 0.0f,
                              coords.z * static_cast<int>(m_ChunkSize[2])},
                     MAX_VERTEX_COUNT, m_Indices, m_VertexLayout, m_BindingIndex, &m_ChunkMap);
         BlockVec blocksToSet = chunk.CreateSurfaceLayer(blockList);
-//        AddBlocks(coords, blocksToSet);
+        AddBlocks(coords, blocksToSet);
         m_ChunkMap.insert({coords, std::move(chunk)});
         m_ChunksToMesh.push(&m_ChunkMap.at(coords));
 
@@ -286,30 +293,24 @@ bool ChunkManager::CalculateCollision(const glm::vec3 &playerSpeed) {
 }
 
 void ChunkManager::AddBlocks(const ChunkCoord &chunkCoord, BlockVec &blockVec) {
-    for (auto &[block, localVoxel]: blockVec) {
-        ChunkCoord neighbor = chunkCoord;
-        auto &v = localVoxel;
-        if (localVoxel.x <= 1) {
-            neighbor.x -= 1 + static_cast<int>(v.x / (XSIZE - 1));
-            v.x = mod(static_cast<int>(v.x) - 2, XSIZE);
-        } else if (localVoxel.x >= XSIZE - 2) {
-            neighbor.x += static_cast<int>(v.x / (XSIZE - 2));
-            v.x = mod(static_cast<int>(v.x) + 2, XSIZE);
+    for (auto &[block, voxel]: blockVec) {
+        ChunkCoord neighbor = {
+                chunkCoord.x + static_cast<int>(std::floor(voxel.x / XSIZE)),
+                chunkCoord.z + static_cast<int>(std::floor(voxel.z / ZSIZE))
+        };
+        glm::uvec3 neighborVoxel = {mod(static_cast<int>(voxel.x), XSIZE),
+                          voxel.y,
+                          mod(static_cast<int>(voxel.z), ZSIZE)};
+
+        if (const auto it = m_ChunkMap.find(neighbor); it != m_ChunkMap.end()) {
+            // if chunk exists, update it
+            Chunk *neighborChunk = &it->second;
+            neighborChunk->SetBlock(neighborVoxel.x, neighborVoxel.y, neighborVoxel.z, block);
+            m_ChunksToUpload.insert(neighbor);
+        } else {
+            // otherwise save the blocks to set for the chunk when it will be created
+            m_BlocksToSet[neighbor].emplace_back(block, neighborVoxel);
         }
-        if (localVoxel.z <= 1) {
-//            std::cout << "Start:\n";
-//            std::cout << "v(" << v.x << "," << v.y << "," << v.z << ")" << "\n";
-//            std::cout << "c(" << neighbor.x << "," << neighbor.z << ")" << "\n";
-            neighbor.z -= 1 + static_cast<int>(v.z / (ZSIZE - 1));
-            v.z = mod(static_cast<int>(v.z) - 2, ZSIZE);
-//            std::cout << "end:\n";
-//            std::cout << "v(" << v.x << "," << v.y << "," << v.z << ")" << "\n";
-//            std::cout << "c(" << neighbor.x << "," << neighbor.z << ")" << "\n\n";
-        } else if (localVoxel.z >= ZSIZE - 2) {
-            neighbor.z += static_cast<int>(v.z / (ZSIZE - 2));
-            v.z = mod(static_cast<int>(v.z) + 2, ZSIZE);
-        }
-        UpdateWorld(neighbor, v, block);
     }
 }
 
@@ -329,17 +330,6 @@ void ChunkManager::UpdateNeighbors(const glm::uvec3 &voxel, const ChunkCoord &ch
         neighborCoord.z += 1;
     m_ChunksToUpload.insert(neighborCoord);
     m_ChunkMap.at(neighborCoord).UpdateMeshHeighLimit(voxel.y);
-}
-
-void ChunkManager::UpdateWorld(const ChunkCoord &chunkCoord, const glm::vec3 &voxel, Block block) {
-    if (const auto it = m_ChunkMap.find(chunkCoord); it != m_ChunkMap.end()) {
-        Chunk *neighborChunk = &it->second;
-        neighborChunk->SetBlock(voxel.x, voxel.y, voxel.z, block);
-        m_ChunksToUpload.insert(chunkCoord);
-        UpdateNeighbors(voxel, chunkCoord);
-    } else {
-        m_BlocksToSet[chunkCoord].emplace_back(block, voxel);
-    }
 }
 
 void ChunkManager::UpdateChunks() {
