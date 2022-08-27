@@ -6,7 +6,7 @@
 using namespace std::chrono_literals;
 
 #define MAX_INDEX_COUNT 18432 // each cube has 6 faces, each face has 6 indexes
-#define MAX_VERTEX_COUNT 12228 // each cube has 6 faces, each face has 4 vertices
+#define MAX_VERTEX_COUNT 24000 // each cube has 6 faces, each face has 4 vertices
 #define VIEW_DISTANCE 24 // how far the player sees
 #define MAX_CHUNK_TO_LOAD 32
 #define PLAYER_HALF_WIDTH 0.3f
@@ -99,12 +99,7 @@ void ChunkManager::LoadChunks() {
             blockList = it->second;
             m_BlocksToSet.erase(it);
         }
-//        if (!blockList.empty()) {
-//            for (auto&[block,vox] : blockList) {
-//                std::cout << vox.x << "," << vox.y << "," << vox.z << "\n";
-//            }
-//            std::cout << "\n";
-//        }
+
         Chunk chunk(coords, {coords.x * static_cast<int>(m_ChunkSize[0]), 0.0f,
                              coords.z * static_cast<int>(m_ChunkSize[2])},
                     MAX_VERTEX_COUNT, m_Indices, m_VertexLayout, m_BindingIndex, &m_ChunkMap);

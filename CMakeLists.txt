@@ -44,29 +44,31 @@ if(NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/glm/CMakeLists.txt")
 endif()
 
 add_executable(${PROJECT_NAME}
-        src/gui/GuiManager.cpp
-        src/gui/Gui.cpp
-        src/gui/GuiRenderer.cpp
-        src/utils/Timer.cpp
-        src/camera/Frustum.cpp
-        src/camera/Camera.cpp
-        src/world/Chunk.cpp
-        src/world/ChunkManager.cpp
+    src/gui/GuiManager.cpp
+    src/gui/Gui.cpp
+    src/gui/GuiRenderer.cpp
+    src/utils/Timer.cpp
+    src/camera/Frustum.cpp
+    src/camera/Camera.cpp
+    src/world/Chunk.cpp
+    src/world/ChunkManager.cpp
     src/Game.cpp
-        src/graphics/IndexBuffer.cpp
+    src/graphics/IndexBuffer.cpp
     src/main.cpp
-        src/utils/Matrix3D.hpp
-        src/utils/Noise.cpp
-        src/graphics/Renderer.cpp
-        src/graphics/Shader.cpp
-        src/graphics/Texture.cpp
-        src/utils/ThreadPool.hpp
-        src/graphics/VertexArray.cpp
-        src/graphics/VertexBuffer.cpp
-        src/graphics/VertexBufferLayout.hpp
-        src/graphics/Window.cpp
-        src/utils/Physics.h
-        src/utils/Physics.cpp src/camera/Constants.h)
+    src/utils/Matrix3D.hpp
+    src/utils/Noise.cpp
+    src/graphics/Renderer.cpp
+    src/graphics/Shader.cpp
+    src/graphics/Texture.cpp
+    src/utils/ThreadPool.hpp
+    src/graphics/VertexArray.cpp
+    src/graphics/VertexBuffer.cpp
+    src/graphics/VertexBufferLayout.hpp
+    src/graphics/Window.cpp
+    src/utils/Physics.h
+    src/utils/Physics.cpp
+    src/camera/Constants.h
+    src/utils/Random.hpp)
 
 add_subdirectory(extern/glfw)
 add_subdirectory(extern/glew)
