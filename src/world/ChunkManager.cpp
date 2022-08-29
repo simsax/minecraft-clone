@@ -74,7 +74,7 @@ void ChunkManager::Render(Renderer &renderer) {
         glm::vec3 center = chunk->GetCenterPosition();
         if (m_Camera->IsInFrustum(center))
             chunk->Render(renderer, m_VAO, m_IBO);
-        if (chunk->GetCenterPosition() == glm::vec3(8,0,-8)) {
+        if (chunk->GetCenterPosition() == glm::vec3(8, 0, -8)) {
             chunk->Render(renderer, m_VAO, m_IBO);
         }
     }
@@ -208,7 +208,7 @@ bool ChunkManager::IsVoxelSolid(const glm::vec3 &voxel) {
 
 void ChunkManager::DestroyBlock() {
     if (m_Raycast.chunk->GetBlock(m_Raycast.localVoxel[0], m_Raycast.localVoxel[1],
-                              m_Raycast.localVoxel[2]) != Block::BEDROCK) {
+                                  m_Raycast.localVoxel[2]) != Block::BEDROCK) {
         m_Raycast.chunk->SetBlock(m_Raycast.localVoxel[0], m_Raycast.localVoxel[1],
                                   m_Raycast.localVoxel[2], Block::EMPTY);
         m_ChunksToUpload.insert(m_Raycast.chunkCoord);
@@ -275,7 +275,8 @@ bool ChunkManager::CalculateCollision(const glm::vec3 &playerSpeed) {
                     Chunk *chunk = &it->second;
                     Block block = chunk->GetBlock(
                             localPos.second[0], localPos.second[1], localPos.second[2]);
-                    if (block != Block::EMPTY && block != Block::WATER) {
+                    if (block != Block::EMPTY && block != Block::WATER &&
+                        block != Block::FLOWER_BLUE && block != Block::FLOWER_YELLOW) {
                         physics::Aabb blockBbox = physics::CreateBlockAabb({i, j, k});
                         physics::SnapAabb(playerBbox, blockBbox, playerSpeed, currentPosition);
                         return true;
@@ -294,8 +295,8 @@ void ChunkManager::AddBlocks(const ChunkCoord &chunkCoord, BlockVec &blockVec) {
                 chunkCoord.z + static_cast<int>(std::floor(voxel.z / ZSIZE))
         };
         glm::uvec3 neighborVoxel = {mod(static_cast<int>(voxel.x), XSIZE),
-                          voxel.y,
-                          mod(static_cast<int>(voxel.z), ZSIZE)};
+                                    voxel.y,
+                                    mod(static_cast<int>(voxel.z), ZSIZE)};
 
         if (const auto it = m_ChunkMap.find(neighbor); it != m_ChunkMap.end()) {
             // if chunk exists, update it

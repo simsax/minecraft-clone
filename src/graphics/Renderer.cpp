@@ -4,7 +4,7 @@
 #include "../camera/Constants.h"
 
 Renderer::Renderer() :
-        m_Texture(std::string(SOURCE_DIR) + "/res/textures/terrain.png"),
+        m_Texture(std::string(SOURCE_DIR) + "/res/textures/terrain2.png"),
         m_View(glm::mat4()),
         m_SkyColor(glm::vec3()),
         m_Proj(glm::mat4()),

@@ -34,7 +34,9 @@ enum class Block : uint8_t {
     SAND,
     GRAVEL,
     SNOWY_GRASS,
-    BEDROCK
+    BEDROCK,
+    FLOWER_BLUE,
+    FLOWER_YELLOW
 };
 
 struct ChunkCoord {
@@ -82,7 +84,6 @@ public:
 
     BlockVec CreateSurfaceLayer(const BlockVec& blocksToSet);
 
-    void CreateTrees(int i, int j, int k, BlockVec& blockVec);
     ChunkCoord GetCoord() const;
     bool NotVisible(ChunkCoord playerChunk, int radius) const;
     void ClearMesh();
@@ -102,7 +103,8 @@ private:
         Args... voidBlocks);
 
     void SetBlocks(const BlockVec& blocksToSet);
-
+    void CreateTrees(int i, int j, int k, BlockVec& blockVec);
+    void CreateSprites(int i, int j, int k, BlockVec& blockVec);
     bool FindNeighbors(std::array<Chunk*, 4>& neighbors);
 
     template <typename... Args>
@@ -124,5 +126,4 @@ private:
     size_t m_TIBOCount;
     ChunkMap* m_ChunkMap;
     glm::vec3 m_CenterPosition;
-    // Random m_Rand;
 };
