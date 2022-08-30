@@ -6,7 +6,7 @@
 
 class Camera {
 public:
-    Camera(const glm::vec3& position = glm::vec3(0.0f, 0.0f, 0.0f));
+    Camera(const glm::vec3& position, int width, int height);
 
     void HandleInput(const std::array<bool, GLFW_KEY_LAST>& keyPressed);
     void ProcessMouse(float xoffset, float yoffset);
@@ -19,6 +19,7 @@ public:
     glm::vec3 GetCameraSpeed();
     void UpdateFrustum();
     bool IsInFrustum(const glm::vec3& point);
+    void Resize(int width, int height);
 
 private:
     frustum::Frustum m_Frustum;

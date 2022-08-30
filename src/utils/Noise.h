@@ -1,8 +1,6 @@
 #pragma once
 #include "FastNoiseLite.h"
 
-// REMEMBER TO CHECK SCALE THINGY
-
 class Noise
 {
 public:

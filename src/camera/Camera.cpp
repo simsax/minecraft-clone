@@ -4,8 +4,8 @@
 #include "Constants.h"
 
 
-Camera::Camera(const glm::vec3& position)
-    : m_Frustum(ZNEAR, ZFAR, glm::radians(FOV), HEIGHT, WIDTH)
+Camera::Camera(const glm::vec3& position, int width, int height)
+    : m_Frustum(ZNEAR, ZFAR, glm::radians(FOV), width, height)
     , m_CameraPos(position)
     , m_CameraFront(glm::vec3(0.0f, 0.0f, -1.0f))
     , m_CameraUp(glm::vec3(0.0f, 1.0f, 0.0f))
@@ -86,4 +86,8 @@ bool Camera::IsInFrustum(const glm::vec3& point)
             return false;
     }
     return true;
+}
+
+void Camera::Resize(int width, int height) {
+    m_Frustum.Resize(width, height);
 }

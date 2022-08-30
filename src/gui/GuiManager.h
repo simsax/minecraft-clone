@@ -4,9 +4,11 @@
 
 class GuiManager {
 public:
-    void Init();
+    void Init(int width, int height);
+    void MakeGui(int width, int height);
     void Render();
     void PressKey(int key);
+    void Resize(int width, int height);
 
 private:
     GuiRenderer m_GuiRenderer;

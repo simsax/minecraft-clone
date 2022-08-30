@@ -4,14 +4,13 @@
 #include "../camera/Constants.h"
 
 Renderer::Renderer() :
-        m_Texture(std::string(SOURCE_DIR) + "/res/textures/terrain2.png"),
+        m_Texture(std::string(SOURCE_DIR) + "/res/textures/terrain.png"),
         m_View(glm::mat4()),
         m_SkyColor(glm::vec3()),
         m_Proj(glm::mat4()),
         m_Visibility(0.5f),
         m_Increment(0.5f),
-        m_DeltaTime(0.0f)
-{}
+        m_DeltaTime(0.0f) {}
 
 void Renderer::Clear() const { glClear(GL_COLOR_BUFFER_BIT); }
 
@@ -19,20 +18,21 @@ void Renderer::SetViewMatrix(const glm::mat4 &view) { m_View = view; }
 
 void Renderer::SetSkyColor(const glm::vec3 &skyColor) { m_SkyColor = skyColor; }
 
-void Renderer::Init() {
+void Renderer::Init(int width, int height) {
     m_Texture.Init();
-    m_Proj = glm::perspective(glm::radians(FOV), WIDTH / HEIGHT, ZNEAR, ZFAR);
+    m_Proj = glm::perspective(glm::radians(FOV),
+                              static_cast<float>(width) / static_cast<float>(height), ZNEAR, ZFAR);
     m_Shader.Init(std::string(SOURCE_DIR) + "/res/shaders/shader.vert",
-                                        std::string(SOURCE_DIR) + "/res/shaders/shader.frag");
+                  std::string(SOURCE_DIR) + "/res/shaders/shader.frag");
     m_Shader.Bind();
     m_Shader.SetUniform1i("u_Texture", 0);
 
     m_OutlineShader.Init(std::string(SOURCE_DIR) + "/res/shaders/shader_outline.vert",
-                                       std::string(SOURCE_DIR) +
-                                       "/res/shaders/shader_outline.frag");
+                         std::string(SOURCE_DIR) +
+                         "/res/shaders/shader_outline.frag");
 
-    m_OutlineShader.Bind();
-    m_OutlineShader.SetUniform1i("u_Texture", 0);
+//    m_OutlineShader.Bind();
+//    m_OutlineShader.SetUniform1i("u_Texture", 0);
 }
 
 void Renderer::Draw(
@@ -58,25 +58,25 @@ void Renderer::RenderOutline(
 //    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 //    glStencilFunc(GL_ALWAYS, 1, 0xFF);
 //    glStencilMask(0xFF);
-//    float scale = 1.001f;
-//    glm::mat4 model = glm::mat4(1.0f);
-//    model = glm::translate(model, glm::vec3(0.5 + i + chunkPos[0], 0.5 + j, 0.5 + k + chunkPos[2]));
-//    model = glm::scale(model, glm::vec3(scale));
-//    model = glm::translate(model,
-//                           glm::vec3(-0.5 - i - chunkPos[0], -0.5 - j, -0.5 - k - chunkPos[2]));
-//    glm::mat4 mvp = m_Proj * m_View * model;
+    float scale = 1.001f;
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.5 + i + chunkPos[0], 0.5 + j, 0.5 + k + chunkPos[2]));
+    model = glm::scale(model, glm::vec3(scale));
+    model = glm::translate(model,
+                           glm::vec3(-0.5 - i - chunkPos[0], -0.5 - j, -0.5 - k - chunkPos[2]));
+    glm::mat4 mvp = m_Proj * m_View * model;
     if (m_Visibility < 0.5f || m_Visibility > 1.0f)
         m_Increment *= -1.0f;
 
     m_Visibility += m_Increment * m_DeltaTime;
-    glm::mat4 mvp = m_Proj * m_View;
+//    glm::mat4 mvp = m_Proj * m_View;
 
     m_OutlineShader.Bind();
     m_OutlineShader.SetUniformMat4f("u_MVP", mvp);
     m_OutlineShader.SetUniform3fv("u_ChunkPos", chunkPos);
     m_OutlineShader.SetUniform1f("u_Visibility", m_Visibility);
 //    m_OutlineShader->SetUniform1i("u_Outline", false);
-    m_Texture.Bind(0);
+//    m_Texture.Bind(0);
     vao.Bind();
     ibo.Bind(vao.GetId());
     glDrawElements(GL_TRIANGLES, ibo.GetCount(), type, nullptr);
@@ -108,4 +108,9 @@ void Renderer::RenderOutline(
 
 void Renderer::SetDeltaTime(float deltaTime) {
     m_DeltaTime = deltaTime;
+}
+
+void Renderer::Resize(int width, int height) {
+    m_Proj = glm::perspective(glm::radians(FOV),
+                              static_cast<float>(width) / static_cast<float>(height), ZNEAR, ZFAR);
 }

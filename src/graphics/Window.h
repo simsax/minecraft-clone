@@ -17,13 +17,14 @@ private:
         GLsizei length, const GLchar* message, const void* userParam);
     static void ErrorCallback(int error, const char* msg);
     static void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
-    void ManageInput();
+    static void FramebufferSizeCallback(GLFWwindow* window, int width, int height);
 
     static bool firstMouse;
     static float lastX;
     static float lastY;
     static float mouseSensitivity;
     static bool wireframe;
+    static bool mouseCaptured;
 
     int m_Width;
     int m_Height;

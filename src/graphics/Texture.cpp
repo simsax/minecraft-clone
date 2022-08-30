@@ -1,7 +1,6 @@
 #include "Texture.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-#include <limits>
 
 int8_t Texture::m_TextureCount = 0;
 int8_t Texture::m_CurrentlyBound = -1;
@@ -59,7 +58,7 @@ Texture::Texture(Texture&& other)  noexcept {
     this->m_BPP = other.m_BPP;
     this->m_BindId = other.m_BindId;
     this->m_FilePath = other.m_FilePath;
-    other.m_TextureId = std::numeric_limits<uint32_t>::max();
+    other.m_TextureId = 0;
     other.m_BindId = -1;
 }
 
@@ -72,7 +71,7 @@ Texture &Texture::operator=(Texture &&other)  noexcept {
        this->m_BPP = other.m_BPP;
        this->m_BindId = other.m_BindId;
        this->m_FilePath = other.m_FilePath;
-       other.m_TextureId = std::numeric_limits<uint32_t>::max();
+       other.m_TextureId = 0;
        other.m_BindId = -1;
    }
    return *this;

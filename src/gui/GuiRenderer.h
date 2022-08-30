@@ -8,9 +8,10 @@
 
 class GuiRenderer {
 public:
-    void Init();
+    void Init(int width, int height);
     void Render(const Texture& texture, const glm::vec2& position,
         const glm::vec2& scale);
+    void Resize(int width, int height);
 
 private:
     Shader m_Shader;

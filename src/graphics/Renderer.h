@@ -9,7 +9,7 @@
 class Renderer {
 public:
     Renderer();
-    void Init();
+    void Init(int width, int height);
     void Draw(const VertexArray& vao, const IndexBuffer& ibo, GLenum type,
         const glm::vec3& chunkPos, uint32_t offset);
     void RenderOutline(const VertexArray& vao, const IndexBuffer& ibo, GLenum type,
@@ -18,6 +18,7 @@ public:
     void SetViewMatrix(const glm::mat4& mv);
     void SetSkyColor(const glm::vec3& skyColor);
     void SetDeltaTime(float deltaTime);
+    void Resize(int width, int height);
 
 private:
     Shader m_Shader;

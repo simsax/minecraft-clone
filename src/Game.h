@@ -14,9 +14,13 @@ public:
     void PressKey(int key);
     void ReleaseKey(int key);
     void Scroll(float offset);
+    int GetWidth() const;
+    int GetHeight() const;
 
     // debug
     glm::vec3 GetPlayerPosition();
+
+    void Resize(int width, int height);
 
 private:
     void CheckRayCast();
@@ -26,6 +30,8 @@ private:
     void Move(float deltaTime);
     void HandleInput();
 
+    int m_Width;
+    int m_Height;
     std::array<bool, GLFW_KEY_LAST> m_KeyPressed;
     bool m_Ground;
     Camera m_Camera;

@@ -48,7 +48,8 @@ Chunk::Chunk(const ChunkCoord &coords, const glm::vec3 &position, uint32_t maxVe
              ChunkMap *chunkMap)
         : m_HeightMap({}), m_Coords(coords), m_ChunkPosition(position),
           m_Chunk(Matrix3D<Block, XSIZE, YSIZE, ZSIZE>()), m_MaxVertexCount(maxVertexCount),
-          m_MinHeight(YSIZE), m_MaxHeight(0), m_IBOCount(0), m_TIBOCount(0), m_ChunkMap(chunkMap),
+          m_MinHeight(YSIZE), m_MaxHeight(0), m_IBOCount(0), m_TIBOCount(0), m_SIBOCount(0),
+          m_ChunkMap(chunkMap),
           m_CenterPosition({m_ChunkPosition.x + static_cast<float>(XSIZE) / 2, 0,
                             m_ChunkPosition.z + static_cast<float>(ZSIZE) / 2}) {
     m_VBO.Init(layout.GetStride(), bindingIndex);
@@ -56,6 +57,7 @@ Chunk::Chunk(const ChunkCoord &coords, const glm::vec3 &position, uint32_t maxVe
 
     m_Mesh.reserve(m_MaxVertexCount);
     m_TransparentMesh.reserve(maxVertexCount / 4);
+    m_SpriteMesh.reserve(2048); // 8 vertices * 16x16
     CreateHeightMap();
     FastFill();
 }
@@ -116,13 +118,14 @@ void Chunk::CreateHeightMap() {
             m_HeightMap[index++] = final_height;
         }
     }
+    m_MaxHeight += 1; // allow sprite generation
 }
 
 void Chunk::FastFill() {
     constexpr int level_size = XSIZE * ZSIZE;
     auto begin = m_Chunk.GetRawPtr();
     std::fill(begin, begin + level_size, Block::BEDROCK);
-    std::fill(begin + level_size, begin + level_size * m_MinHeight, Block::STONE);
+    std::fill(begin + level_size, begin + level_size * (m_MinHeight - 10), Block::STONE);
     std::fill(begin + level_size * (m_MaxHeight + 1), begin + level_size * YSIZE, Block::EMPTY);
 }
 
@@ -132,21 +135,17 @@ BlockVec Chunk::CreateSurfaceLayer(const BlockVec &blocksToSet) {
     constexpr int snow_level = 120;
     if (m_MaxHeight < water_level)
         m_MaxHeight = water_level;
-    for (int j = m_MinHeight; j <= m_MaxHeight; j++) {
+    for (int j = m_MinHeight - 10; j <= m_MaxHeight; j++) {
         int index = 0;
         for (int i = 0; i < XSIZE; i++) {
             for (int k = 0; k < ZSIZE; k++) {
                 int height = m_HeightMap[index++];
                 if (m_Chunk(i, j, k) != Block::WOOD && m_Chunk(i, j, k) != Block::LEAVES) {
                     if (j < height) {
-                        int dirtThickness
-                                = static_cast<int>((m_Noise.OctaveNoise(i + m_ChunkPosition.x + 111,
-                                                                        k + m_ChunkPosition.z + 111,
-                                                                        8)
-                                                    + 1)
-                                                   / 2 * 10)
-                                  - j;
-                        if (dirtThickness >= 0)
+                        float dirt = m_Noise.OctaveNoise(i + m_ChunkPosition.x + 11.1f,
+                                                                  k + m_ChunkPosition.z + 11.1f,
+                                                                  8);
+                        if (dirt >= 0)
                             m_Chunk(i, j, k) = Block::DIRT;
                         else
                             m_Chunk(i, j, k) = Block::STONE;
@@ -156,16 +155,33 @@ BlockVec Chunk::CreateSurfaceLayer(const BlockVec &blocksToSet) {
                                                       8);
                         if (j == water_level && noise_chance >= 0)
                             m_Chunk(i, j, k) = Block::SAND;
-                        else if (j < water_level) {
+                        else if (j < water_level && j > water_level - 3) {
                             if (noise_chance >= 0.2)
                                 m_Chunk(i, j, k) = Block::GRAVEL;
                             else
                                 m_Chunk(i, j, k) = Block::SAND;
+                        } else if (j <= water_level - 3) {
+                            float noise
+                                    = m_Noise.OctaveNoise(i + m_ChunkPosition.x + 11.1f,
+                                                          k + m_ChunkPosition.z + 11.1f,
+                                                          8);
+                            double rand = Random::GetRand<double>(0, 1);
+                            if (noise < -0.5)
+                                m_Chunk(i, j, k) = Block::SAND;
+                            else if (noise < 1.3)
+                                m_Chunk(i, j, k) = Block::WET_DIRT;
+                            else
+                                m_Chunk(i, j, k) = Block::GRAVEL;
                         } else if (j >= snow_level)
                             m_Chunk(i, j, k) = Block::SNOW;
-                        else if (j >= snow_level - 10 && noise_chance >= -0.2)
-                            m_Chunk(i, j, k) = Block::SNOWY_GRASS;
-                        else
+                        else if (j >= snow_level - 20 && noise_chance >= -0.2) {
+                            if (Random::GetRand<double>(0, 1) <
+                                (2.0f / static_cast<float>(snow_level - j)))
+                                m_Chunk(i, j, k) = Block::SNOWY_GRASS;
+                            else
+                                m_Chunk(i, j, k) = Block::GRASS;
+
+                        } else
                             m_Chunk(i, j, k) = Block::GRASS;
                     } else {
                         if (j < water_level)
@@ -226,19 +242,20 @@ void Chunk::CreateTrees(int i, int j, int k, BlockVec &blockVec) {
     }
 }
 
-// add bush, improve tree terrain generation
-// improve under-water blocks
-// and finally add lighting, AO, sun and moon and clouds
 void Chunk::CreateSprites(int i, int j, int k, BlockVec &blockVec) {
-    if (j > 0 && m_Chunk(i, j, k) == Block::EMPTY && m_Chunk(i, j - 1, k) == Block::GRASS && Random::GetRand<double>(0, 1) < 0.005) {
-        const float noise_chance = m_Noise.OctaveNoise(
-                i + m_ChunkPosition.x + 33.3f, k + m_ChunkPosition.z + 33.3f, 4, 0.008f);
-        if (noise_chance) {
-            if (Random::GetRand<double>(0, 1) < 0.6)
-                m_Chunk(i, j, k) = Block::FLOWER_BLUE;
-            else
-                m_Chunk(i, j, k) = Block::FLOWER_YELLOW;
-        }
+    if (j > 0 && m_Chunk(i, j, k) == Block::EMPTY && m_Chunk(i, j - 1, k) == Block::GRASS) {
+        if (Random::GetRand<double>(0, 1) < 0.005) {
+            const float noise_chance = m_Noise.OctaveNoise(
+                    i + m_ChunkPosition.x + 33.3f, k + m_ChunkPosition.z + 33.3f, 4, 0.008f);
+            if (noise_chance) {
+                if (Random::GetRand<double>(0, 1) < 0.6)
+                    m_Chunk(i, j, k) = Block::FLOWER_BLUE;
+                else
+                    m_Chunk(i, j, k) = Block::FLOWER_YELLOW;
+            }
+            return;
+        } else if (Random::GetRand<double>(0, 1) < 0.2)
+            m_Chunk(i, j, k) = Block::BUSH;
     }
 }
 
@@ -328,10 +345,8 @@ bool Chunk::FindNeighbors(std::array<Chunk *, 4> &neighbors) {
     return true;
 }
 
-// call this everytime player moves between blocks
-// cycling z and x from furthest to closest
 bool Chunk::GenerateMesh() {
-    if (m_Mesh.empty() && m_TransparentMesh.empty()) {
+    if (m_Mesh.empty() && m_TransparentMesh.empty() && m_SpriteMesh.empty()) {
         // retrieve the 4 pointers from the map and continue only if all of them exist
         std::array<Chunk *, 4> neighbors = {nullptr}; // west, north, east, south
         if (FindNeighbors(neighbors)) {
@@ -340,23 +355,27 @@ bool Chunk::GenerateMesh() {
             for (int j = m_MinHeight - 1; j <= m_MaxHeight; j++) {
                 for (int i = 0; i < XSIZE; i++) {
                     for (int k = 0; k < ZSIZE; k++) {
-//                        for (int i = XSIZE - 1; i >= 0; i--) {
-//                            for (int k = ZSIZE - 1; k >= 0; k--) {
-                        if (m_Chunk(i, j, k) != Block::EMPTY) {
-                            std::array<uint8_t, 6> textureCoords
-                                    = s_TextureMap.at(m_Chunk(i, j, k));
-                            if (m_Chunk(i, j, k) == Block::FLOWER_BLUE
-                                || m_Chunk(i, j, k) == Block::FLOWER_YELLOW) {
-                                GenSprite(i, j, k, m_TransparentMesh, textureCoords);
-                            } else if (m_Chunk(i, j, k) != Block::WATER
-                                       && m_Chunk(i, j, k) != Block::LEAVES) {
+                        std::array<uint8_t, 6> textureCoords
+                                = s_TextureMap.at(m_Chunk(i, j, k));
+                        switch (m_Chunk(i, j, k)) {
+                            case Block::EMPTY:
+                                break;
+                            case Block::FLOWER_YELLOW:
+                            case Block::FLOWER_BLUE:
+                            case Block::BUSH:
+                                GenSprite(i, j, k, m_SpriteMesh, textureCoords);
+                                break;
+                            case Block::WATER:
+                            case Block::LEAVES:
+                                GenCube(i, j, k, m_TransparentMesh, textureCoords, neighbors,
+                                        Block::EMPTY, Block::FLOWER_BLUE, Block::FLOWER_YELLOW,
+                                        Block::BUSH);
+                                break;
+                            default:
                                 GenCube(i, j, k, m_Mesh, textureCoords, neighbors, Block::EMPTY,
                                         Block::LEAVES, Block::WATER, Block::FLOWER_BLUE,
-                                        Block::FLOWER_YELLOW);
-                            } else {
-                                GenCube(i, j, k, m_TransparentMesh, textureCoords, neighbors,
-                                        Block::EMPTY, Block::FLOWER_BLUE, Block::FLOWER_YELLOW);
-                            }
+                                        Block::FLOWER_YELLOW, Block::BUSH);
+                                break;
                         }
                     }
                 }
@@ -365,13 +384,22 @@ bool Chunk::GenerateMesh() {
             size_t indexCount = m_Mesh.size() / 4 * 6; // num faces * 6
             m_IBOCount = indexCount;
             uint32_t solidSize = m_Mesh.size() * sizeof(uint32_t);
+            uint32_t transSize = 0;
             m_VBO.SendData(solidSize, m_Mesh.data(), 0);
 
             if (!m_TransparentMesh.empty()) {
                 indexCount = m_TransparentMesh.size() / 4 * 6;
                 m_TIBOCount = indexCount;
-                m_VBO.SendData(m_TransparentMesh.size() * sizeof(uint32_t),
+                transSize = m_TransparentMesh.size() * sizeof(uint32_t);
+                m_VBO.SendData(transSize,
                                m_TransparentMesh.data(), solidSize);
+            }
+            if (!m_SpriteMesh.empty()) {
+                uint32_t offset = solidSize + transSize;
+                indexCount = m_SpriteMesh.size() / 4 * 6;
+                m_SIBOCount = indexCount;
+                m_VBO.SendData(m_SpriteMesh.size() * sizeof(uint32_t),
+                               m_SpriteMesh.data(), offset);
             }
             return true;
         } else
@@ -380,7 +408,9 @@ bool Chunk::GenerateMesh() {
     return true;
 }
 
-void Chunk::Render(Renderer &renderer, const VertexArray &vao, IndexBuffer &ibo) {
+void
+Chunk::Render(Renderer &renderer, const VertexArray &vao, IndexBuffer &ibo, ChunkCoord playerChunk,
+              int radius) {
     ibo.SetCount(m_IBOCount);
     m_VBO.Bind(vao.GetId());
     renderer.Draw(vao, ibo, GL_UNSIGNED_INT, m_ChunkPosition, 0);
@@ -390,8 +420,13 @@ void Chunk::Render(Renderer &renderer, const VertexArray &vao, IndexBuffer &ibo)
         renderer.Draw(vao, ibo, GL_UNSIGNED_INT, m_ChunkPosition, m_Mesh.size());
         glEnable(GL_CULL_FACE);
     }
-    // pass in the current player position to this method,
-    // create a sprite mesh and avoid rendering it for far chunks
+    if (!m_SpriteMesh.empty() && ChunkIsVisible(playerChunk, radius)) {
+        ibo.SetCount(m_SIBOCount);
+        glDisable(GL_CULL_FACE);
+        renderer.Draw(vao, ibo, GL_UNSIGNED_INT, m_ChunkPosition,
+                      m_Mesh.size() + m_TransparentMesh.size());
+        glEnable(GL_CULL_FACE);
+    }
 }
 
 void Chunk::RenderOutline(Renderer &renderer, const VertexArray &vao, VertexBuffer &vbo,
@@ -401,9 +436,7 @@ void Chunk::RenderOutline(Renderer &renderer, const VertexArray &vao, VertexBuff
         int i = target.x;
         int j = target.y;
         int k = target.z;
-        if (m_Chunk(i, j, k) != Block::EMPTY && m_Chunk(i, j, k) != Block::WATER
-            && m_Chunk(i, j, k) != Block::LEAVES && m_Chunk(i, j, k) != Block::FLOWER_BLUE
-            && m_Chunk(i, j, k) != Block::FLOWER_YELLOW) {
+        if (m_Chunk(i, j, k) != Block::EMPTY && m_Chunk(i, j, k) != Block::WATER) {
             std::vector<uint32_t> outlineMesh;
             std::array<uint8_t, 6> textureCoords = s_TextureMap.at(m_Chunk(i, j, k));
             GenCube(i, j, k, outlineMesh, textureCoords, neighbors, Block::EMPTY, Block::LEAVES,
@@ -435,6 +468,7 @@ void Chunk::SetBlock(uint32_t x, uint32_t y, uint32_t z, Block block) {
 void Chunk::ClearMesh() {
     m_Mesh.clear();
     m_TransparentMesh.clear();
+    m_SpriteMesh.clear();
 }
 
 glm::vec3 Chunk::GetCenterPosition() const { return m_CenterPosition; }
@@ -448,12 +482,12 @@ void Chunk::SetBlocks(const BlockVec &blocksToSet) {
 
 ChunkCoord Chunk::GetCoord() const { return m_Coords; }
 
-bool Chunk::NotVisible(ChunkCoord playerChunk, int radius) const {
+bool Chunk::ChunkIsVisible(ChunkCoord playerChunk, int radius) const {
     if (std::abs(playerChunk.x - m_Coords.x) > radius
         || std::abs(playerChunk.z - m_Coords.z) > radius)
-        return true;
-    else
         return false;
+    else
+        return true;
 }
 
 void Chunk::UpdateMeshHeighLimit(uint32_t height) {
@@ -464,6 +498,7 @@ void Chunk::UpdateMeshHeighLimit(uint32_t height) {
 }
 
 const std::unordered_map<Block, std::array<uint8_t, 6>> Chunk::s_TextureMap = { // top, side, bottom
+        {Block::EMPTY,         {0,  0,  0,  0,  0,  0}},
         {Block::GRASS,         {12, 3,  3,  15, 2,  15}},
         {Block::DIRT,          {2,  15, 2,  15, 2,  15}},
         {Block::STONE,         {1,  15, 1,  15, 1,  15}},
@@ -481,4 +516,7 @@ const std::unordered_map<Block, std::array<uint8_t, 6>> Chunk::s_TextureMap = { 
         {Block::BEDROCK,       {1,  14, 1,  14, 1,  14}},
         {Block::FLOWER_BLUE,   {12, 15, 12, 15, 12, 15}},
         {Block::FLOWER_YELLOW, {13, 15, 13, 15, 13, 15}},
+        {Block::BUSH,          {14, 4,  14, 4,  14, 4}},
+        {Block::WET_DIRT,      {6,  10, 6,  10, 6,  10}},
+        {Block::TERRACOTTA,    {15, 14, 15, 14, 15, 14}},
 };

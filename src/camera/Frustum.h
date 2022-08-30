@@ -17,17 +17,19 @@ struct Plane {
 
 class Frustum {
 public:
-    Frustum(float znear, float zfar, float fov, float height, float width);
+    Frustum(float znear, float zfar, float fov, int width, int height);
     std::array<Plane, 6> GeneratePlanes(
         const glm::vec3& cameraPos, const glm::vec3& cameraFront, const glm::vec3& cameraUp);
+
+    void Resize(int width, int height);
 
 private:
     enum P { TOP, BOTTOM, LEFT, RIGHT, NEARP, FARP };
     float m_Znear;
     float m_Zfar;
     float m_Fov;
-    float m_Height;
-    float m_Width;
+    int m_Width;
+    int m_Height;
     float m_Ratio;
     float m_TanFOV;
 };

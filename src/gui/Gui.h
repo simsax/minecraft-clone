@@ -1,4 +1,5 @@
 #pragma once
+
 #include "GL/glew.h"
 #include <memory>
 #include "../graphics/Texture.h"
@@ -6,11 +7,17 @@
 
 class Gui {
 public:
-    Gui(std::string name, const std::string& texturePath, const glm::vec2& scale, const glm::vec2& position);
-    Texture & GetTexture();
+    Gui(std::string name, const std::string &texturePath, const glm::vec2 &scale,
+        const glm::vec2 &position);
+
+    Texture &GetTexture();
+
     glm::vec2 GetScale() const;
+
     glm::vec2 GetPosition() const;
-    void SetPosition(const glm::vec2& position);
+
+    void SetPosition(const glm::vec2 &position);
+
     std::string GetName() const;
 
 private:

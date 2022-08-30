@@ -8,7 +8,7 @@ using namespace std::chrono_literals;
 #define MAX_INDEX_COUNT 18432 // each cube has 6 faces, each face has 6 indexes
 #define MAX_VERTEX_COUNT 24000 // each cube has 6 faces, each face has 4 vertices
 #define VIEW_DISTANCE 24 // how far the player sees
-#define MAX_CHUNK_TO_LOAD 32
+#define MAX_CHUNK_TO_LOAD 16
 #define PLAYER_HALF_WIDTH 0.3f
 #define PLAYER_TOP_HEIGHT 0.2f
 #define PLAYER_BOTTOM_HEIGHT 1.6f
@@ -64,19 +64,19 @@ void ChunkManager::Render(Renderer &renderer) {
         SortChunks();
     }
 
-    if (m_Raycast.selected) {
-        m_OutlineVBO.Bind(m_VAO.GetId());
-        m_Raycast.chunk->RenderOutline(renderer, m_VAO, m_OutlineVBO, m_IBO, m_Raycast.localVoxel);
-    }
     // frustum culling
     m_Camera->UpdateFrustum();
+    ChunkCoord playerChunk = CalculateChunkCoord(m_Camera->GetPlayerPosition());
+    constexpr int radius = 20;
     for (Chunk *chunk: m_ChunksToRender) {
         glm::vec3 center = chunk->GetCenterPosition();
         if (m_Camera->IsInFrustum(center))
-            chunk->Render(renderer, m_VAO, m_IBO);
-        if (chunk->GetCenterPosition() == glm::vec3(8, 0, -8)) {
-            chunk->Render(renderer, m_VAO, m_IBO);
-        }
+            chunk->Render(renderer, m_VAO, m_IBO, playerChunk, radius);
+    }
+
+    if (m_Raycast.selected) {
+        m_OutlineVBO.Bind(m_VAO.GetId());
+        m_Raycast.chunk->RenderOutline(renderer, m_VAO, m_OutlineVBO, m_IBO, m_Raycast.localVoxel);
     }
 }
 
@@ -218,14 +218,24 @@ void ChunkManager::DestroyBlock() {
 }
 
 void ChunkManager::PlaceBlock(Block block) {
+    glm::uvec3 localVoxel = m_Raycast.localVoxel;
+    ChunkCoord chunkCoord = m_Raycast.chunkCoord;
+    glm::vec3 globalVoxel = m_Raycast.globalVoxel;
+    Block target = m_Raycast.chunk->GetBlock(localVoxel[0], localVoxel[1], localVoxel[2]);
+    if (target != Block::FLOWER_BLUE &&
+        target != Block::FLOWER_YELLOW &&
+        target != Block::BUSH) {
+        localVoxel = m_Raycast.prevLocalVoxel;
+        chunkCoord = m_Raycast.prevChunkCoord;
+        globalVoxel = m_Raycast.prevGlobalVoxel;
+    }
     if (!physics::Intersect(
             physics::CreatePlayerAabb(m_Camera->GetPlayerPosition()),
-            physics::CreateBlockAabb(m_Raycast.prevGlobalVoxel))) {
-        m_Raycast.prevChunk->SetBlock(m_Raycast.prevLocalVoxel[0], m_Raycast.prevLocalVoxel[1],
-                                      m_Raycast.prevLocalVoxel[2], block);
-        m_ChunksToUpload.insert(m_Raycast.prevChunkCoord);
+            physics::CreateBlockAabb(globalVoxel))) {
+        m_Raycast.prevChunk->SetBlock(localVoxel[0], localVoxel[1], localVoxel[2], block);
+        m_ChunksToUpload.insert(chunkCoord);
         // check if the target is in the chunk border
-        UpdateNeighbors(m_Raycast.prevLocalVoxel, m_Raycast.prevChunkCoord);
+        UpdateNeighbors(localVoxel, chunkCoord);
     }
 }
 
@@ -276,7 +286,8 @@ bool ChunkManager::CalculateCollision(const glm::vec3 &playerSpeed) {
                     Block block = chunk->GetBlock(
                             localPos.second[0], localPos.second[1], localPos.second[2]);
                     if (block != Block::EMPTY && block != Block::WATER &&
-                        block != Block::FLOWER_BLUE && block != Block::FLOWER_YELLOW) {
+                        block != Block::FLOWER_BLUE && block != Block::FLOWER_YELLOW
+                        && block != Block::BUSH) {
                         physics::Aabb blockBbox = physics::CreateBlockAabb({i, j, k});
                         physics::SnapAabb(playerBbox, blockBbox, playerSpeed, currentPosition);
                         return true;

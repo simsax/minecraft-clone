@@ -3,10 +3,9 @@
 
 int main()
 {
-    Game* game = new Game;
-    Window window(game, 1920, 1080, "Minecraft 2");
+    Game game;
+    Window window(&game, game.GetWidth(), game.GetHeight(), "Minecraft clone");
     window.WindowLoop();
-    delete game;
 
     return 0;
 }

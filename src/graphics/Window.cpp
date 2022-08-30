@@ -7,13 +7,10 @@ float Window::lastX = 960.0f;
 float Window::lastY = 540.0f;
 float Window::mouseSensitivity = 0.1f;
 bool Window::wireframe = false;
+bool Window::mouseCaptured = true;
 
-Window::Window(Game* game, int width, int height, const char* name)
-    : m_Game(game)
-    , m_Width(width)
-    , m_Height(height)
-    , m_Name(name)
-{
+Window::Window(Game *game, int width, int height, const char *name)
+        : m_Game(game), m_Width(width), m_Height(height), m_Name(name) {
     glfwSetErrorCallback(ErrorCallback);
     // initialize GLFW
     if (!glfwInit()) {
@@ -42,11 +39,14 @@ Window::Window(Game* game, int width, int height, const char* name)
     }
     std::cout << glGetString(GL_VERSION) << std::endl;
 
+    // set callbacks
     glfwSetCursorPosCallback(m_Window, MouseCallback);
     glfwSetMouseButtonCallback(m_Window, MouseButtonCallback);
     glfwSetKeyCallback(m_Window, KeyCallback);
-    glfwSetWindowUserPointer(m_Window, (void*)m_Game);
+    glfwSetWindowUserPointer(m_Window, (void *) m_Game);
     glfwSetScrollCallback(m_Window, ScrollCallback);
+    glfwSetFramebufferSizeCallback(m_Window, FramebufferSizeCallback);
+
     // capture cursor in the center and hide it
     glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -61,8 +61,7 @@ Window::Window(Game* game, int width, int height, const char* name)
     m_Game->Init();
 }
 
-void Window::WindowLoop()
-{
+void Window::WindowLoop() {
     float currentFrame = 0.0f, deltaTime = 0.0f, lastFrame = 0.0f;
     //#ifndef NDEBUG
     float prevTime = 0.0f, crntTime = 0.0f;
@@ -81,8 +80,9 @@ void Window::WindowLoop()
             std::string ms = std::to_string(1000.0 / nFrames);
             glm::vec3 playerPos = m_Game->GetPlayerPosition();
             std::string newTitle = "Minecraft 2 - " + fps + "FPS / " + ms + "ms"
-                + "  -  PlayerPos: " + std::to_string(playerPos.x) + ","
-                + std::to_string(playerPos.y) + "," + std::to_string(playerPos.z);
+                                   + "  -  PlayerPos: " + std::to_string(playerPos.x) + ","
+                                   + std::to_string(playerPos.y) + "," +
+                                   std::to_string(playerPos.z);
             glfwSetWindowTitle(m_Window, newTitle.c_str());
             prevTime = crntTime;
             nFrames = 0;
@@ -100,10 +100,9 @@ void Window::WindowLoop()
 }
 
 // camera input
-void Window::MouseCallback(GLFWwindow* window, double xpos, double ypos)
-{
-    Game* game;
-    game = (Game*)glfwGetWindowUserPointer(window);
+void Window::MouseCallback(GLFWwindow *window, double xpos, double ypos) {
+    Game *game;
+    game = (Game *) glfwGetWindowUserPointer(window);
     if (firstMouse) {
         lastX = static_cast<float>(xpos);
         lastY = static_cast<float>(ypos);
@@ -113,17 +112,16 @@ void Window::MouseCallback(GLFWwindow* window, double xpos, double ypos)
     // calculate offset between current mouse position and mouse position in the previous frame
     float xoffset = (static_cast<float>(xpos) - lastX) * mouseSensitivity;
     float yoffset = (lastY - static_cast<float>(ypos))
-        * mouseSensitivity; // y-coords range from bottom to top
+                    * mouseSensitivity; // y-coords range from bottom to top
     lastX = static_cast<float>(xpos);
     lastY = static_cast<float>(ypos);
 
     game->ProcessMouse(xoffset, yoffset);
 }
 
-void Window::MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
-{
-    Game* game;
-    game = (Game*)glfwGetWindowUserPointer(window);
+void Window::MouseButtonCallback(GLFWwindow *window, int button, int action, int mods) {
+    Game *game;
+    game = (Game *) glfwGetWindowUserPointer(window);
 
     if (action == GLFW_PRESS)
         game->PressKey(button);
@@ -131,14 +129,17 @@ void Window::MouseButtonCallback(GLFWwindow* window, int button, int action, int
         game->ReleaseKey(button);
 }
 
-void Window::KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-    Game* game;
-    game = (Game*)glfwGetWindowUserPointer(window);
+void Window::KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+    Game *game;
+    game = (Game *) glfwGetWindowUserPointer(window);
 
-    if (key == GLFW_KEY_CAPS_LOCK && action == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-    // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+        if (mouseCaptured)
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        else
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        mouseCaptured = !mouseCaptured;
+    }
     if (key == GLFW_KEY_Z && action == GLFW_PRESS) { // toggle wireframe mode
         wireframe = !wireframe;
         if (wireframe)
@@ -155,22 +156,27 @@ void Window::KeyCallback(GLFWwindow* window, int key, int scancode, int action, 
 }
 
 void GLAPIENTRY Window::MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity,
-    GLsizei length, const GLchar* message, const void* userParam)
-{
+                                        GLsizei length, const GLchar *message,
+                                        const void *userParam) {
     fprintf(stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
-        (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""), type, severity, message);
+            (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""), type, severity, message);
 }
 
-void Window::ErrorCallback(int error, const char* msg)
-{
+void Window::ErrorCallback(int error, const char *msg) {
     std::string s;
     s = " [" + std::to_string(error) + "] " + msg + '\n';
     std::cerr << s << std::endl;
 }
 
-void Window::ScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
-{
-    Game* game;
-    game = (Game*)glfwGetWindowUserPointer(window);
+void Window::ScrollCallback(GLFWwindow *window, double xoffset, double yoffset) {
+    Game *game;
+    game = (Game *) glfwGetWindowUserPointer(window);
     game->Scroll(yoffset);
+}
+
+void Window::FramebufferSizeCallback(GLFWwindow *window, int width, int height) {
+    Game *game;
+    game = (Game *) glfwGetWindowUserPointer(window);
+    glViewport(0, 0, width, height);
+    game->Resize(width, height);
 }

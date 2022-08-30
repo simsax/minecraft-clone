@@ -2,7 +2,8 @@
 #include <iostream>
 
 Game::Game()
-        : m_KeyPressed({}), m_Ground(false), m_Camera(glm::vec3(0.0f, 0.0f, 0.0f)),
+        : m_Width(1920), m_Height(1080), m_KeyPressed({}), m_Ground(false),
+          m_Camera(glm::vec3(0.0f, 0.0f, 0.0f), 1920, 1080),
           m_ChunkManager(&m_Camera),
           m_Blocks(std::vector({Block::DIRT, Block::GRASS, Block::SAND, Block::SNOW, Block::STONE,
                                 Block::WOOD, Block::DIAMOND, Block::EMPTY, Block::EMPTY})),
@@ -20,9 +21,9 @@ void Game::Init() {
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
 
-    m_Renderer.Init();
+    m_Renderer.Init(m_Width, m_Height);
+    m_GuiManager.Init(m_Width, m_Height);
     m_ChunkManager.InitWorld();
-    m_GuiManager.Init();
 
     // spawn player over a block
     m_Camera.GetPlayerPosition().y += static_cast<float>(m_ChunkManager.SpawnHeight());
@@ -239,4 +240,20 @@ void Game::UpdateChunks() {
 
 glm::vec3 Game::GetPlayerPosition() {
     return m_Camera.GetPlayerPosition();
+}
+
+void Game::Resize(int width, int height) {
+    m_Width = width;
+    m_Height = height;
+    m_Camera.Resize(m_Width, m_Height);
+    m_Renderer.Resize(m_Width, m_Height);
+    m_GuiManager.Resize(m_Width, m_Height);
+}
+
+int Game::GetWidth() const {
+    return m_Width;
+}
+
+int Game::GetHeight() const {
+    return m_Height;
 }
