@@ -155,7 +155,7 @@ void Game::ApplyGravity(float deltaTime) {
 }
 
 void Game::Jump() {
-    constexpr float jump = 10.0f;
+    static constexpr float jump = 10.0f;
     m_VerticalVelocity = jump;
     m_Ground = false;
 }

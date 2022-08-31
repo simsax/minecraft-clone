@@ -32,7 +32,7 @@ static void CreateQuad(std::vector<uint32_t> &target, const glm::uvec3 &position
                        const glm::uvec2 &textureCoords, const glm::uvec4 &offsetx,
                        const glm::uvec4 &offsety,
                        const glm::uvec4 &offsetz) {
-    constexpr int vertices = 4;
+    static constexpr int vertices = 4;
     std::array<uint32_t, vertices> t = GenerateTextCoords({textureCoords[0], textureCoords[1]});
 
     for (int i = 0; i < vertices; i++) {
@@ -63,7 +63,7 @@ Chunk::Chunk(const ChunkCoord &coords, const glm::vec3 &position, uint32_t maxVe
 }
 
 float Chunk::Continentalness(int x, int y) {
-    constexpr float scale = 256.0f;
+    static constexpr float scale = 256.0f;
     float height = 0;
 
     float noise = m_Noise.OctaveNoise(x, y, 8, 0.01f);
@@ -83,7 +83,7 @@ float Chunk::Continentalness(int x, int y) {
 }
 
 void Chunk::CreateHeightMap() {
-    constexpr int elevation = 50; // increase for less water
+    static constexpr int elevation = 50; // increase for less water
     int index = 0;
 
     for (int i = 0; i < XSIZE; i++) {
@@ -122,7 +122,7 @@ void Chunk::CreateHeightMap() {
 }
 
 void Chunk::FastFill() {
-    constexpr int level_size = XSIZE * ZSIZE;
+    static constexpr int level_size = XSIZE * ZSIZE;
     auto begin = m_Chunk.GetRawPtr();
     std::fill(begin, begin + level_size, Block::BEDROCK);
     std::fill(begin + level_size, begin + level_size * (m_MinHeight - 10), Block::STONE);
@@ -131,8 +131,8 @@ void Chunk::FastFill() {
 
 BlockVec Chunk::CreateSurfaceLayer(const BlockVec &blocksToSet) {
     BlockVec blockVec = {};
-    constexpr int water_level = 63;
-    constexpr int snow_level = 120;
+    static constexpr int water_level = 63;
+    static constexpr int snow_level = 120;
     if (m_MaxHeight < water_level)
         m_MaxHeight = water_level;
     for (int j = m_MinHeight - 10; j <= m_MaxHeight; j++) {
@@ -169,7 +169,7 @@ BlockVec Chunk::CreateSurfaceLayer(const BlockVec &blocksToSet) {
                             if (noise < -0.5)
                                 m_Chunk(i, j, k) = Block::SAND;
                             else if (noise < 1.3)
-                                m_Chunk(i, j, k) = Block::WET_DIRT;
+                                m_Chunk(i, j, k) = Block::DIRT;
                             else
                                 m_Chunk(i, j, k) = Block::GRAVEL;
                         } else if (j >= snow_level)
@@ -273,10 +273,10 @@ void Chunk::GenCube(int i, int j, int k, std::vector<uint32_t> &target,
                     const std::array<uint8_t, 6> &textureCoords,
                     const std::array<Chunk *, 4> &neighbors,
                     Args... voidBlocks) {
-    constexpr int west = 0;
-    constexpr int north = 1;
-    constexpr int east = 2;
-    constexpr int south = 3;
+    static constexpr int west = 0;
+    static constexpr int north = 1;
+    static constexpr int east = 2;
+    static constexpr int south = 3;
 
     if (j == 0 || (j > 0 && ((m_Chunk(i, j - 1, k) == voidBlocks) || ...))) {
         CreateQuad(target, {i, j, k}, {textureCoords[4], textureCoords[5]}, // D
@@ -311,11 +311,11 @@ void Chunk::GenCube(int i, int j, int k, std::vector<uint32_t> &target,
 static void GenSprite(
         int i, int j, int k, std::vector<uint32_t> &target,
         const std::array<uint8_t, 6> &textureCoords) {
-    constexpr int vertices = 4;
+    static constexpr int vertices = 4;
+    static constexpr std::array<uint8_t, 8> offsetx = {0, 1, 1, 0, 0, 1, 1, 0};
+    static constexpr std::array<uint8_t, 8> offsety = {0, 0, 1, 1, 0, 0, 1, 1};
+    static constexpr std::array<uint8_t, 8> offsetz = {0, 1, 1, 0, 1, 0, 0, 1};
     std::array<uint32_t, vertices> t = GenerateTextCoords({textureCoords[0], textureCoords[1]});
-    constexpr std::array<uint8_t, 8> offsetx = {0, 1, 1, 0, 0, 1, 1, 0};
-    constexpr std::array<uint8_t, 8> offsety = {0, 0, 1, 1, 0, 0, 1, 1};
-    constexpr std::array<uint8_t, 8> offsetz = {0, 1, 1, 0, 1, 0, 0, 1};
 
     for (int n = 0; n < 8; n++) {
         uint32_t v

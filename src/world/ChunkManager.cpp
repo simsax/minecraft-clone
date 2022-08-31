@@ -67,7 +67,7 @@ void ChunkManager::Render(Renderer &renderer) {
     // frustum culling
     m_Camera->UpdateFrustum();
     ChunkCoord playerChunk = CalculateChunkCoord(m_Camera->GetPlayerPosition());
-    constexpr int radius = 20;
+    static constexpr int radius = 20;
     for (Chunk *chunk: m_ChunksToRender) {
         glm::vec3 center = chunk->GetCenterPosition();
         if (m_Camera->IsInFrustum(center))

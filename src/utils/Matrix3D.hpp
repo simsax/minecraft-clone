@@ -1,6 +1,8 @@
 #pragma once
-#include <stdexcept>
 #include <cstring>
+#include <cassert>
+#include <algorithm>
+#define assertm(exp, msg) assert(((void)msg, exp))
 
 template <typename T, size_t X, size_t Y, size_t Z> class Matrix3D {
 public:
@@ -37,12 +39,9 @@ static uint32_t MyLog2(uint32_t x)
 
 template <typename T, size_t X, size_t Y, size_t Z> inline Matrix3D<T, X, Y, Z>::Matrix3D()
 {
-#ifndef NDEBUG
-    if (X == 0 || Y == 0 || Z == 0)
-        throw std::logic_error("Size must be higher than 0.");
-    if ((X & (X - 1)) != 0 || (Z & (Z - 1)) != 0)
-        throw std::logic_error("X and Z sizes must be power of 2");
-#endif
+    static_assert(X != 0 && Y != 0 && Z != 0, "Size must be higher than 0.");
+    static_assert((X & (X - 1)) == 0 && (Z & (Z - 1)) == 0, "X and Z sizes must be power of 2");
+
     m_Data = new T[X * Y * Z];
     m_Log2Z = MyLog2(Z);
     m_Log2XZSize = MyLog2(X * Z);
@@ -86,19 +85,13 @@ template <typename T, size_t X, size_t Y, size_t Z> inline T* Matrix3D<T, X, Y, 
 template <typename T, size_t X, size_t Y, size_t Z>
 inline T& Matrix3D<T, X, Y, Z>::operator()(uint32_t i, uint32_t j, uint32_t k)
 {
-#ifndef NDEBUG
-    if (i >= X || j >= Y || k >= Z)
-        throw std::logic_error("Matrix3D index out of bounds.");
-#endif
+    assertm(i <= X && j <= Y && k <= Z, "Matrix3D index out of bounds.");
     return m_Data[(j << m_Log2XZSize) + (i << m_Log2Z) + k];
 }
 
 template <typename T, size_t X, size_t Y, size_t Z>
 inline T Matrix3D<T, X, Y, Z>::operator()(uint32_t i, uint32_t j, uint32_t k) const
 {
-#ifndef NDEBUG
-    if (i >= X || j >= Y || k >= Z)
-        throw std::logic_error("Matrix3D index out of bounds.");
-#endif
+    assertm(i <= X && j <= Y && k <= Z, "Matrix3D index out of bounds.");
     return m_Data[(j << m_Log2XZSize) + (i << m_Log2Z) + k];
 }
