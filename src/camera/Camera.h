@@ -31,4 +31,5 @@ private:
     float yaw;
     float pitch;
     bool m_FlyMode;
+    float m_Speed;
 };

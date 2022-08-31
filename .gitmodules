@@ -7,3 +7,6 @@
 [submodule "extern/glew"]
 	path = extern/glew
 	url = https://github.com/Perlmint/glew-cmake.git
+[submodule "extern/fastnoise2"]
+	path = extern/fastnoise2
+	url = https://github.com/Auburn/FastNoise2.git

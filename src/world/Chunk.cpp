@@ -66,7 +66,7 @@ float Chunk::Continentalness(int x, int y) {
     static constexpr float scale = 256.0f;
     float height = 0;
 
-    float noise = m_Noise.OctaveNoise(x, y, 8, 0.01f);
+    float noise = m_Noise.OctaveNoiseSingle(y, x, 8, 0.01f);
 
     if (noise < 0.3) {
         // height = (noise + 2.3f) / 0.026f;
@@ -86,17 +86,17 @@ void Chunk::CreateHeightMap() {
     static constexpr int elevation = 50; // increase for less water
     int index = 0;
 
+    std::array<float, ZSIZE * XSIZE> noiseMapA = m_Noise.OctaveNoiseGrid<ZSIZE, XSIZE>(
+            m_ChunkPosition.z, m_ChunkPosition.x, 6, 0.002f);
+    std::array<float, XSIZE * ZSIZE> noiseMapM = m_Noise.OctaveNoiseGrid<XSIZE, ZSIZE>(
+            m_ChunkPosition.z + 12.3f, m_ChunkPosition.x + 12.3f, 8, 0.01f);
+
+    int n = 0;
     for (int i = 0; i < XSIZE; i++) {
         for (int k = 0; k < ZSIZE; k++) {
-            float a
-                    =
-                    (m_Noise.OctaveNoise(i + m_ChunkPosition.x, k + m_ChunkPosition.z, 6, 0.002f) +
-                     1)
-                    / 2;
-            float m = (m_Noise.OctaveNoise(
-                    i + m_ChunkPosition.x + 123, k + m_ChunkPosition.z + 456, 8, 0.01f)
-                       + 1)
-                      / 2;
+            float a = (noiseMapA[n] + 1) * 0.5f;
+            float m = (noiseMapM[n] + 1) * 0.5f;
+            n++;
             a *= a;
             float terrain_height;
             if (a < 0.5)
@@ -105,10 +105,10 @@ void Chunk::CreateHeightMap() {
                 terrain_height = m * (1 - (1 - a) * (1 - a) * 2);
             terrain_height *= 200.0f;
             terrain_height = static_cast<int>(terrain_height + elevation);
-            if (terrain_height < 40)
-                terrain_height = 40;
+//            if (terrain_height < 40)
+//                terrain_height = 40;
             int height = static_cast<int>(
-                    m_Noise.OctaveNoise(i + m_ChunkPosition.x, k + m_ChunkPosition.z, 8) * 5.0f);
+                    m_Noise.OctaveNoiseSingle(k + m_ChunkPosition.z, i + m_ChunkPosition.x, 8) * 5.0f);
 
             int final_height = height + terrain_height;
             if (final_height > YSIZE)
@@ -142,16 +142,16 @@ BlockVec Chunk::CreateSurfaceLayer(const BlockVec &blocksToSet) {
                 int height = m_HeightMap[index++];
                 if (m_Chunk(i, j, k) != Block::WOOD && m_Chunk(i, j, k) != Block::LEAVES) {
                     if (j < height) {
-                        float dirt = m_Noise.OctaveNoise(i + m_ChunkPosition.x + 11.1f,
-                                                                  k + m_ChunkPosition.z + 11.1f,
-                                                                  8);
+                        float dirt = m_Noise.OctaveNoiseSingle(k + m_ChunkPosition.z + 11.1f,
+                                                         i + m_ChunkPosition.x + 11.1f,
+                                                         8);
                         if (dirt >= 0)
                             m_Chunk(i, j, k) = Block::DIRT;
                         else
                             m_Chunk(i, j, k) = Block::STONE;
                     } else if (j == height) {
                         float noise_chance
-                                = m_Noise.OctaveNoise(i + m_ChunkPosition.x, k + m_ChunkPosition.z,
+                                = m_Noise.OctaveNoiseSingle(k + m_ChunkPosition.z, i + m_ChunkPosition.x,
                                                       8);
                         if (j == water_level && noise_chance >= 0)
                             m_Chunk(i, j, k) = Block::SAND;
@@ -162,8 +162,8 @@ BlockVec Chunk::CreateSurfaceLayer(const BlockVec &blocksToSet) {
                                 m_Chunk(i, j, k) = Block::SAND;
                         } else if (j <= water_level - 3) {
                             float noise
-                                    = m_Noise.OctaveNoise(i + m_ChunkPosition.x + 11.1f,
-                                                          k + m_ChunkPosition.z + 11.1f,
+                                    = m_Noise.OctaveNoiseSingle(k + m_ChunkPosition.z + 111.0f,
+                                                          i + m_ChunkPosition.x + 111.0f,
                                                           8);
                             double rand = Random::GetRand<double>(0, 1);
                             if (noise < -0.5)
@@ -205,39 +205,41 @@ BlockVec Chunk::CreateSurfaceLayer(const BlockVec &blocksToSet) {
 void Chunk::CreateTrees(int i, int j, int k, BlockVec &blockVec) {
     int treeHeight = Random::GetRand<int>(3, 9) + j;
     if (j > 0 && m_Chunk(i, j, k) == Block::EMPTY && m_Chunk(i, j - 1, k) == Block::GRASS) {
-        float noise_chance = m_Noise.OctaveNoise(
-                i + m_ChunkPosition.x + 22.2f, k + m_ChunkPosition.z + 22.2f, 4, 0.008f);
-        if (noise_chance >= 0.1 && Random::GetRand<double>(0, 1) < 0.005) {
-            int height;
-            for (height = j; height < treeHeight; height++) {
-                if (height > YSIZE)
-                    break;
-                m_Chunk(i, height, k) = Block::WOOD;
-            }
-            const int top = height + Random::GetRand<int>(1, 3);
-            const int bottom = height - Random::GetRand<int>(2, 3);
-            int leaves_height;
-            for (leaves_height = bottom; leaves_height <= top; leaves_height++) {
-                int size = Random::GetRand<int>(2, 4);
-                if (leaves_height == top || leaves_height == bottom)
-                    size = 1;
-                for (int x = -size; x <= size; x++) {
-                    for (int z = -size; z <= size; z++) {
-                        const int leafx = i + x;
-                        const int leafz = k + z;
-                        if (leafx >= 0 && leafz >= 0 && leafx < XSIZE && leafz < ZSIZE) {
-                            if (m_Chunk(leafx, leaves_height, leafz) != Block::WOOD
-                                && Random::GetRand<double>(0, 1) > 0.2)
-                                m_Chunk(leafx, leaves_height, leafz) = Block::LEAVES;
-                        } else {
-                            blockVec.emplace_back(
-                                    Block::LEAVES, glm::vec3(leafx, leaves_height, leafz));
+        if (Random::GetRand<double>(0, 1) < 0.005) {
+            float noise_chance = m_Noise.OctaveNoiseSingle(
+                    k + m_ChunkPosition.z + 22.2f, i + m_ChunkPosition.x + 22.2f, 4, 0.008f);
+            if (noise_chance < 0) {
+                int height;
+                for (height = j; height < treeHeight; height++) {
+                    if (height > YSIZE)
+                        break;
+                    m_Chunk(i, height, k) = Block::WOOD;
+                }
+                const int top = height + Random::GetRand<int>(1, 3);
+                const int bottom = height - Random::GetRand<int>(2, 3);
+                int leaves_height;
+                for (leaves_height = bottom; leaves_height <= top; leaves_height++) {
+                    int size = Random::GetRand<int>(2, 4);
+                    if (leaves_height == top || leaves_height == bottom)
+                        size = 1;
+                    for (int x = -size; x <= size; x++) {
+                        for (int z = -size; z <= size; z++) {
+                            const int leafx = i + x;
+                            const int leafz = k + z;
+                            if (leafx >= 0 && leafz >= 0 && leafx < XSIZE && leafz < ZSIZE) {
+                                if (m_Chunk(leafx, leaves_height, leafz) != Block::WOOD
+                                    && Random::GetRand<double>(0, 1) > 0.2)
+                                    m_Chunk(leafx, leaves_height, leafz) = Block::LEAVES;
+                            } else {
+                                blockVec.emplace_back(
+                                        Block::LEAVES, glm::vec3(leafx, leaves_height, leafz));
+                            }
                         }
                     }
                 }
+                if (leaves_height > m_MaxHeight)
+                    m_MaxHeight = leaves_height;
             }
-            if (leaves_height > m_MaxHeight)
-                m_MaxHeight = leaves_height;
         }
     }
 }
@@ -245,8 +247,8 @@ void Chunk::CreateTrees(int i, int j, int k, BlockVec &blockVec) {
 void Chunk::CreateSprites(int i, int j, int k, BlockVec &blockVec) {
     if (j > 0 && m_Chunk(i, j, k) == Block::EMPTY && m_Chunk(i, j - 1, k) == Block::GRASS) {
         if (Random::GetRand<double>(0, 1) < 0.005) {
-            const float noise_chance = m_Noise.OctaveNoise(
-                    i + m_ChunkPosition.x + 33.3f, k + m_ChunkPosition.z + 33.3f, 4, 0.008f);
+            const float noise_chance = m_Noise.OctaveNoiseSingle(
+                    k + m_ChunkPosition.z + 33.3f, i + m_ChunkPosition.x + 33.3f, 4, 0.008f);
             if (noise_chance) {
                 if (Random::GetRand<double>(0, 1) < 0.6)
                     m_Chunk(i, j, k) = Block::FLOWER_BLUE;

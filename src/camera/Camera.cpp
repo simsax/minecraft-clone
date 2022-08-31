@@ -13,16 +13,13 @@ Camera::Camera(const glm::vec3& position, int width, int height)
     , yaw(-90.0f)
     , pitch(0.0f)
     , m_FlyMode(true)
+    , m_Speed(25.0f)
 {
 }
 
 void Camera::HandleInput(const std::array<bool, GLFW_KEY_LAST>& keyPressed)
 {
-    float speed = 25.0f;
-//    float speed = 5.0f;
     m_CameraSpeed = glm::vec3(0.0f);
-    if (keyPressed[GLFW_KEY_LEFT_SHIFT]) // sprint
-        speed *= 2;
     if (keyPressed[GLFW_KEY_SPACE] && m_FlyMode)
         m_CameraSpeed += m_CameraUp;
     if (keyPressed[GLFW_KEY_LEFT_CONTROL] && m_FlyMode)
@@ -36,7 +33,9 @@ void Camera::HandleInput(const std::array<bool, GLFW_KEY_LAST>& keyPressed)
     if (keyPressed[GLFW_KEY_D])
         m_CameraSpeed += glm::normalize(glm::cross(m_CameraFront, m_CameraUp));
 
-    m_CameraSpeed *= speed;
+    m_CameraSpeed *= m_Speed;
+    if (keyPressed[GLFW_KEY_LEFT_SHIFT]) // sprint
+        m_CameraSpeed *= 2;
 }
 
 void Camera::Move(float deltaTime) { m_CameraPos += m_CameraSpeed * deltaTime; }
@@ -69,7 +68,13 @@ void Camera::ProcessMouse(float xoffset, float yoffset)
     m_CameraFront = glm::normalize(direction);
 }
 
-void Camera::ToggleFlyMode() { m_FlyMode = !m_FlyMode; }
+void Camera::ToggleFlyMode() {
+    m_FlyMode = !m_FlyMode;
+    if (m_FlyMode)
+        m_Speed = 25.0f;
+    else
+        m_Speed = 5.0f;
+}
 
 bool Camera::GetFlyMode() const { return m_FlyMode; }
 
