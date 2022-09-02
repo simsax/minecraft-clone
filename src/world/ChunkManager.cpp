@@ -8,7 +8,7 @@ using namespace std::chrono_literals;
 #define MAX_INDEX_COUNT 18432 // each cube has 6 faces, each face has 6 indexes
 #define MAX_VERTEX_COUNT 24000 // each cube has 6 faces, each face has 4 vertices
 #define VIEW_DISTANCE 24 // how far the player sees
-#define MAX_CHUNK_TO_LOAD 16
+#define MAX_CHUNK_TO_LOAD 8
 #define PLAYER_HALF_WIDTH 0.3f
 #define PLAYER_TOP_HEIGHT 0.2f
 #define PLAYER_BOTTOM_HEIGHT 1.6f
@@ -194,12 +194,14 @@ bool ChunkManager::IsVoxelSolid(const glm::vec3 &voxel) {
     m_Raycast.chunkCoord = target.first;
     m_Raycast.prevLocalVoxel = m_Raycast.localVoxel;
     m_Raycast.localVoxel = target.second;
-    if (const auto it = m_ChunkMap.find(m_Raycast.chunkCoord); it != m_ChunkMap.end()) {
-        m_Raycast.chunk = &it->second;
-        if (m_Raycast.chunk->GetBlock(m_Raycast.localVoxel[0], m_Raycast.localVoxel[1],
-                                      m_Raycast.localVoxel[2]) != Block::EMPTY) {
-            m_Raycast.selected = true;
-            return true;
+    if (m_Raycast.localVoxel.y >= 0 && m_Raycast.localVoxel.y < YSIZE) {
+        if (const auto it = m_ChunkMap.find(m_Raycast.chunkCoord); it != m_ChunkMap.end()) {
+            m_Raycast.chunk = &it->second;
+            if (m_Raycast.chunk->GetBlock(m_Raycast.localVoxel[0], m_Raycast.localVoxel[1],
+                                          m_Raycast.localVoxel[2]) != Block::EMPTY) {
+                m_Raycast.selected = true;
+                return true;
+            }
         }
     }
     m_Raycast.selected = false;

@@ -58,7 +58,7 @@ void Renderer::RenderOutline(
 //    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 //    glStencilFunc(GL_ALWAYS, 1, 0xFF);
 //    glStencilMask(0xFF);
-    float scale = 1.001f;
+    float scale = 1.002f;
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(0.5 + i + chunkPos[0], 0.5 + j, 0.5 + k + chunkPos[2]));
     model = glm::scale(model, glm::vec3(scale));

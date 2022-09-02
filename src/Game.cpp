@@ -194,7 +194,7 @@ void Game::CheckRayCast() {
     }
 
     bool voxelFound = false;
-    float maxDistance = 5.0f;
+    static constexpr float maxDistance = 5.0f;
     float distance = 0.0f;
     while (!voxelFound && distance < maxDistance) {
         // walk

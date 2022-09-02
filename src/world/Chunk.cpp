@@ -1,10 +1,11 @@
 #include "Chunk.h"
-#include <stdexcept>
 #include "glm/gtx/norm.hpp"
 #include <iostream>
 #include <map>
 #include "../camera/Camera.h"
 #include "../utils/Random.hpp"
+
+#define assertm(exp, msg) assert(((void)msg, exp))
 
 bool operator==(const ChunkCoord &l, const ChunkCoord &r) { return l.x == r.x && l.z == r.z; }
 
@@ -82,6 +83,38 @@ float Chunk::Continentalness(int x, int y) {
     return height;
 }
 
+#if 1
+
+void Chunk::CreateHeightMap() {
+    int index = 0;
+    static constexpr float fudge_factor = 1.0f;
+    static constexpr float exp = 3.0f;
+
+    std::array<float, ZSIZE * XSIZE> noiseMapA = m_Noise.OctaveNoiseGrid<ZSIZE, XSIZE>(
+            m_ChunkPosition.z, m_ChunkPosition.x, 6, 0.001f);
+
+    int n = 0;
+    for (int i = 0; i < XSIZE; i++) {
+        for (int k = 0; k < ZSIZE; k++) {
+            float a = (noiseMapA[n++] + 1) * 0.5f; // [0, 1]
+//            a = std::pow(a * fudge_factor, exp);
+            if (a >= 0.5)
+                a = 6.0f * std::pow(a - 0.5f, exp) + 0.25f;
+            else
+                a *= 0.5f;
+//            else
+//                a = 2.0f * std::pow(a - 0.5f, exp) + 0.25f;
+            int terrain_height = static_cast<int>(a * YSIZE); // [0, 255]
+
+            m_MinHeight = std::min(m_MinHeight, terrain_height);
+            m_MaxHeight = std::max(m_MaxHeight, terrain_height);
+            m_HeightMap[index++] = terrain_height;
+        }
+    }
+    m_MaxHeight += 1; // allow sprite generation
+}
+
+#else
 void Chunk::CreateHeightMap() {
     static constexpr int elevation = 50; // increase for less water
     int index = 0;
@@ -98,15 +131,11 @@ void Chunk::CreateHeightMap() {
             float m = (noiseMapM[n] + 1) * 0.5f;
             n++;
             a *= a;
-            float terrain_height;
             if (a < 0.5)
-                terrain_height = m * a * a * 2;
+                a = m * a * a * 2;
             else
-                terrain_height = m * (1 - (1 - a) * (1 - a) * 2);
-            terrain_height *= 200.0f;
-            terrain_height = static_cast<int>(terrain_height + elevation);
-//            if (terrain_height < 40)
-//                terrain_height = 40;
+                a = m * (1 - (1 - a) * (1 - a) * 2);
+            int terrain_height = static_cast<int>(a * 200.0f) + elevation;
             int height = static_cast<int>(
                     m_Noise.OctaveNoiseSingle(k + m_ChunkPosition.z, i + m_ChunkPosition.x, 8) * 5.0f);
 
@@ -120,13 +149,16 @@ void Chunk::CreateHeightMap() {
     }
     m_MaxHeight += 1; // allow sprite generation
 }
+#endif
 
 void Chunk::FastFill() {
     static constexpr int level_size = XSIZE * ZSIZE;
     auto begin = m_Chunk.GetRawPtr();
     std::fill(begin, begin + level_size, Block::BEDROCK);
-    std::fill(begin + level_size, begin + level_size * (m_MinHeight - 10), Block::STONE);
-    std::fill(begin + level_size * (m_MaxHeight + 1), begin + level_size * YSIZE, Block::EMPTY);
+    if (m_MinHeight > 1)
+        std::fill(begin + level_size, begin + level_size * (m_MinHeight), Block::STONE);
+    if (m_MaxHeight < YSIZE - 1)
+        std::fill(begin + level_size * (m_MaxHeight + 1), begin + level_size * YSIZE, Block::EMPTY);
 }
 
 BlockVec Chunk::CreateSurfaceLayer(const BlockVec &blocksToSet) {
@@ -135,56 +167,52 @@ BlockVec Chunk::CreateSurfaceLayer(const BlockVec &blocksToSet) {
     static constexpr int snow_level = 120;
     if (m_MaxHeight < water_level)
         m_MaxHeight = water_level;
-    for (int j = m_MinHeight - 10; j <= m_MaxHeight; j++) {
+    int j = m_MinHeight < 5 ? 0 : m_MinHeight - 5;
+    for (; j <= m_MaxHeight; j++) {
         int index = 0;
         for (int i = 0; i < XSIZE; i++) {
             for (int k = 0; k < ZSIZE; k++) {
                 int height = m_HeightMap[index++];
                 if (m_Chunk(i, j, k) != Block::WOOD && m_Chunk(i, j, k) != Block::LEAVES) {
                     if (j < height) {
-                        float dirt = m_Noise.OctaveNoiseSingle(k + m_ChunkPosition.z + 11.1f,
-                                                         i + m_ChunkPosition.x + 11.1f,
-                                                         8);
+                        float dirt = m_Noise.OctaveNoiseSingle(k + m_ChunkPosition.z + 1000.1f,
+                                                               i + m_ChunkPosition.x, 4, 0.001f);
+
                         if (dirt >= 0)
                             m_Chunk(i, j, k) = Block::DIRT;
                         else
                             m_Chunk(i, j, k) = Block::STONE;
                     } else if (j == height) {
                         float noise_chance
-                                = m_Noise.OctaveNoiseSingle(k + m_ChunkPosition.z, i + m_ChunkPosition.x,
-                                                      8);
-                        if (j == water_level && noise_chance >= 0)
-                            m_Chunk(i, j, k) = Block::SAND;
-                        else if (j < water_level && j > water_level - 3) {
-                            if (noise_chance >= 0.2)
+                                = m_Noise.OctaveNoiseSingle(k + m_ChunkPosition.z,
+                                                            i + m_ChunkPosition.x + 100.0f,
+                                                            8, 0.002f);
+                        if (j == water_level) {
+                            if (noise_chance >= 0.3)
                                 m_Chunk(i, j, k) = Block::GRAVEL;
+                            else if (noise_chance < -0.3)
+                                m_Chunk(i, j, k) = Block::GRASS;
                             else
                                 m_Chunk(i, j, k) = Block::SAND;
-                        } else if (j <= water_level - 3) {
-                            float noise
-                                    = m_Noise.OctaveNoiseSingle(k + m_ChunkPosition.z + 111.0f,
-                                                          i + m_ChunkPosition.x + 111.0f,
-                                                          8);
-                            double rand = Random::GetRand<double>(0, 1);
-                            if (noise < -0.5)
-                                m_Chunk(i, j, k) = Block::SAND;
-                            else if (noise < 1.3)
+                        } else if (j < water_level) {
+                            if (noise_chance >= 0.2f && noise_chance < 0.4f)
+                                m_Chunk(i, j, k) = Block::GRAVEL;
+                            else if (noise_chance >= 0.4f)
                                 m_Chunk(i, j, k) = Block::DIRT;
                             else
-                                m_Chunk(i, j, k) = Block::GRAVEL;
+                                m_Chunk(i, j, k) = Block::SAND;
                         } else if (j >= snow_level)
                             m_Chunk(i, j, k) = Block::SNOW;
-                        else if (j >= snow_level - 20 && noise_chance >= -0.2) {
+                        else if (j >= snow_level - 20) {
                             if (Random::GetRand<double>(0, 1) <
-                                (2.0f / static_cast<float>(snow_level - j)))
+                                (3.0f / static_cast<float>(snow_level - j)))
                                 m_Chunk(i, j, k) = Block::SNOWY_GRASS;
                             else
                                 m_Chunk(i, j, k) = Block::GRASS;
-
                         } else
                             m_Chunk(i, j, k) = Block::GRASS;
-                    } else {
-                        if (j < water_level)
+                    } else { // j > height
+                        if (j <= water_level)
                             m_Chunk(i, j, k) = Block::WATER;
                         else
                             m_Chunk(i, j, k) = Block::EMPTY;
@@ -207,7 +235,7 @@ void Chunk::CreateTrees(int i, int j, int k, BlockVec &blockVec) {
     if (j > 0 && m_Chunk(i, j, k) == Block::EMPTY && m_Chunk(i, j - 1, k) == Block::GRASS) {
         if (Random::GetRand<double>(0, 1) < 0.005) {
             float noise_chance = m_Noise.OctaveNoiseSingle(
-                    k + m_ChunkPosition.z + 22.2f, i + m_ChunkPosition.x + 22.2f, 4, 0.008f);
+                    k + m_ChunkPosition.z, i + m_ChunkPosition.x + 1000.0f, 4, 0.008f);
             if (noise_chance < 0) {
                 int height;
                 for (height = j; height < treeHeight; height++) {
@@ -248,8 +276,8 @@ void Chunk::CreateSprites(int i, int j, int k, BlockVec &blockVec) {
     if (j > 0 && m_Chunk(i, j, k) == Block::EMPTY && m_Chunk(i, j - 1, k) == Block::GRASS) {
         if (Random::GetRand<double>(0, 1) < 0.005) {
             const float noise_chance = m_Noise.OctaveNoiseSingle(
-                    k + m_ChunkPosition.z + 33.3f, i + m_ChunkPosition.x + 33.3f, 4, 0.008f);
-            if (noise_chance) {
+                    k + m_ChunkPosition.z + 1000.1f, i + m_ChunkPosition.x + 1000.1f, 4, 0.02f);
+            if (noise_chance < 0) {
                 if (Random::GetRand<double>(0, 1) < 0.6)
                     m_Chunk(i, j, k) = Block::FLOWER_BLUE;
                 else
@@ -432,7 +460,7 @@ Chunk::Render(Renderer &renderer, const VertexArray &vao, IndexBuffer &ibo, Chun
 }
 
 void Chunk::RenderOutline(Renderer &renderer, const VertexArray &vao, VertexBuffer &vbo,
-                          IndexBuffer &ibo, const glm::vec3 &target) {
+                          IndexBuffer &ibo, const glm::uvec3 &target) {
     std::array<Chunk *, 4> neighbors = {nullptr};
     if (FindNeighbors(neighbors)) {
         int i = target.x;
@@ -454,10 +482,7 @@ void Chunk::RenderOutline(Renderer &renderer, const VertexArray &vao, VertexBuff
 Block Chunk::GetBlock(uint32_t x, uint32_t y, uint32_t z) const { return m_Chunk(x, y, z); }
 
 void Chunk::SetBlock(uint32_t x, uint32_t y, uint32_t z, Block block) {
-#ifndef NDEBUG
-    if (x >= XSIZE || y >= YSIZE || z >= ZSIZE)
-        throw std::logic_error("Chunk coordinates out of bound.");
-#endif
+    assertm(i <= X && j <= Y && k <= Z, "Matrix3D index out of bounds.");
     m_Chunk(x, y, z) = block;
     if (y < m_MinHeight)
         m_MinHeight = y;

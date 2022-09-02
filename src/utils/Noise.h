@@ -6,9 +6,6 @@ class Noise {
 public:
     Noise();
 
-//    float CombinedNoise(int xCoord, int yCoord, unsigned int octaves, float frequency = 0.01f,
-//                        float lacunarity = 2.0f, float amplitude = 0.5f);
-
     float OctaveNoiseSingle(float xCoord, float yCoord, int octaves, float frequency = 0.01f,
                             float lacunarity = 2.0f, float amplitude = 0.5f);
 
@@ -19,7 +16,7 @@ public:
 
 private:
     static const unsigned int seed;
-    FastNoise::SmartNode<FastNoise::Perlin> m_Perlin;
+    FastNoise::SmartNode<FastNoise::Simplex> m_Simplex;
     FastNoise::SmartNode<FastNoise::FractalFBm> m_Fractal;
 };
 

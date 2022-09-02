@@ -86,7 +86,7 @@ public:
            int radius);
 
     void RenderOutline(Renderer &renderer, const VertexArray &vao, VertexBuffer &vbo,
-                       IndexBuffer &ibo, const glm::vec3 &target);
+                       IndexBuffer &ibo, const glm::uvec3 &target);
 
     glm::vec3 GetCenterPosition() const;
 
