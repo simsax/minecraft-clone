@@ -31,10 +31,11 @@ public:
 
 private:
     GLint GetUniformLocation(const std::string& name);
-    unsigned int CreateShader(const std::string& vertexShader, const std::string& fragmentShader);
-    unsigned int CompileShader(unsigned int type, const std::string& source);
+    uint32_t CreateShader(const std::string& vertexShader, const std::string& fragmentShader);
+    uint32_t CompileShader(uint32_t type, const std::string& source);
     ShaderProgramSource ParseShader(const std::string& vertexPath, const std::string& fragPath);
 
-    unsigned int m_RendererID;
+    static uint32_t s_CurrentlyBound;
+    uint32_t m_ShaderId;
     std::unordered_map<std::string, GLint> m_UniformLocationCache;
 };

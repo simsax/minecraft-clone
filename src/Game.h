@@ -3,6 +3,7 @@
 #include "camera/Camera.h"
 #include "world/ChunkManager.h"
 #include "gui/GuiManager.h"
+#include "entities/SunEntity.h"
 
 class Game {
 public:
@@ -43,4 +44,5 @@ private:
     GuiManager m_GuiManager;
     bool m_ShowGui;
     float m_VerticalVelocity;
+    SunEntity m_Sun;
 };

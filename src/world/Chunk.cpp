@@ -443,18 +443,18 @@ Chunk::Render(Renderer &renderer, const VertexArray &vao, IndexBuffer &ibo, Chun
               int radius) {
     ibo.SetCount(m_IBOCount);
     m_VBO.Bind(vao.GetId());
-    renderer.Draw(vao, ibo, GL_UNSIGNED_INT, m_ChunkPosition, 0);
+    renderer.Render(vao, ibo, GL_UNSIGNED_INT, m_ChunkPosition, 0);
     if (!m_TransparentMesh.empty()) {
         ibo.SetCount(m_TIBOCount);
         glDisable(GL_CULL_FACE);
-        renderer.Draw(vao, ibo, GL_UNSIGNED_INT, m_ChunkPosition, m_Mesh.size());
+        renderer.Render(vao, ibo, GL_UNSIGNED_INT, m_ChunkPosition, m_Mesh.size());
         glEnable(GL_CULL_FACE);
     }
     if (!m_SpriteMesh.empty() && ChunkIsVisible(playerChunk, radius)) {
         ibo.SetCount(m_SIBOCount);
         glDisable(GL_CULL_FACE);
-        renderer.Draw(vao, ibo, GL_UNSIGNED_INT, m_ChunkPosition,
-                      m_Mesh.size() + m_TransparentMesh.size());
+        renderer.Render(vao, ibo, GL_UNSIGNED_INT, m_ChunkPosition,
+                        m_Mesh.size() + m_TransparentMesh.size());
         glEnable(GL_CULL_FACE);
     }
 }
@@ -482,7 +482,7 @@ void Chunk::RenderOutline(Renderer &renderer, const VertexArray &vao, VertexBuff
 Block Chunk::GetBlock(uint32_t x, uint32_t y, uint32_t z) const { return m_Chunk(x, y, z); }
 
 void Chunk::SetBlock(uint32_t x, uint32_t y, uint32_t z, Block block) {
-    assertm(i <= X && j <= Y && k <= Z, "Matrix3D index out of bounds.");
+    assertm(x < XSIZE && y < YSIZE && z < ZSIZE, "indices out of bounds.");
     m_Chunk(x, y, z) = block;
     if (y < m_MinHeight)
         m_MinHeight = y;

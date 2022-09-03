@@ -1,5 +1,5 @@
 #include "GuiManager.h"
-#include "Config.h"
+#include "../entities/CursorEntity.h"
 
 #define CURSOR_SCALE 20.0f
 #define BAR_HEIGHT 80.0f
@@ -9,67 +9,85 @@
 #define BLOCK_SIZE 40.0f
 
 void GuiManager::Init(int width, int height) {
-    m_GuiRenderer.Init(width, height);
     MakeGui(width, height);
 }
 
 void GuiManager::MakeGui(int width, int height) {
     float offset = (BAR_WIDTH - BAR_HEIGHT) / 2;
-    m_SquareBase = width / 2.0f - offset + 4.0f;
-    std::string baseDir = std::string(SOURCE_DIR) + "/res/textures/gui/";
-    m_GuiElements.emplace_back("cursor", baseDir + "cursor.png",
-                               glm::vec2(CURSOR_SCALE, CURSOR_SCALE),
-                               glm::vec2(width / 2.0f, height / 2.0f));
+    m_SquareBase = static_cast<float>(width) / 2.0f - offset + 4.0f;
 
-    m_GuiElements.emplace_back("bar", baseDir + "bottom_bar.png", glm::vec2(BAR_WIDTH, BAR_HEIGHT),
-                               glm::vec2(width / 2.0f, BAR_HEIGHT / 2.0f));
+    m_GuiElements.push_back(std::make_unique<CursorEntity>("cursor", "cursor.png", glm::vec3{
+                                                                   static_cast<float>(width) / 2.0f, 0.0f,
+                                                                   static_cast<float>(height) / 2.0f},
+                                                           glm::vec3{CURSOR_SCALE, 0.0f,
+                                                                     CURSOR_SCALE}));
 
-    m_GuiElements.emplace_back("active_square", baseDir + "active_square.png",
-                               glm::vec2(ACTIVE_SQUARE_SCALE, ACTIVE_SQUARE_SCALE),
-                               glm::vec2(m_SquareBase, BAR_HEIGHT / 2.0f));
+    m_GuiElements.push_back(std::make_unique<GuiEntity>("bar", "bottom_bar.png",
+                                                        glm::vec3{static_cast<float>(width) / 2.0f,
+                                                                  0.0f, BAR_HEIGHT / 2.0f},
+                                                        glm::vec3{BAR_WIDTH, 0.0f, BAR_HEIGHT}));
 
-    m_GuiElements.emplace_back("dirt", baseDir + "dirt.png", glm::vec2(BLOCK_SIZE, BLOCK_SIZE),
-                               glm::vec2(m_SquareBase, BAR_HEIGHT / 2.0f));
+    m_GuiElements.push_back(std::make_unique<GuiEntity>("active_square", "active_square.png",
+                                                        glm::vec3{m_SquareBase, 0.0f,
+                                                                  BAR_HEIGHT / 2.0f},
+                                                        glm::vec3{ACTIVE_SQUARE_SCALE, 0.0f,
+                                                                  ACTIVE_SQUARE_SCALE}));
 
-    m_GuiElements.emplace_back("grass", baseDir + "grass.png", glm::vec2(BLOCK_SIZE, BLOCK_SIZE),
-                               glm::vec2(m_SquareBase + BAR_OFFSET, BAR_HEIGHT / 2.0f));
+    m_GuiElements.push_back(std::make_unique<GuiEntity>("dirt", "dirt.png",
+                                                        glm::vec3{m_SquareBase, 0.0f,
+                                                                  BAR_HEIGHT / 2.0f},
+                                                        glm::vec3{BLOCK_SIZE, 0.0f, BLOCK_SIZE}));
 
-    m_GuiElements.emplace_back("sand", baseDir + "sand.png", glm::vec2(BLOCK_SIZE, BLOCK_SIZE),
-                               glm::vec2(m_SquareBase + BAR_OFFSET * 2, BAR_HEIGHT / 2.0f));
+    m_GuiElements.push_back(std::make_unique<GuiEntity>("grass", "grass.png",
+                                                        glm::vec3{m_SquareBase + BAR_OFFSET, 0.0f,
+                                                                  BAR_HEIGHT / 2.0f},
+                                                        glm::vec3{BLOCK_SIZE, 0.0f, BLOCK_SIZE}));
 
-    m_GuiElements.emplace_back("snow", baseDir + "snow.png", glm::vec2(BLOCK_SIZE, BLOCK_SIZE),
-                               glm::vec2(m_SquareBase + BAR_OFFSET * 3, BAR_HEIGHT / 2.0f));
+    m_GuiElements.push_back(std::make_unique<GuiEntity>("sand", "sand.png",
+                                                        glm::vec3{m_SquareBase + BAR_OFFSET * 2,
+                                                                  0.0f, BAR_HEIGHT / 2.0f},
+                                                        glm::vec3{BLOCK_SIZE, 0.0f, BLOCK_SIZE}));
 
-    m_GuiElements.emplace_back("stone", baseDir + "stone.png", glm::vec2(BLOCK_SIZE, BLOCK_SIZE),
-                               glm::vec2(m_SquareBase + BAR_OFFSET * 4, BAR_HEIGHT / 2.0f));
+    m_GuiElements.push_back(std::make_unique<GuiEntity>("snow", "snow.png",
+                                                        glm::vec3{m_SquareBase + BAR_OFFSET * 3,
+                                                                  0.0f, BAR_HEIGHT / 2.0f},
+                                                        glm::vec3{BLOCK_SIZE, 0.0f, BLOCK_SIZE}));
 
-    m_GuiElements.emplace_back("wood", baseDir + "wood.png", glm::vec2(BLOCK_SIZE, BLOCK_SIZE),
-                               glm::vec2(m_SquareBase + BAR_OFFSET * 5, BAR_HEIGHT / 2.0f));
+    m_GuiElements.push_back(std::make_unique<GuiEntity>("stone", "stone.png",
+                                                        glm::vec3{m_SquareBase + BAR_OFFSET * 4,
+                                                                  0.0f, BAR_HEIGHT / 2.0f},
+                                                        glm::vec3{BLOCK_SIZE, 0.0f, BLOCK_SIZE}));
 
-    m_GuiElements.emplace_back("diamond", baseDir + "diamond.png",
-                               glm::vec2(BLOCK_SIZE, BLOCK_SIZE),
-                               glm::vec2(m_SquareBase + BAR_OFFSET * 6, BAR_HEIGHT / 2.0f));
+    m_GuiElements.push_back(std::make_unique<GuiEntity>("wood", "wood.png",
+                                                        glm::vec3{m_SquareBase + BAR_OFFSET * 5,
+                                                                  0.0f, BAR_HEIGHT / 2.0f},
+                                                        glm::vec3{BLOCK_SIZE, 0.0f, BLOCK_SIZE}));
+
+    m_GuiElements.push_back(std::make_unique<GuiEntity>("diamond", "diamond.png",
+                                                        glm::vec3{m_SquareBase + BAR_OFFSET * 6,
+                                                                  0.0f, BAR_HEIGHT / 2.0f},
+                                                        glm::vec3{BLOCK_SIZE, 0.0f, BLOCK_SIZE}));
+
+    for (auto &gui: m_GuiElements) {
+        gui->InitTexture();
+        gui->InitBuffers();
+        gui->InitShaders("shader_quad.vert", "shader_quad.frag");
+    }
 }
 
-void GuiManager::Render() {
-    for (Gui &gui: m_GuiElements) {
-        if (gui.GetName() == "cursor")
-            glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ZERO);
-        m_GuiRenderer.Render(gui.GetTexture(), gui.GetPosition(), gui.GetScale());
-        if (gui.GetName() == "cursor")
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+void GuiManager::Render(Renderer &renderer) {
+    for (auto &gui: m_GuiElements) {
+        gui->Render(renderer);
     }
 }
 
 void GuiManager::PressKey(int key) {
-    glm::vec2 squarePosition = m_GuiElements[2].GetPosition();
+    glm::vec2 squarePosition = m_GuiElements[2]->GetPosition();
     squarePosition.x = m_SquareBase + BAR_OFFSET * key;
-    m_GuiElements[2].SetPosition(squarePosition);
+    m_GuiElements[2]->SetPosition({squarePosition.x, 0, squarePosition.y});
 }
 
 void GuiManager::Resize(int width, int height) {
-    m_GuiRenderer.Resize(width, height);
     m_GuiElements.clear();
-
     MakeGui(width, height);
 }

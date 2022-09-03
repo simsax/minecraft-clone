@@ -49,8 +49,7 @@ endif ()
 
 add_executable(${PROJECT_NAME}
         src/gui/GuiManager.cpp
-        src/gui/Gui.cpp
-        src/gui/GuiRenderer.cpp
+        src/entities/GuiEntity.cpp
         src/utils/Timer.cpp
         src/camera/Frustum.cpp
         src/camera/Camera.cpp
@@ -72,7 +71,12 @@ add_executable(${PROJECT_NAME}
         src/utils/Physics.h
         src/utils/Physics.cpp
         src/camera/Constants.h
-        src/utils/Random.hpp)
+        src/utils/Random.hpp
+        src/entities/SunEntity.cpp
+        src/entities/Entity.cpp
+        src/entities/QuadEntity.cpp
+        src/entities/GuiEntity.cpp
+        src/entities/CursorEntity.cpp)
 
 add_subdirectory(extern/glfw)
 add_subdirectory(extern/glew)

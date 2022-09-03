@@ -8,22 +8,16 @@ Game::Game()
           m_Blocks(std::vector({Block::DIRT, Block::GRASS, Block::SAND, Block::SNOW, Block::STONE,
                                 Block::WOOD, Block::DIAMOND, Block::EMPTY, Block::EMPTY})),
           m_HoldingBlock(0), m_SkyColor(173.0f / 255.0f, 223.0f / 255.0f, 230.0f / 255.0f),
-          m_ShowGui(true), m_VerticalVelocity(0.0f) {
-}
+          m_ShowGui(true), m_VerticalVelocity(0.0f),
+          m_Sun("sun", "sun.png", glm::vec3(0), glm::vec3(300.0f, 1.0f, 300.0f)) {}
 
 void Game::Init() {
-    glEnable(GL_DEPTH_TEST);
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
-    glFrontFace(GL_CCW);
-
     m_Renderer.Init(m_Width, m_Height);
     m_GuiManager.Init(m_Width, m_Height);
     m_ChunkManager.InitWorld();
+    m_Sun.InitTexture();
+    m_Sun.InitShaders("shader_quad.vert", "shader_quad.frag");
+    m_Sun.InitBuffers();
 
     // spawn player over a block
     m_Camera.GetPlayerPosition().y += static_cast<float>(m_ChunkManager.SpawnHeight());
@@ -36,17 +30,18 @@ void Game::OnUpdate(float deltaTime) {
     Move(deltaTime);
     UpdateChunks();
     m_Renderer.SetDeltaTime(deltaTime);
+    m_Sun.SetPosition(m_Camera.GetPlayerPosition());
+    m_Sun.IncrTime(deltaTime);
 }
 
 void Game::OnRender() {
-    glClearColor(m_SkyColor.x, m_SkyColor.y, m_SkyColor.z, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+    Renderer::Clear(m_SkyColor);
     m_Renderer.SetViewMatrix(m_Camera.GetViewMatrix());
     m_Renderer.SetSkyColor(m_SkyColor);
     m_ChunkManager.Render(m_Renderer);
+    m_Sun.Render(m_Renderer);
     if (m_ShowGui)
-        m_GuiManager.Render();
+        m_GuiManager.Render(m_Renderer);
 }
 
 void Game::HandleInput() {
@@ -246,8 +241,8 @@ void Game::Resize(int width, int height) {
     m_Width = width;
     m_Height = height;
     m_Camera.Resize(m_Width, m_Height);
-    m_Renderer.Resize(m_Width, m_Height);
     m_GuiManager.Resize(m_Width, m_Height);
+    m_Renderer.Resize(m_Width, m_Height);
 }
 
 int Game::GetWidth() const {

@@ -1,12 +1,12 @@
 #include "VertexArray.h"
 
-int8_t VertexArray::m_BufferCount = 0;
-int8_t VertexArray::m_CurrentlyBound = -1;
+int8_t VertexArray::s_BufferCount = 0;
+int8_t VertexArray::s_CurrentlyBound = -1;
 
 VertexArray::VertexArray()
         : m_Vao(0), m_NumElements(0) {
-    m_BindId = m_BufferCount;
-    m_BufferCount++;
+    m_BindId = s_BufferCount;
+    s_BufferCount++;
 };
 
 void VertexArray::Init() {
@@ -16,9 +16,9 @@ void VertexArray::Init() {
 VertexArray::~VertexArray() { glDeleteVertexArrays(1, &m_Vao); };
 
 void VertexArray::Bind() const {
-    if (m_CurrentlyBound != m_BindId) {
+    if (s_CurrentlyBound != m_BindId) {
         glBindVertexArray(m_Vao);
-        m_CurrentlyBound = m_BindId;
+        s_CurrentlyBound = m_BindId;
     }
 }
 

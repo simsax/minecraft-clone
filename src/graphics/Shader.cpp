@@ -5,19 +5,26 @@
 #include <string>
 #include <sstream>
 
+uint32_t Shader::s_CurrentlyBound = 0;
+
 Shader::Shader() :
-    m_RendererID(0)
+        m_ShaderId(0)
 {
 }
 
-Shader::~Shader() { glDeleteProgram(m_RendererID); }
+Shader::~Shader() { glDeleteProgram(m_ShaderId); }
 
 void Shader::Init(const std::string &vertexPath, const std::string &fragPath) {
     ShaderProgramSource source = ParseShader(vertexPath, fragPath);
-    m_RendererID = CreateShader(source.VertexSource, source.FragmentSource);
+    m_ShaderId = CreateShader(source.VertexSource, source.FragmentSource);
 }
 
-void Shader::Bind() const { glUseProgram(m_RendererID); }
+void Shader::Bind() const {
+    if (s_CurrentlyBound != m_ShaderId) {
+        s_CurrentlyBound = m_ShaderId;
+        glUseProgram(m_ShaderId);
+    }
+}
 
 void Shader::Unbind() const { glUseProgram(0); }
 
@@ -65,19 +72,19 @@ GLint Shader::GetUniformLocation(const std::string& name)
     if (m_UniformLocationCache.find(name) != m_UniformLocationCache.end())
         return m_UniformLocationCache[name];
 
-    GLint location = glGetUniformLocation(m_RendererID, name.c_str());
+    GLint location = glGetUniformLocation(m_ShaderId, name.c_str());
     if (location == -1)
         std::cout << "Warning: uniform '" << name << "' doesn't exist!\n";
     m_UniformLocationCache[name] = location;
     return location;
 }
 
-unsigned int Shader::CreateShader(
+uint32_t Shader::CreateShader(
     const std::string& vertexShader, const std::string& fragmentShader)
 {
-    unsigned int program = glCreateProgram();
-    unsigned int vs = CompileShader(GL_VERTEX_SHADER, vertexShader);
-    unsigned int fs = CompileShader(GL_FRAGMENT_SHADER, fragmentShader);
+    uint32_t program = glCreateProgram();
+    uint32_t vs = CompileShader(GL_VERTEX_SHADER, vertexShader);
+    uint32_t fs = CompileShader(GL_FRAGMENT_SHADER, fragmentShader);
 
     glAttachShader(program, vs);
     glAttachShader(program, fs);
@@ -90,9 +97,9 @@ unsigned int Shader::CreateShader(
     return program;
 }
 
-unsigned int Shader::CompileShader(unsigned int type, const std::string& source)
+uint32_t Shader::CompileShader(uint32_t type, const std::string& source)
 {
-    unsigned int id = glCreateShader(type);
+    uint32_t id = glCreateShader(type);
     const char* src = source.c_str();
     glShaderSource(id, 1, &src, NULL);
     glCompileShader(id);

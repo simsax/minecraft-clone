@@ -7,21 +7,33 @@ Renderer::Renderer() :
         m_Texture(std::string(SOURCE_DIR) + "/res/textures/terrain.png"),
         m_View(glm::mat4()),
         m_SkyColor(glm::vec3()),
-        m_Proj(glm::mat4()),
+        m_PersProj(glm::mat4()),
+        m_OrthoProj(glm::mat4()),
         m_Visibility(0.5f),
         m_Increment(0.5f),
         m_DeltaTime(0.0f) {}
-
-void Renderer::Clear() const { glClear(GL_COLOR_BUFFER_BIT); }
 
 void Renderer::SetViewMatrix(const glm::mat4 &view) { m_View = view; }
 
 void Renderer::SetSkyColor(const glm::vec3 &skyColor) { m_SkyColor = skyColor; }
 
 void Renderer::Init(int width, int height) {
+    glEnable(GL_DEPTH_TEST);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CCW);
+
     m_Texture.Init();
-    m_Proj = glm::perspective(glm::radians(FOV),
-                              static_cast<float>(width) / static_cast<float>(height), ZNEAR, ZFAR);
+    m_PersProj = glm::perspective(glm::radians(FOV),
+                                  static_cast<float>(width) / static_cast<float>(height), ZNEAR,
+                                  ZFAR);
+    m_OrthoProj = glm::ortho(0.0f, static_cast<float>(width), 0.0f, static_cast<float>(height),
+                             -1.0f,
+                             1.0f);
     m_Shader.Init(std::string(SOURCE_DIR) + "/res/shaders/shader.vert",
                   std::string(SOURCE_DIR) + "/res/shaders/shader.frag");
     m_Shader.Bind();
@@ -35,10 +47,10 @@ void Renderer::Init(int width, int height) {
 //    m_OutlineShader.SetUniform1i("u_Texture", 0);
 }
 
-void Renderer::Draw(
+void Renderer::Render(
         const VertexArray &vao, const IndexBuffer &ibo, GLenum type,
         const glm::vec3 &chunkPos, uint32_t offset) {
-    glm::mat4 mvp = m_Proj * m_View;
+    glm::mat4 mvp = m_PersProj * m_View;
     m_Shader.Bind();
     m_Shader.SetUniformMat4f("u_MVP", mvp);
     m_Shader.SetUniformMat4f("u_MV", m_View);
@@ -48,6 +60,20 @@ void Renderer::Draw(
     vao.Bind();
     ibo.Bind(vao.GetId());
     glDrawElementsBaseVertex(GL_TRIANGLES, ibo.GetCount(), type, nullptr, offset);
+}
+
+void Renderer::RenderQuad(const VertexArray &vao, Shader &shader, const Texture &texture,
+                          const glm::mat4& model, bool ortho) {
+    glm::mat4 mvp;
+    if (ortho)
+        mvp = m_OrthoProj * model;
+    else
+        mvp = m_PersProj * m_View * model;
+    shader.Bind();
+    shader.SetUniformMat4f("u_MVP", mvp);
+    texture.Bind(0);
+    vao.Bind();
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
 
 void Renderer::RenderOutline(
@@ -64,12 +90,12 @@ void Renderer::RenderOutline(
     model = glm::scale(model, glm::vec3(scale));
     model = glm::translate(model,
                            glm::vec3(-0.5 - i - chunkPos[0], -0.5 - j, -0.5 - k - chunkPos[2]));
-    glm::mat4 mvp = m_Proj * m_View * model;
+    glm::mat4 mvp = m_PersProj * m_View * model;
     if (m_Visibility < 0.5f || m_Visibility > 1.0f)
         m_Increment *= -1.0f;
 
     m_Visibility += m_Increment * m_DeltaTime;
-//    glm::mat4 mvp = m_Proj * m_View;
+//    glm::mat4 mvp = m_PersProj * m_View;
 
     m_OutlineShader.Bind();
     m_OutlineShader.SetUniformMat4f("u_MVP", mvp);
@@ -91,7 +117,7 @@ void Renderer::RenderOutline(
 //    model = glm::translate(model,
 //                           glm::vec3(-0.5 - i - chunkPos[0], -0.5 - j, -0.5 - k - chunkPos[2]));
 //
-//    mvp = m_Proj * m_View * model;
+//    mvp = m_PersProj * m_View * model;
 //    m_OutlineShader->Bind();
 //    m_OutlineShader->SetUniformMat4f("u_MVP", mvp);
 //    m_OutlineShader->SetUniform3fv("u_ChunkPos", chunkPos);
@@ -111,6 +137,15 @@ void Renderer::SetDeltaTime(float deltaTime) {
 }
 
 void Renderer::Resize(int width, int height) {
-    m_Proj = glm::perspective(glm::radians(FOV),
-                              static_cast<float>(width) / static_cast<float>(height), ZNEAR, ZFAR);
+    m_PersProj = glm::perspective(glm::radians(FOV),
+                                  static_cast<float>(width) / static_cast<float>(height), ZNEAR,
+                                  ZFAR);
+    m_OrthoProj = glm::ortho(0.0f, static_cast<float>(width), 0.0f, static_cast<float>(height),
+                             -1.0f,
+                             1.0f);
+}
+
+void Renderer::Clear(const glm::vec3 &skyColor) {
+    glClearColor(skyColor.x, skyColor.y, skyColor.z, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }

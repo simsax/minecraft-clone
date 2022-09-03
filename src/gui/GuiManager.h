@@ -1,17 +1,15 @@
 #pragma once
-#include "GuiRenderer.h"
-#include "Gui.h"
+#include "../entities/GuiEntity.h"
 
 class GuiManager {
 public:
     void Init(int width, int height);
     void MakeGui(int width, int height);
-    void Render();
+    void Render(Renderer& renderer);
     void PressKey(int key);
     void Resize(int width, int height);
 
 private:
-    GuiRenderer m_GuiRenderer;
-    std::vector<Gui> m_GuiElements;
+    std::vector<std::unique_ptr<GuiEntity>> m_GuiElements;
     float m_SquareBase;
 };
