@@ -9,6 +9,7 @@
 #define BLOCK_SIZE 40.0f
 
 void GuiManager::Init(int width, int height) {
+    GuiEntity::InitShaders("shader_gui.vert", "shader_quad.frag");
     MakeGui(width, height);
 }
 
@@ -70,8 +71,6 @@ void GuiManager::MakeGui(int width, int height) {
 
     for (auto &gui: m_GuiElements) {
         gui->InitTexture();
-        gui->InitBuffers();
-        gui->InitShaders("shader_quad.vert", "shader_quad.frag");
     }
 }
 
@@ -82,9 +81,9 @@ void GuiManager::Render(Renderer &renderer) {
 }
 
 void GuiManager::PressKey(int key) {
-    glm::vec2 squarePosition = m_GuiElements[2]->GetPosition();
+    glm::vec3 squarePosition = m_GuiElements[2]->GetPosition();
     squarePosition.x = m_SquareBase + BAR_OFFSET * key;
-    m_GuiElements[2]->SetPosition({squarePosition.x, 0, squarePosition.y});
+    m_GuiElements[2]->SetPosition({squarePosition.x, 0, squarePosition.z});
 }
 
 void GuiManager::Resize(int width, int height) {

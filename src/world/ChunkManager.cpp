@@ -2,6 +2,7 @@
 #include "glm/gtx/norm.hpp"
 #include <iostream>
 #include "../utils/Timer.h"
+#include "Config.h"
 
 using namespace std::chrono_literals;
 
@@ -20,6 +21,7 @@ static int mod(int a, int b) {
 
 ChunkManager::ChunkManager(Camera *camera)
         : m_ChunkSize({XSIZE, YSIZE, ZSIZE}), m_ViewDistance(VIEW_DISTANCE),
+          m_TextureAtlas(std::string(SOURCE_DIR) + "/res/textures/terrain.png"),
           m_Camera(camera), m_SortChunks(false), m_ChunksReadyToMesh(false),
           m_BindingIndex(0), m_Raycast({}), m_LastChunk({0, 0}), m_CurrentChunk({0, 0}) {
     m_VertexLayout.Push<uint32_t>(1); // position + texture coords
@@ -44,6 +46,19 @@ ChunkManager::ChunkManager(Camera *camera)
 }
 
 void ChunkManager::InitWorld() {
+    m_TextureAtlas.Init();
+    m_ChunkShader.Init(std::string(SOURCE_DIR) + "/res/shaders/shader_chunk.vert",
+                  std::string(SOURCE_DIR) + "/res/shaders/shader_chunk.frag");
+    m_ChunkShader.Bind();
+    m_ChunkShader.SetUniform1i("u_Texture", 0);
+
+    m_OutlineShader.Init(std::string(SOURCE_DIR) + "/res/shaders/shader_outline.vert",
+                         std::string(SOURCE_DIR) +
+                         "/res/shaders/shader_outline.frag");
+
+//    m_OutlineShader.Bind();
+//    m_OutlineShader.SetUniform1i("u_Texture", 0);
+
     m_IBO.Init(m_Indices.size() * sizeof(uint32_t), m_Indices.data());
     m_VAO.Init();
     m_VAO.AddLayout(m_VertexLayout, m_BindingIndex);
@@ -71,12 +86,13 @@ void ChunkManager::Render(Renderer &renderer) {
     for (Chunk *chunk: m_ChunksToRender) {
         glm::vec3 center = chunk->GetCenterPosition();
         if (m_Camera->IsInFrustum(center))
-            chunk->Render(renderer, m_VAO, m_IBO, playerChunk, radius);
+            chunk->Render(renderer, m_VAO, m_IBO, m_ChunkShader, m_TextureAtlas, playerChunk, radius);
     }
 
     if (m_Raycast.selected) {
         m_OutlineVBO.Bind(m_VAO.GetId());
-        m_Raycast.chunk->RenderOutline(renderer, m_VAO, m_OutlineVBO, m_IBO, m_Raycast.localVoxel);
+        m_Raycast.chunk->RenderOutline(renderer, m_VAO, m_OutlineVBO, m_IBO, m_OutlineShader,
+                                       m_Raycast.localVoxel);
     }
 }
 

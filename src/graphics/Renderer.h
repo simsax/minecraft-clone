@@ -13,17 +13,14 @@ public:
 
     void Init(int width, int height);
 
-    void Render(const VertexArray &vao, const IndexBuffer &ibo, GLenum type,
-                const glm::vec3 &chunkPos, uint32_t offset);
+    void RenderChunk(const VertexArray &vao, const IndexBuffer &ibo, Shader &shader,
+                     const Texture &texture, GLenum type, const glm::vec3 &chunkPos,
+                     uint32_t offset);
 
     void RenderQuad(const VertexArray &vao, Shader &shader, const Texture &texture,
-                              const glm::mat4& model, bool ortho);
+                    const glm::mat4 &model, bool ortho);
 
-    void RenderSun(const VertexArray &vao, Shader &shader, const Texture &texture,
-                   const glm::vec3 &position,
-                   const glm::vec3 &scale);
-
-    void RenderOutline(const VertexArray &vao, const IndexBuffer &ibo, GLenum type,
+    void RenderOutline(const VertexArray &vao, const IndexBuffer &ibo, Shader& shader, GLenum type,
                        const glm::vec3 &chunkPos, int i, int j, int k);
 
     void SetViewMatrix(const glm::mat4 &mv);
@@ -37,9 +34,6 @@ public:
     static void Clear(const glm::vec3 &skyColor);
 
 private:
-    Shader m_Shader;
-    Shader m_OutlineShader;
-    Texture m_Texture;
     glm::mat4 m_View;
     glm::vec3 m_SkyColor;
     glm::mat4 m_PersProj;

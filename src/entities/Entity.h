@@ -20,9 +20,6 @@ public:
     void SetScale(const glm::vec3 &scale);
     void SetPosition(const glm::vec3 &position);
 
-    virtual void InitBuffers() = 0;
-    virtual void
-    InitShaders(const std::string &vertShaderPath, const std::string &fragShaderPath) = 0;
     virtual void Render(Renderer &renderer) = 0;
 
 protected:

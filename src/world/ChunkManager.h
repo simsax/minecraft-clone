@@ -52,6 +52,9 @@ private:
     VertexArray m_VAO;
     IndexBuffer m_IBO;
     VertexBuffer m_OutlineVBO;
+    Shader m_ChunkShader;
+    Shader m_OutlineShader;
+    Texture m_TextureAtlas;
     std::vector<uint32_t> m_Indices;
     std::vector<Chunk*> m_ChunksToRender;
     std::queue<Chunk*> m_ChunksToMesh;

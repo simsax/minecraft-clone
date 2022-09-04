@@ -1,17 +1,22 @@
 #include "SunEntity.h"
 #include "Config.h"
+#include <mutex>
 
-static constexpr std::array<float, 12> positions = {
-        0.0f, 0.0f, 1.0f, // bottom left
-        0.0f, 0.0f, 0.0f, // top left
-        1.0f, 0.0f, 1.0f, // bottom right
-        1.0f, 0.0f, 0.0f // top right
-};
+Shader SunEntity::s_Shader = {};
+static std::once_flag fShaders;
 
 SunEntity::SunEntity(std::string name, std::string texturePath, const glm::vec3 &position,
                      const glm::vec3 &scale) : QuadEntity(
         std::move(name), std::move(texturePath), position, scale), m_Time(0.0f) {}
 
+void SunEntity::InitShaders(const std::string &vertShaderPath, const std::string &fragShaderPath) {
+    std::call_once(fShaders, [&](){
+        s_Shader.Init(std::string(SOURCE_DIR) + "/res/shaders/" + vertShaderPath,
+                      std::string(SOURCE_DIR) + "/res/shaders/" + fragShaderPath);
+        s_Shader.Bind();
+        s_Shader.SetUniform1i("u_Texture", 0);
+    });
+}
 
 void SunEntity::Render(Renderer &renderer) {
     static constexpr float timeSpeed = 1.0f;

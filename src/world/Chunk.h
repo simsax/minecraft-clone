@@ -82,11 +82,11 @@ public:
     void SetBlock(uint32_t x, uint32_t y, uint32_t z, Block block);
 
     void
-    Render(Renderer &renderer, const VertexArray &vao, IndexBuffer &ibo, ChunkCoord playerChunk,
-           int radius);
+    Render(Renderer &renderer, const VertexArray &vao, IndexBuffer &ibo, Shader &shader,
+           const Texture &texture, ChunkCoord playerChunk, int radius);
 
     void RenderOutline(Renderer &renderer, const VertexArray &vao, VertexBuffer &vbo,
-                       IndexBuffer &ibo, const glm::uvec3 &target);
+                       IndexBuffer &ibo, Shader& shader, const glm::uvec3 &target);
 
     glm::vec3 GetCenterPosition() const;
 

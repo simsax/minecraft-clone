@@ -7,12 +7,10 @@ class QuadEntity : public Entity {
 public:
     QuadEntity(std::string name, std::string texturePath, const glm::vec3 &position,
            const glm::vec3 &scale);
-    void InitBuffers() override;
-    void InitShaders(const std::string &vertShaderPath, const std::string &fragShaderPath) override;
-    void Render(Renderer& renderer) override;
+    static void InitBuffers(); // all quads share the same vbo
+    void Render(Renderer& renderer) override = 0;
 
 protected:
-    static Shader s_Shader;
     static VertexBuffer s_VBO;
     static VertexBufferLayout s_VertexLayout;
     static VertexArray s_VAO;

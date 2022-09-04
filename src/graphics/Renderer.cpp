@@ -4,7 +4,6 @@
 #include "../camera/Constants.h"
 
 Renderer::Renderer() :
-        m_Texture(std::string(SOURCE_DIR) + "/res/textures/terrain.png"),
         m_View(glm::mat4()),
         m_SkyColor(glm::vec3()),
         m_PersProj(glm::mat4()),
@@ -27,36 +26,25 @@ void Renderer::Init(int width, int height) {
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
 
-    m_Texture.Init();
     m_PersProj = glm::perspective(glm::radians(FOV),
                                   static_cast<float>(width) / static_cast<float>(height), ZNEAR,
                                   ZFAR);
     m_OrthoProj = glm::ortho(0.0f, static_cast<float>(width), 0.0f, static_cast<float>(height),
                              -1.0f,
                              1.0f);
-    m_Shader.Init(std::string(SOURCE_DIR) + "/res/shaders/shader.vert",
-                  std::string(SOURCE_DIR) + "/res/shaders/shader.frag");
-    m_Shader.Bind();
-    m_Shader.SetUniform1i("u_Texture", 0);
-
-    m_OutlineShader.Init(std::string(SOURCE_DIR) + "/res/shaders/shader_outline.vert",
-                         std::string(SOURCE_DIR) +
-                         "/res/shaders/shader_outline.frag");
-
-//    m_OutlineShader.Bind();
-//    m_OutlineShader.SetUniform1i("u_Texture", 0);
 }
 
-void Renderer::Render(
-        const VertexArray &vao, const IndexBuffer &ibo, GLenum type,
+void Renderer::RenderChunk(
+        const VertexArray &vao, const IndexBuffer &ibo, Shader& shader, const Texture& texture,
+        GLenum type,
         const glm::vec3 &chunkPos, uint32_t offset) {
     glm::mat4 mvp = m_PersProj * m_View;
-    m_Shader.Bind();
-    m_Shader.SetUniformMat4f("u_MVP", mvp);
-    m_Shader.SetUniformMat4f("u_MV", m_View);
-    m_Shader.SetUniform3fv("u_ChunkPos", chunkPos);
-    m_Shader.SetUniform3fv("u_SkyColor", m_SkyColor);
-    m_Texture.Bind(0);
+    shader.Bind();
+    shader.SetUniformMat4f("u_MVP", mvp);
+    shader.SetUniformMat4f("u_MV", m_View);
+    shader.SetUniform3fv("u_ChunkPos", chunkPos);
+    shader.SetUniform3fv("u_SkyColor", m_SkyColor);
+    texture.Bind(0);
     vao.Bind();
     ibo.Bind(vao.GetId());
     glDrawElementsBaseVertex(GL_TRIANGLES, ibo.GetCount(), type, nullptr, offset);
@@ -77,7 +65,7 @@ void Renderer::RenderQuad(const VertexArray &vao, Shader &shader, const Texture 
 }
 
 void Renderer::RenderOutline(
-        const VertexArray &vao, const IndexBuffer &ibo, GLenum type, const glm::vec3 &chunkPos,
+        const VertexArray &vao, const IndexBuffer &ibo, Shader& shader, GLenum type, const glm::vec3 &chunkPos,
         int i, int j, int k) {
 //    glDisable(GL_DEPTH_TEST);
 //    glEnable(GL_STENCIL_TEST);
@@ -97,12 +85,12 @@ void Renderer::RenderOutline(
     m_Visibility += m_Increment * m_DeltaTime;
 //    glm::mat4 mvp = m_PersProj * m_View;
 
-    m_OutlineShader.Bind();
-    m_OutlineShader.SetUniformMat4f("u_MVP", mvp);
-    m_OutlineShader.SetUniform3fv("u_ChunkPos", chunkPos);
-    m_OutlineShader.SetUniform1f("u_Visibility", m_Visibility);
-//    m_OutlineShader->SetUniform1i("u_Outline", false);
-//    m_Texture.Bind(0);
+    shader.Bind();
+    shader.SetUniformMat4f("u_MVP", mvp);
+    shader.SetUniform3fv("u_ChunkPos", chunkPos);
+    shader.SetUniform1f("u_Visibility", m_Visibility);
+//    shader->SetUniform1i("u_Outline", false);
+//    texture.Bind(0);
     vao.Bind();
     ibo.Bind(vao.GetId());
     glDrawElements(GL_TRIANGLES, ibo.GetCount(), type, nullptr);

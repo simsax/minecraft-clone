@@ -15,9 +15,9 @@ void Game::Init() {
     m_Renderer.Init(m_Width, m_Height);
     m_GuiManager.Init(m_Width, m_Height);
     m_ChunkManager.InitWorld();
+    QuadEntity::InitBuffers();
+    SunEntity::InitShaders("shader_quad.vert", "shader_quad.frag");
     m_Sun.InitTexture();
-    m_Sun.InitShaders("shader_quad.vert", "shader_quad.frag");
-    m_Sun.InitBuffers();
 
     // spawn player over a block
     m_Camera.GetPlayerPosition().y += static_cast<float>(m_ChunkManager.SpawnHeight());

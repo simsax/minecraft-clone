@@ -439,28 +439,28 @@ bool Chunk::GenerateMesh() {
 }
 
 void
-Chunk::Render(Renderer &renderer, const VertexArray &vao, IndexBuffer &ibo, ChunkCoord playerChunk,
-              int radius) {
+Chunk::Render(Renderer &renderer, const VertexArray &vao, IndexBuffer &ibo, Shader& shader,
+              const Texture& texture, ChunkCoord playerChunk, int radius) {
     ibo.SetCount(m_IBOCount);
     m_VBO.Bind(vao.GetId());
-    renderer.Render(vao, ibo, GL_UNSIGNED_INT, m_ChunkPosition, 0);
+    renderer.RenderChunk(vao, ibo, shader, texture, GL_UNSIGNED_INT, m_ChunkPosition, 0);
     if (!m_TransparentMesh.empty()) {
         ibo.SetCount(m_TIBOCount);
         glDisable(GL_CULL_FACE);
-        renderer.Render(vao, ibo, GL_UNSIGNED_INT, m_ChunkPosition, m_Mesh.size());
+        renderer.RenderChunk(vao, ibo, shader, texture, GL_UNSIGNED_INT, m_ChunkPosition, m_Mesh.size());
         glEnable(GL_CULL_FACE);
     }
     if (!m_SpriteMesh.empty() && ChunkIsVisible(playerChunk, radius)) {
         ibo.SetCount(m_SIBOCount);
         glDisable(GL_CULL_FACE);
-        renderer.Render(vao, ibo, GL_UNSIGNED_INT, m_ChunkPosition,
+        renderer.RenderChunk(vao, ibo, shader, texture, GL_UNSIGNED_INT, m_ChunkPosition,
                         m_Mesh.size() + m_TransparentMesh.size());
         glEnable(GL_CULL_FACE);
     }
 }
 
 void Chunk::RenderOutline(Renderer &renderer, const VertexArray &vao, VertexBuffer &vbo,
-                          IndexBuffer &ibo, const glm::uvec3 &target) {
+                          IndexBuffer &ibo, Shader& shader, const glm::uvec3 &target) {
     std::array<Chunk *, 4> neighbors = {nullptr};
     if (FindNeighbors(neighbors)) {
         int i = target.x;
@@ -474,7 +474,7 @@ void Chunk::RenderOutline(Renderer &renderer, const VertexArray &vao, VertexBuff
             size_t indexCount = outlineMesh.size() / 4 * 6;
             vbo.SendData(outlineMesh.size() * sizeof(uint32_t), outlineMesh.data(), 0);
             ibo.SetCount(indexCount);
-            renderer.RenderOutline(vao, ibo, GL_UNSIGNED_INT, m_ChunkPosition, i, j, k);
+            renderer.RenderOutline(vao, ibo, shader, GL_UNSIGNED_INT, m_ChunkPosition, i, j, k);
         }
     }
 }
