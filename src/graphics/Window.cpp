@@ -1,6 +1,7 @@
 #include "Window.h"
 #include <iostream>
 #include <exception>
+#include <utility>
 
 bool Window::firstMouse = true;
 float Window::lastX = 960.0f;
@@ -9,8 +10,8 @@ float Window::mouseSensitivity = 0.1f;
 bool Window::wireframe = false;
 bool Window::mouseCaptured = true;
 
-Window::Window(Game *game, int width, int height, const char *name)
-        : m_Game(game), m_Width(width), m_Height(height), m_Name(name) {
+Window::Window(WindowListener* windowListener, int width, int height, const char *name)
+        : m_WindowListener(windowListener), m_Width(width), m_Height(height), m_Name(name) {
     glfwSetErrorCallback(ErrorCallback);
     // initialize GLFW
     if (!glfwInit()) {
@@ -43,7 +44,7 @@ Window::Window(Game *game, int width, int height, const char *name)
     glfwSetCursorPosCallback(m_Window, MouseCallback);
     glfwSetMouseButtonCallback(m_Window, MouseButtonCallback);
     glfwSetKeyCallback(m_Window, KeyCallback);
-    glfwSetWindowUserPointer(m_Window, (void *) m_Game);
+    glfwSetWindowUserPointer(m_Window, (void *) m_WindowListener);
     glfwSetScrollCallback(m_Window, ScrollCallback);
     glfwSetFramebufferSizeCallback(m_Window, FramebufferSizeCallback);
 
@@ -57,15 +58,13 @@ Window::Window(Game *game, int width, int height, const char *name)
     glDebugMessageCallback(Window::MessageCallback, 0);
     glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
 #endif
-
-    m_Game->Init();
 }
 
 void Window::WindowLoop() {
     float currentFrame = 0.0f, deltaTime = 0.0f, lastFrame = 0.0f;
     //#ifndef NDEBUG
-    float prevTime = 0.0f, crntTime = 0.0f;
-    unsigned int nFrames = 0;
+    float prevTime = 0.0f;
+    uint32_t nFrames = 0;
     //#endif
     while (!glfwWindowShouldClose(m_Window)) {
         currentFrame = static_cast<float>(glfwGetTime());
@@ -73,26 +72,17 @@ void Window::WindowLoop() {
         lastFrame = currentFrame;
 
         //#ifndef NDEBUG
-        crntTime = static_cast<float>(glfwGetTime());
         nFrames++;
-        if (crntTime - prevTime >= 1.0) {
-            std::string fps = std::to_string(nFrames);
-            std::string ms = std::to_string(1000.0 / nFrames);
-            glm::vec3 playerPos = m_Game->GetPlayerPosition();
-            std::string newTitle = "Minecraft 2 - " + fps + "FPS / " + ms + "ms"
-                                   + "  -  PlayerPos: " + std::to_string(playerPos.x) + ","
-                                   + std::to_string(playerPos.y) + "," +
-                                   std::to_string(playerPos.z);
-            glfwSetWindowTitle(m_Window, newTitle.c_str());
-            prevTime = crntTime;
+        if (currentFrame - prevTime >= 1.0) {
+            m_WindowListener->UpdateFPS(nFrames);
+            prevTime = currentFrame;
             nFrames = 0;
         }
         //#endif
 
         glfwPollEvents();
 
-        m_Game->OnUpdate(deltaTime);
-        m_Game->OnRender();
+        m_WindowListener->Update(deltaTime);
 
         glfwSwapBuffers(m_Window);
     }
@@ -101,8 +91,8 @@ void Window::WindowLoop() {
 
 // camera input
 void Window::MouseCallback(GLFWwindow *window, double xpos, double ypos) {
-    Game *game;
-    game = (Game *) glfwGetWindowUserPointer(window);
+    auto* windowListener = static_cast<WindowListener *>(glfwGetWindowUserPointer(window));
+
     if (firstMouse) {
         lastX = static_cast<float>(xpos);
         lastY = static_cast<float>(ypos);
@@ -116,22 +106,20 @@ void Window::MouseCallback(GLFWwindow *window, double xpos, double ypos) {
     lastX = static_cast<float>(xpos);
     lastY = static_cast<float>(ypos);
 
-    game->ProcessMouse(xoffset, yoffset);
+    windowListener->MouseMoved(xoffset, yoffset);
 }
 
 void Window::MouseButtonCallback(GLFWwindow *window, int button, int action, int mods) {
-    Game *game;
-    game = (Game *) glfwGetWindowUserPointer(window);
+    auto* windowListener = static_cast<WindowListener *>(glfwGetWindowUserPointer(window));
 
     if (action == GLFW_PRESS)
-        game->PressKey(button);
+        windowListener->KeyPressed(button);
     else if (action == GLFW_RELEASE)
-        game->ReleaseKey(button);
+        windowListener->KeyReleased(button);
 }
 
 void Window::KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
-    Game *game;
-    game = (Game *) glfwGetWindowUserPointer(window);
+    auto* windowListener = static_cast<WindowListener *>(glfwGetWindowUserPointer(window));
 
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         if (mouseCaptured)
@@ -150,9 +138,9 @@ void Window::KeyCallback(GLFWwindow *window, int key, int scancode, int action, 
     if (key == GLFW_KEY_UNKNOWN)
         return;
     if (action == GLFW_PRESS)
-        game->PressKey(key);
+        windowListener->KeyPressed(key);
     else if (action == GLFW_RELEASE)
-        game->ReleaseKey(key);
+        windowListener->KeyReleased(key);
 }
 
 void GLAPIENTRY Window::MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity,
@@ -169,14 +157,16 @@ void Window::ErrorCallback(int error, const char *msg) {
 }
 
 void Window::ScrollCallback(GLFWwindow *window, double xoffset, double yoffset) {
-    Game *game;
-    game = (Game *) glfwGetWindowUserPointer(window);
-    game->Scroll(yoffset);
+    auto* windowListener = static_cast<WindowListener *>(glfwGetWindowUserPointer(window));
+    windowListener->MouseScroll(yoffset);
 }
 
 void Window::FramebufferSizeCallback(GLFWwindow *window, int width, int height) {
-    Game *game;
-    game = (Game *) glfwGetWindowUserPointer(window);
+    auto* windowListener = static_cast<WindowListener *>(glfwGetWindowUserPointer(window));
     glViewport(0, 0, width, height);
-    game->Resize(width, height);
+    windowListener->Resize(width, height);
+}
+
+void Window::ChangeTitle(const std::string &newTitle) {
+    glfwSetWindowTitle(m_Window, newTitle.c_str());
 }

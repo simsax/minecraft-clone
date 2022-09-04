@@ -1,13 +1,15 @@
 #pragma once
 
+#include <memory>
 #include "GL/glew.h"
 #include "GLFW/glfw3.h"
-#include "../Game.h"
+#include "WindowListener.h"
 
 class Window {
 public:
-    Window(Game* game, int width, int height, const char* name);
+    Window(WindowListener* windowListener, int width, int height, const char* name);
     void WindowLoop();
+    void ChangeTitle(const std::string& newTitle);
 
 private:
     static void MouseCallback(GLFWwindow* window, double xpos, double ypos);
@@ -30,5 +32,5 @@ private:
     int m_Height;
     const char* m_Name;
     GLFWwindow* m_Window;
-    Game* m_Game;
+    WindowListener* m_WindowListener;
 };

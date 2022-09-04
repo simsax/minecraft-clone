@@ -3,27 +3,33 @@
 #include "camera/Camera.h"
 #include "world/ChunkManager.h"
 #include "gui/GuiManager.h"
+#include "graphics/WindowListener.h"
 #include "entities/SunEntity.h"
+#include "graphics/Window.h"
 
-class Game {
+class Game : WindowListener {
 public:
     Game();
+    void Update(float deltaTime) override;
+    void KeyPressed(int key) override;
+    void KeyReleased(int key) override;
+    void MouseScroll(float offset) override;
+    void MouseMoved(float xOffset, float yOffset) override;
+    void Resize(int width, int height) override;
+    void UpdateFPS(uint32_t numFrames) override;
+
     void Init();
-    void OnUpdate(float deltaTime);
-    void OnRender();
-    void ProcessMouse(float xoffset, float yoffset);
-    void PressKey(int key);
-    void ReleaseKey(int key);
-    void Scroll(float offset);
+    void Run();
     int GetWidth() const;
     int GetHeight() const;
 
     // debug
     glm::vec3 GetPlayerPosition();
 
-    void Resize(int width, int height);
 
 private:
+    void OnUpdate(float deltaTime);
+    void OnRender();
     void CheckRayCast();
     void ApplyGravity(float deltaTime);
     void Jump();
@@ -33,6 +39,7 @@ private:
 
     int m_Width;
     int m_Height;
+    Window m_Window;
     std::array<bool, GLFW_KEY_LAST> m_KeyPressed;
     bool m_Ground;
     Camera m_Camera;

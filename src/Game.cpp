@@ -2,14 +2,18 @@
 #include <iostream>
 
 Game::Game()
-        : m_Width(1920), m_Height(1080), m_KeyPressed({}), m_Ground(false),
+        : m_Width(1920), m_Height(1080),
+          m_Window(this, m_Width, m_Height, "Minecraft clone"), m_KeyPressed({}), m_Ground(false),
           m_Camera(glm::vec3(0.0f, 0.0f, 0.0f), 1920, 1080),
           m_ChunkManager(&m_Camera),
           m_Blocks(std::vector({Block::DIRT, Block::GRASS, Block::SAND, Block::SNOW, Block::STONE,
                                 Block::WOOD, Block::DIAMOND, Block::EMPTY, Block::EMPTY})),
           m_HoldingBlock(0), m_SkyColor(173.0f / 255.0f, 223.0f / 255.0f, 230.0f / 255.0f),
           m_ShowGui(true), m_VerticalVelocity(0.0f),
-          m_Sun("sun", "sun.png", glm::vec3(0), glm::vec3(300.0f, 1.0f, 300.0f)) {}
+          m_Sun("sun", "sun.png", glm::vec3(0), glm::vec3(300.0f, 1.0f, 300.0f)) {
+
+    this->Init();
+}
 
 void Game::Init() {
     m_Renderer.Init(m_Width, m_Height);
@@ -21,6 +25,40 @@ void Game::Init() {
 
     // spawn player over a block
     m_Camera.GetPlayerPosition().y += static_cast<float>(m_ChunkManager.SpawnHeight());
+}
+
+void Game::Run() {
+    m_Window.WindowLoop();
+}
+
+void Game::Update(float deltaTime) {
+    OnUpdate(deltaTime);
+    OnRender();
+}
+
+void Game::KeyPressed(int key) {
+    if (key >= GLFW_KEY_1 && key <= GLFW_KEY_9) {
+        m_HoldingBlock = key - GLFW_KEY_0 - 1;
+        m_GuiManager.PressKey(m_HoldingBlock);
+    }
+    m_KeyPressed[key] = true;
+}
+
+void Game::KeyReleased(int key) {
+    m_KeyPressed[key] = false;
+}
+
+void Game::MouseScroll(float offset) {
+    m_HoldingBlock += static_cast<int>(offset);
+    if (m_HoldingBlock < 0)
+        m_HoldingBlock = 0;
+    if (m_HoldingBlock > 8)
+        m_HoldingBlock = 8;
+    m_GuiManager.PressKey(m_HoldingBlock);
+}
+
+void Game::MouseMoved(float xOffset, float yOffset) {
+    m_Camera.ProcessMouse(xOffset, yOffset);
 }
 
 void Game::OnUpdate(float deltaTime) {
@@ -58,27 +96,6 @@ void Game::HandleInput() {
         m_ShowGui = !m_ShowGui;
         m_KeyPressed[GLFW_KEY_G] = false;
     }
-}
-
-void Game::ProcessMouse(float xoffset, float yoffset) { m_Camera.ProcessMouse(xoffset, yoffset); }
-
-void Game::PressKey(int key) {
-    if (key >= GLFW_KEY_1 && key <= GLFW_KEY_9) {
-        m_HoldingBlock = key - GLFW_KEY_0 - 1;
-        m_GuiManager.PressKey(m_HoldingBlock);
-    }
-    m_KeyPressed[key] = true;
-}
-
-void Game::ReleaseKey(int key) { m_KeyPressed[key] = false; }
-
-void Game::Scroll(float offset) {
-    m_HoldingBlock += static_cast<int>(offset);
-    if (m_HoldingBlock < 0)
-        m_HoldingBlock = 0;
-    if (m_HoldingBlock > 8)
-        m_HoldingBlock = 8;
-    m_GuiManager.PressKey(m_HoldingBlock);
 }
 
 void Game::Move(float deltaTime) {
@@ -251,4 +268,11 @@ int Game::GetWidth() const {
 
 int Game::GetHeight() const {
     return m_Height;
+}
+
+void Game::UpdateFPS(uint32_t numFrames) {
+    std::string fps = std::to_string(numFrames);
+    std::string ms = std::to_string(1000.0 / numFrames);
+    std::string newTitle = "Minecraft 2 - " + fps + "FPS / " + ms + "ms";
+    m_Window.ChangeTitle(newTitle);
 }
