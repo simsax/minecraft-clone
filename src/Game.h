@@ -7,7 +7,7 @@
 #include "entities/SunEntity.h"
 #include "graphics/Window.h"
 
-class Game : WindowListener {
+class Game : public WindowListener {
 public:
     Game();
     void Update(float deltaTime) override;
@@ -18,16 +18,10 @@ public:
     void Resize(int width, int height) override;
     void UpdateFPS(uint32_t numFrames) override;
 
-    void Init();
     void Run();
-    int GetWidth() const;
-    int GetHeight() const;
-
-    // debug
-    glm::vec3 GetPlayerPosition();
-
 
 private:
+    void Init();
     void OnUpdate(float deltaTime);
     void OnRender();
     void CheckRayCast();

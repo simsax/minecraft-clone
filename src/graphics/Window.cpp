@@ -1,7 +1,7 @@
 #include "Window.h"
-#include <iostream>
 #include <exception>
-#include <utility>
+#include <iostream>
+#include "../utils/Logger.h"
 
 bool Window::firstMouse = true;
 float Window::lastX = 960.0f;
@@ -38,7 +38,8 @@ Window::Window(WindowListener* windowListener, int width, int height, const char
     if (glewInit() != GLEW_OK) {
         throw std::runtime_error("Failed to initialize GLEW");
     }
-    std::cout << glGetString(GL_VERSION) << std::endl;
+
+    std::cout << glGetString(GL_VERSION) << "\n";
 
     // set callbacks
     glfwSetCursorPosCallback(m_Window, MouseCallback);
@@ -146,14 +147,16 @@ void Window::KeyCallback(GLFWwindow *window, int key, int scancode, int action, 
 void GLAPIENTRY Window::MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity,
                                         GLsizei length, const GLchar *message,
                                         const void *userParam) {
-    fprintf(stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
-            (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""), type, severity, message);
+    if (type == GL_DEBUG_TYPE_ERROR)
+        GL_LOG_ERROR("type = {}, severity = {}, message = {}", type, severity, message);
+    else
+        GL_LOG_WARN("type = {}, severity = {}, message = {}", type, severity, message);
+//    fprintf(stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
+//            (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""), type, severity, message);
 }
 
 void Window::ErrorCallback(int error, const char *msg) {
-    std::string s;
-    s = " [" + std::to_string(error) + "] " + msg + '\n';
-    std::cerr << s << std::endl;
+    GL_LOG_ERROR("Error {}: {}", error, msg);
 }
 
 void Window::ScrollCallback(GLFWwindow *window, double xoffset, double yoffset) {

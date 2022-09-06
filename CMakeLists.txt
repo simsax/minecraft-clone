@@ -76,12 +76,14 @@ add_executable(${PROJECT_NAME}
         src/entities/Entity.cpp
         src/entities/QuadEntity.cpp
         src/entities/GuiEntity.cpp
-        src/entities/CursorEntity.cpp)
+        src/entities/CursorEntity.cpp
+        src/utils/Logger.cpp)
 
 add_subdirectory(extern/glfw)
 add_subdirectory(extern/glew)
 add_subdirectory(extern/glm)
 add_subdirectory(extern/fastnoise2)
+add_subdirectory(extern/spdlog)
 
 target_include_directories(${PROJECT_NAME}
         PUBLIC ${CMAKE_BINARY_DIR}
@@ -90,6 +92,7 @@ target_include_directories(${PROJECT_NAME}
         PUBLIC extern/glm
         PUBLIC extern/stb_image
         PUBLIC extern/fastnoise2/include
+        PUBLIC extern/spdlog/include
         )
 
-target_link_libraries(${PROJECT_NAME} glfw libglew_static glm FastNoise)
+target_link_libraries(${PROJECT_NAME} glfw libglew_static glm FastNoise spdlog)

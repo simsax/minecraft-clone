@@ -1,5 +1,5 @@
 #include "Game.h"
-#include <iostream>
+#include "utils/Logger.h"
 
 Game::Game()
         : m_Width(1920), m_Height(1080),
@@ -11,7 +11,8 @@ Game::Game()
           m_HoldingBlock(0), m_SkyColor(173.0f / 255.0f, 223.0f / 255.0f, 230.0f / 255.0f),
           m_ShowGui(true), m_VerticalVelocity(0.0f),
           m_Sun("sun", "sun.png", glm::vec3(0), glm::vec3(300.0f, 1.0f, 300.0f)) {
-
+    Logger::Init();
+    Logger::GetGLLogger()->set_level(spdlog::level::off); // opengl logger level
     this->Init();
 }
 
@@ -250,24 +251,12 @@ void Game::UpdateChunks() {
     m_ChunkManager.UpdateChunks();
 }
 
-glm::vec3 Game::GetPlayerPosition() {
-    return m_Camera.GetPlayerPosition();
-}
-
 void Game::Resize(int width, int height) {
     m_Width = width;
     m_Height = height;
     m_Camera.Resize(m_Width, m_Height);
     m_GuiManager.Resize(m_Width, m_Height);
     m_Renderer.Resize(m_Width, m_Height);
-}
-
-int Game::GetWidth() const {
-    return m_Width;
-}
-
-int Game::GetHeight() const {
-    return m_Height;
 }
 
 void Game::UpdateFPS(uint32_t numFrames) {

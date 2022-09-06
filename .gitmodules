@@ -10,3 +10,6 @@
 [submodule "extern/fastnoise2"]
 	path = extern/fastnoise2
 	url = https://github.com/Auburn/FastNoise2.git
+[submodule "extern/spdlog"]
+	path = extern/spdlog
+	url = https://github.com/gabime/spdlog.git
