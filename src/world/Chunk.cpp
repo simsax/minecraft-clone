@@ -32,12 +32,13 @@ static std::array<uint32_t, 4> GenerateTextCoords(const glm::uvec2 &textureCoord
 static void CreateQuad(std::vector<uint32_t> &target, const glm::uvec3 &position,
                        const glm::uvec2 &textureCoords, const glm::uvec4 &offsetx,
                        const glm::uvec4 &offsety,
-                       const glm::uvec4 &offsetz) {
+                       const glm::uvec4 &offsetz,
+                       uint8_t normalIndex) {
     static constexpr int vertices = 4;
     std::array<uint32_t, vertices> t = GenerateTextCoords({textureCoords[0], textureCoords[1]});
 
     for (int i = 0; i < vertices; i++) {
-        uint32_t v = (position[0] + offsetx[i]) << 24 | (position[1] + offsety[i]) << 15
+        uint32_t v = normalIndex << 29 | (position[0] + offsetx[i]) << 24 | (position[1] + offsety[i]) << 15
                      | (position[2] + offsetz[i]) << 10 | t[i];
         target.emplace_back(v);
     }
@@ -310,31 +311,31 @@ void Chunk::GenCube(int i, int j, int k, std::vector<uint32_t> &target,
 
     if (j == 0 || (j > 0 && ((m_Chunk(i, j - 1, k) == voidBlocks) || ...))) {
         CreateQuad(target, {i, j, k}, {textureCoords[4], textureCoords[5]}, // D
-                   {0, 0, 1, 1}, glm::uvec4(0), {1, 0, 0, 1});
+                   {0, 0, 1, 1}, glm::uvec4(0), {1, 0, 0, 1}, 3);
     }
     if (j == YSIZE - 1 || (j < YSIZE - 1 && ((m_Chunk(i, j + 1, k) == voidBlocks) || ...))) {
         CreateQuad(target, {i, j, k}, {textureCoords[0], textureCoords[1]}, // U
-                   {0, 1, 1, 0}, glm::uvec4(1), {1, 1, 0, 0});
+                   {0, 1, 1, 0}, glm::uvec4(1), {1, 1, 0, 0}, 2);
     }
     if ((k == 0 && CheckNeighbor(neighbors[north], {i, j, ZSIZE - 1}, voidBlocks...))
         || (k > 0 && ((m_Chunk(i, j, k - 1) == voidBlocks) || ...))) {
         CreateQuad(target, {i, j, k}, {textureCoords[2], textureCoords[3]}, // B
-                   {1, 0, 0, 1}, {0, 0, 1, 1}, glm::uvec4(0));
+                   {1, 0, 0, 1}, {0, 0, 1, 1}, glm::uvec4(0), 5);
     }
     if ((k == ZSIZE - 1 && CheckNeighbor(neighbors[south], {i, j, 0}, voidBlocks...))
         || (k < ZSIZE - 1 && ((m_Chunk(i, j, k + 1) == voidBlocks) || ...))) {
         CreateQuad(target, {i, j, k}, {textureCoords[2], textureCoords[3]}, // F
-                   {0, 1, 1, 0}, {0, 0, 1, 1}, glm::uvec4(1));
+                   {0, 1, 1, 0}, {0, 0, 1, 1}, glm::uvec4(1), 4);
     }
     if ((i == 0 && CheckNeighbor(neighbors[west], {XSIZE - 1, j, k}, voidBlocks...))
         || (i > 0 && ((m_Chunk(i - 1, j, k) == voidBlocks) || ...))) {
         CreateQuad(target, {i, j, k}, {textureCoords[2], textureCoords[3]}, // L
-                   glm::uvec4(0), {0, 0, 1, 1}, {0, 1, 1, 0});
+                   glm::uvec4(0), {0, 0, 1, 1}, {0, 1, 1, 0}, 1);
     }
     if ((i == XSIZE - 1 && CheckNeighbor(neighbors[east], {0, j, k}, voidBlocks...))
         || (i < XSIZE - 1 && ((m_Chunk(i + 1, j, k) == voidBlocks) || ...))) {
         CreateQuad(target, {i, j, k}, {textureCoords[2], textureCoords[3]}, // R
-                   glm::uvec4(1), {0, 0, 1, 1}, {1, 0, 0, 1});
+                   glm::uvec4(1), {0, 0, 1, 1}, {1, 0, 0, 1}, 0);
     }
 }
 
@@ -347,9 +348,11 @@ static void GenSprite(
     static constexpr std::array<uint8_t, 8> offsetz = {0, 1, 1, 0, 1, 0, 0, 1};
     std::array<uint32_t, vertices> t = GenerateTextCoords({textureCoords[0], textureCoords[1]});
 
+    // maybe a constant color that changes depending on the angle would be better
+
     for (int n = 0; n < 8; n++) {
         uint32_t v
-                = (i + offsetx[n]) << 24 | (j + offsety[n]) << 15 | (k + offsetz[n]) << 10 |
+                = (n < 4 ? 5 << 29 : 4 << 29) | (i + offsetx[n]) << 24 | (j + offsety[n]) << 15 | (k + offsetz[n]) << 10 |
                   t[n % vertices];
         target.emplace_back(v);
     }
@@ -439,28 +442,31 @@ bool Chunk::GenerateMesh() {
 }
 
 void
-Chunk::Render(Renderer &renderer, const VertexArray &vao, IndexBuffer &ibo, Shader& shader,
-              const Texture& texture, ChunkCoord playerChunk, int radius) {
+Chunk::Render(Renderer &renderer, const VertexArray &vao, IndexBuffer &ibo, Shader &shader,
+              const Texture &texture, ChunkCoord playerChunk, int radius, const glm::vec3 &skyColor,
+              const glm::vec3 &sunColor) {
     ibo.SetCount(m_IBOCount);
     m_VBO.Bind(vao.GetId());
-    renderer.RenderChunk(vao, ibo, shader, texture, GL_UNSIGNED_INT, m_ChunkPosition, 0);
+    renderer.RenderChunk(vao, ibo, shader, texture, GL_UNSIGNED_INT, m_ChunkPosition, 0, skyColor,
+                         sunColor);
     if (!m_TransparentMesh.empty()) {
         ibo.SetCount(m_TIBOCount);
         glDisable(GL_CULL_FACE);
-        renderer.RenderChunk(vao, ibo, shader, texture, GL_UNSIGNED_INT, m_ChunkPosition, m_Mesh.size());
+        renderer.RenderChunk(vao, ibo, shader, texture, GL_UNSIGNED_INT, m_ChunkPosition,
+                             m_Mesh.size(), skyColor, sunColor);
         glEnable(GL_CULL_FACE);
     }
     if (!m_SpriteMesh.empty() && ChunkIsVisible(playerChunk, radius)) {
         ibo.SetCount(m_SIBOCount);
         glDisable(GL_CULL_FACE);
         renderer.RenderChunk(vao, ibo, shader, texture, GL_UNSIGNED_INT, m_ChunkPosition,
-                        m_Mesh.size() + m_TransparentMesh.size());
+                             m_Mesh.size() + m_TransparentMesh.size(), skyColor, sunColor);
         glEnable(GL_CULL_FACE);
     }
 }
 
 void Chunk::RenderOutline(Renderer &renderer, const VertexArray &vao, VertexBuffer &vbo,
-                          IndexBuffer &ibo, Shader& shader, const glm::uvec3 &target) {
+                          IndexBuffer &ibo, Shader &shader, const glm::uvec3 &target) {
     std::array<Chunk *, 4> neighbors = {nullptr};
     if (FindNeighbors(neighbors)) {
         int i = target.x;

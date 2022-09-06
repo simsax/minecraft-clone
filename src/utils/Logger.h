@@ -11,7 +11,8 @@ private:
     static std::shared_ptr<spdlog::logger> s_GLLog;
 };
 
-#ifdef NDEBUG
+//#ifdef NDEBUG
+#if 0
 
 #define LOG_TRACE
 #define LOG_INFO

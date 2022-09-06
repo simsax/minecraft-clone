@@ -5,7 +5,6 @@
 
 Renderer::Renderer() :
         m_View(glm::mat4()),
-        m_SkyColor(glm::vec3()),
         m_PersProj(glm::mat4()),
         m_OrthoProj(glm::mat4()),
         m_Visibility(0.5f),
@@ -13,8 +12,6 @@ Renderer::Renderer() :
         m_DeltaTime(0.0f) {}
 
 void Renderer::SetViewMatrix(const glm::mat4 &view) { m_View = view; }
-
-void Renderer::SetSkyColor(const glm::vec3 &skyColor) { m_SkyColor = skyColor; }
 
 void Renderer::Init(int width, int height) {
     glEnable(GL_DEPTH_TEST);
@@ -37,13 +34,14 @@ void Renderer::Init(int width, int height) {
 void Renderer::RenderChunk(
         const VertexArray &vao, const IndexBuffer &ibo, Shader& shader, const Texture& texture,
         GLenum type,
-        const glm::vec3 &chunkPos, uint32_t offset) {
+        const glm::vec3 &chunkPos, uint32_t offset, const glm::vec3& skyColor, const glm::vec3& sunColor) {
     glm::mat4 mvp = m_PersProj * m_View;
     shader.Bind();
     shader.SetUniformMat4f("u_MVP", mvp);
     shader.SetUniformMat4f("u_MV", m_View);
     shader.SetUniform3fv("u_ChunkPos", chunkPos);
-    shader.SetUniform3fv("u_SkyColor", m_SkyColor);
+    shader.SetUniform3fv("u_SkyColor", skyColor);
+    shader.SetUniform3fv("u_SunColor", sunColor);
     texture.Bind(0);
     vao.Bind();
     ibo.Bind(vao.GetId());

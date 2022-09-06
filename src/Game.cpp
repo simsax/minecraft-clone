@@ -76,8 +76,8 @@ void Game::OnUpdate(float deltaTime) {
 void Game::OnRender() {
     Renderer::Clear(m_SkyColor);
     m_Renderer.SetViewMatrix(m_Camera.GetViewMatrix());
-    m_Renderer.SetSkyColor(m_SkyColor);
-    m_ChunkManager.Render(m_Renderer);
+//    m_Sun.SetColor({245 / 255.0f, 220 / 255.0f, 110 / 255.0f});
+    m_ChunkManager.Render(m_Renderer, m_SkyColor, m_Sun.GetColor());
     m_Sun.Render(m_Renderer);
     if (m_ShowGui)
         m_GuiManager.Render(m_Renderer);
@@ -262,6 +262,7 @@ void Game::Resize(int width, int height) {
 void Game::UpdateFPS(uint32_t numFrames) {
     std::string fps = std::to_string(numFrames);
     std::string ms = std::to_string(1000.0 / numFrames);
-    std::string newTitle = "Minecraft 2 - " + fps + "FPS / " + ms + "ms";
-    m_Window.ChangeTitle(newTitle);
+    LOG_INFO("{} FPS / {} ms", fps, ms);
+//    std::string newTitle = "Minecraft 2 - " + fps + "FPS / " + ms + "ms";
+//    m_Window.ChangeTitle(newTitle);
 }

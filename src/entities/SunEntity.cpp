@@ -6,8 +6,8 @@ Shader SunEntity::s_Shader = {};
 static std::once_flag fShaders;
 
 SunEntity::SunEntity(std::string name, std::string texturePath, const glm::vec3 &position,
-                     const glm::vec3 &scale) : QuadEntity(
-        std::move(name), std::move(texturePath), position, scale), m_Time(0.0f) {}
+                     const glm::vec3 &scale, const glm::vec3 &color) : QuadEntity(
+        std::move(name), std::move(texturePath), position, scale), m_Time(0.0f), m_Color(color) {}
 
 void SunEntity::InitShaders(const std::string &vertShaderPath, const std::string &fragShaderPath) {
     std::call_once(fShaders, [&](){
@@ -33,4 +33,12 @@ void SunEntity::Render(Renderer &renderer) {
 
 void SunEntity::IncrTime(float deltaTime) {
     m_Time += deltaTime;
+}
+
+glm::vec3 SunEntity::GetColor() const {
+    return m_Color;
+}
+
+void SunEntity::SetColor(const glm::vec3 &lightColor) {
+    m_Color = lightColor;
 }

@@ -48,7 +48,7 @@ ChunkManager::ChunkManager(Camera *camera)
 void ChunkManager::InitWorld() {
     m_TextureAtlas.Init();
     m_ChunkShader.Init(std::string(SOURCE_DIR) + "/res/shaders/shader_chunk.vert",
-                  std::string(SOURCE_DIR) + "/res/shaders/shader_chunk.frag");
+                       std::string(SOURCE_DIR) + "/res/shaders/shader_chunk.frag");
     m_ChunkShader.Bind();
     m_ChunkShader.SetUniform1i("u_Texture", 0);
 
@@ -71,7 +71,8 @@ void ChunkManager::InitWorld() {
     SortChunks();
 }
 
-void ChunkManager::Render(Renderer &renderer) {
+void
+ChunkManager::Render(Renderer &renderer, const glm::vec3 &skyColor, const glm::vec3 &sunColor) {
     LoadChunks();
     MeshChunks();
     if (m_SortChunks) {
@@ -86,13 +87,14 @@ void ChunkManager::Render(Renderer &renderer) {
     for (Chunk *chunk: m_ChunksToRender) {
         glm::vec3 center = chunk->GetCenterPosition();
         if (m_Camera->IsInFrustum(center))
-            chunk->Render(renderer, m_VAO, m_IBO, m_ChunkShader, m_TextureAtlas, playerChunk, radius);
+            chunk->Render(renderer, m_VAO, m_IBO, m_ChunkShader, m_TextureAtlas, playerChunk,
+                          radius, skyColor, sunColor);
     }
 
     if (m_Raycast.selected) {
         m_OutlineVBO.Bind(m_VAO.GetId());
-        m_Raycast.chunk->RenderOutline(renderer, m_VAO, m_OutlineVBO, m_IBO, m_OutlineShader,
-                                       m_Raycast.localVoxel);
+//        m_Raycast.chunk->RenderOutline(renderer, m_VAO, m_OutlineVBO, m_IBO, m_OutlineShader,
+//                                       m_Raycast.localVoxel);
     }
 }
 

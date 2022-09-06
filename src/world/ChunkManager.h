@@ -17,7 +17,7 @@ public:
     void InitWorld();
     int SpawnHeight();
     ChunkCoord CalculateChunkCoord(const glm::vec3 &position);
-    void Render(Renderer &renderer);
+    void Render(Renderer &renderer, const glm::vec3& skyColor, const glm::vec3& sunColor);
     std::array<uint32_t, 3> GetChunkSize() const;
     bool IsVoxelSolid(const glm::vec3 &voxel);
     void DestroyBlock();

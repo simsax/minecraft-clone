@@ -15,7 +15,7 @@ public:
 
     void RenderChunk(const VertexArray &vao, const IndexBuffer &ibo, Shader &shader,
                      const Texture &texture, GLenum type, const glm::vec3 &chunkPos,
-                     uint32_t offset);
+                     uint32_t offset, const glm::vec3& skyColor, const glm::vec3& sunColor);
 
     void RenderQuad(const VertexArray &vao, Shader &shader, const Texture &texture,
                     const glm::mat4 &model, bool ortho);
@@ -35,7 +35,6 @@ public:
 
 private:
     glm::mat4 m_View;
-    glm::vec3 m_SkyColor;
     glm::mat4 m_PersProj;
     glm::mat4 m_OrthoProj;
     float m_Visibility;
