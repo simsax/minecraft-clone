@@ -84,7 +84,7 @@ public:
     void
     Render(Renderer &renderer, const VertexArray &vao, IndexBuffer &ibo, Shader &shader,
            const Texture &texture, ChunkCoord playerChunk, int radius, const glm::vec3 &skyColor,
-           const glm::vec3 &sunColor);
+           const glm::vec3 &sunColor, const glm::vec3 &viewPos, const glm::vec3& sunPos, bool isDay);
 
     void RenderOutline(Renderer &renderer, const VertexArray &vao, VertexBuffer &vbo,
                        IndexBuffer &ibo, Shader &shader, const glm::uvec3 &target);

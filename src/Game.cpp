@@ -8,9 +8,14 @@ Game::Game()
           m_ChunkManager(&m_Camera),
           m_Blocks(std::vector({Block::DIRT, Block::GRASS, Block::SAND, Block::SNOW, Block::STONE,
                                 Block::WOOD, Block::DIAMOND, Block::EMPTY, Block::EMPTY})),
-          m_HoldingBlock(0), m_SkyColor(173.0f / 255.0f, 223.0f / 255.0f, 230.0f / 255.0f),
+          m_HoldingBlock(0),
+          m_SkyColor(0, 0, 0),
           m_ShowGui(true), m_VerticalVelocity(0.0f),
-          m_Sun("sun", "sun.png", glm::vec3(0), glm::vec3(300.0f, 1.0f, 300.0f)) {
+          m_Sun("sun", "sun.png", glm::vec3(0), glm::vec3(300.0f, 1.0f, 300.0f)),
+          m_Moon("moon", "moon.png", glm::vec3(0), glm::vec3(300.0f, 1.0f, 300.0f)),
+          m_Pause(false),
+          m_Sky("sky", "", glm::vec3(0), glm::vec3(1000000.0f, 1.0f, 1000000.0f),
+                {173.0f / 255.0f, 223.0f / 255.0f, 230.0f / 255.0f}) {
     Logger::Init();
     Logger::GetGLLogger()->set_level(spdlog::level::off); // opengl logger level
     this->Init();
@@ -21,8 +26,10 @@ void Game::Init() {
     m_GuiManager.Init(m_Width, m_Height);
     m_ChunkManager.InitWorld();
     QuadEntity::InitBuffers();
-    SunEntity::InitShaders("shader_quad.vert", "shader_quad.frag");
+    Sun::InitShaders("shader_quad.vert", "shader_quad.frag");
+    Sky::InitShaders("shader_sky.vert", "shader_sky.frag");
     m_Sun.InitTexture();
+    m_Moon.InitTexture();
 
     // spawn player over a block
     m_Camera.GetPlayerPosition().y += static_cast<float>(m_ChunkManager.SpawnHeight());
@@ -33,8 +40,11 @@ void Game::Run() {
 }
 
 void Game::Update(float deltaTime) {
-    OnUpdate(deltaTime);
-    OnRender();
+    HandleInput();
+    if (!m_Pause) {
+        OnUpdate(deltaTime);
+        OnRender();
+    }
 }
 
 void Game::KeyPressed(int key) {
@@ -63,7 +73,6 @@ void Game::MouseMoved(float xOffset, float yOffset) {
 }
 
 void Game::OnUpdate(float deltaTime) {
-    HandleInput();
     CheckRayCast();
     ApplyGravity(deltaTime);
     Move(deltaTime);
@@ -71,14 +80,19 @@ void Game::OnUpdate(float deltaTime) {
     m_Renderer.SetDeltaTime(deltaTime);
     m_Sun.SetPosition(m_Camera.GetPlayerPosition());
     m_Sun.IncrTime(deltaTime);
+    m_Moon.SetPosition(m_Camera.GetPlayerPosition());
+    m_Moon.IncrTime(deltaTime);
+    m_Sky.SetPosition(m_Camera.GetPlayerPosition());
 }
 
 void Game::OnRender() {
-    Renderer::Clear(m_SkyColor);
+    Renderer::Clear(m_Sky.GetColor());
     m_Renderer.SetViewMatrix(m_Camera.GetViewMatrix());
-//    m_Sun.SetColor({245 / 255.0f, 220 / 255.0f, 110 / 255.0f});
-    m_ChunkManager.Render(m_Renderer, m_SkyColor, m_Sun.GetColor());
+//    m_Sky.Render(m_Renderer);
     m_Sun.Render(m_Renderer);
+    m_Moon.Render(m_Renderer);
+    // sun needs to be first since the position is determined before rendering
+    m_ChunkManager.Render(m_Renderer, m_Sky.GetColor(), m_Sun);
     if (m_ShowGui)
         m_GuiManager.Render(m_Renderer);
 }
@@ -96,6 +110,10 @@ void Game::HandleInput() {
     if (m_KeyPressed[GLFW_KEY_G]) {
         m_ShowGui = !m_ShowGui;
         m_KeyPressed[GLFW_KEY_G] = false;
+    }
+    if (m_KeyPressed[GLFW_KEY_P]) {
+        m_Pause = !m_Pause;
+        m_KeyPressed[GLFW_KEY_P] = false;
     }
 }
 
@@ -262,7 +280,7 @@ void Game::Resize(int width, int height) {
 void Game::UpdateFPS(uint32_t numFrames) {
     std::string fps = std::to_string(numFrames);
     std::string ms = std::to_string(1000.0 / numFrames);
-    LOG_INFO("{} FPS / {} ms", fps, ms);
+//    LOG_INFO("{} FPS / {} ms", fps, ms);
 //    std::string newTitle = "Minecraft 2 - " + fps + "FPS / " + ms + "ms";
 //    m_Window.ChangeTitle(newTitle);
 }

@@ -38,7 +38,8 @@ static void CreateQuad(std::vector<uint32_t> &target, const glm::uvec3 &position
     std::array<uint32_t, vertices> t = GenerateTextCoords({textureCoords[0], textureCoords[1]});
 
     for (int i = 0; i < vertices; i++) {
-        uint32_t v = normalIndex << 29 | (position[0] + offsetx[i]) << 24 | (position[1] + offsety[i]) << 15
+        uint32_t v = normalIndex << 29 | (position[0] + offsetx[i]) << 24 |
+                     (position[1] + offsety[i]) << 15
                      | (position[2] + offsetz[i]) << 10 | t[i];
         target.emplace_back(v);
     }
@@ -352,7 +353,8 @@ static void GenSprite(
 
     for (int n = 0; n < 8; n++) {
         uint32_t v
-                = (n < 4 ? 5 << 29 : 4 << 29) | (i + offsetx[n]) << 24 | (j + offsety[n]) << 15 | (k + offsetz[n]) << 10 |
+                = (n < 4 ? 7 << 29 : 6 << 29) | (i + offsetx[n]) << 24 | (j + offsety[n]) << 15 |
+                  (k + offsetz[n]) << 10 |
                   t[n % vertices];
         target.emplace_back(v);
     }
@@ -444,25 +446,26 @@ bool Chunk::GenerateMesh() {
 void
 Chunk::Render(Renderer &renderer, const VertexArray &vao, IndexBuffer &ibo, Shader &shader,
               const Texture &texture, ChunkCoord playerChunk, int radius, const glm::vec3 &skyColor,
-              const glm::vec3 &sunColor) {
+              const glm::vec3 &sunColor, const glm::vec3 &viewPos, const glm::vec3 &sunPos, bool isDay) {
     ibo.SetCount(m_IBOCount);
     m_VBO.Bind(vao.GetId());
     renderer.RenderChunk(vao, ibo, shader, texture, GL_UNSIGNED_INT, m_ChunkPosition, 0, skyColor,
-                         sunColor);
+                         sunColor, viewPos, sunPos, isDay);
     if (!m_TransparentMesh.empty()) {
         ibo.SetCount(m_TIBOCount);
         glDisable(GL_CULL_FACE);
         renderer.RenderChunk(vao, ibo, shader, texture, GL_UNSIGNED_INT, m_ChunkPosition,
-                             m_Mesh.size(), skyColor, sunColor);
+                             m_Mesh.size(), skyColor, sunColor, viewPos, sunPos, isDay);
         glEnable(GL_CULL_FACE);
     }
-    if (!m_SpriteMesh.empty() && ChunkIsVisible(playerChunk, radius)) {
-        ibo.SetCount(m_SIBOCount);
-        glDisable(GL_CULL_FACE);
-        renderer.RenderChunk(vao, ibo, shader, texture, GL_UNSIGNED_INT, m_ChunkPosition,
-                             m_Mesh.size() + m_TransparentMesh.size(), skyColor, sunColor);
-        glEnable(GL_CULL_FACE);
-    }
+//    if (!m_SpriteMesh.empty() && ChunkIsVisible(playerChunk, radius)) {
+//        ibo.SetCount(m_SIBOCount);
+//        glDisable(GL_CULL_FACE);
+//        renderer.RenderChunk(vao, ibo, shader, texture, GL_UNSIGNED_INT, m_ChunkPosition,
+//                             m_Mesh.size() + m_TransparentMesh.size(), skyColor, sunColor, viewPos,
+//                             sunPos, isDay);
+//        glEnable(GL_CULL_FACE);
+//    }
 }
 
 void Chunk::RenderOutline(Renderer &renderer, const VertexArray &vao, VertexBuffer &vbo,

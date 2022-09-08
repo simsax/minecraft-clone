@@ -1,6 +1,6 @@
 #include "GL/glew.h"
 #include "Shader.h"
-#include <iostream>
+#include "../utils/Logger.h"
 #include <fstream>
 #include <string>
 #include <sstream>
@@ -74,7 +74,7 @@ GLint Shader::GetUniformLocation(const std::string& name)
 
     GLint location = glGetUniformLocation(m_ShaderId, name.c_str());
     if (location == -1)
-        std::cout << "Warning: uniform '" << name << "' doesn't exist!\n";
+        LOG_WARN("Uniform {} doesn't exist!", name);
     m_UniformLocationCache[name] = location;
     return location;
 }
@@ -112,8 +112,8 @@ uint32_t Shader::CompileShader(uint32_t type, const std::string& source)
         glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
         char* message = (char*)malloc(length * sizeof(char));
         glGetShaderInfoLog(id, length, &length, message);
-        std::cout << "Failed to compile " << (type == GL_VERTEX_SHADER ? "vertex\n" : "fragment\n");
-        std::cout << message << std::endl;
+        LOG_ERROR("Failed to compile {} shader.", type == GL_VERTEX_SHADER ? "vertex" : "fragment");
+        LOG_ERROR("{}", message);
         glDeleteShader(id);
         return 0;
     }

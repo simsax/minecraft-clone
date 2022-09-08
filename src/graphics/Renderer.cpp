@@ -1,7 +1,7 @@
 #include "Renderer.h"
 #include "glm/gtc/matrix_transform.hpp"
-#include "Config.h"
 #include "../camera/Constants.h"
+#include "../utils/Logger.h"
 
 Renderer::Renderer() :
         m_View(glm::mat4()),
@@ -31,10 +31,12 @@ void Renderer::Init(int width, int height) {
                              1.0f);
 }
 
-void Renderer::RenderChunk(
-        const VertexArray &vao, const IndexBuffer &ibo, Shader& shader, const Texture& texture,
-        GLenum type,
-        const glm::vec3 &chunkPos, uint32_t offset, const glm::vec3& skyColor, const glm::vec3& sunColor) {
+void Renderer::RenderChunk(const VertexArray &vao, const IndexBuffer &ibo, Shader &shader,
+                           const Texture &texture,
+                           GLenum type, const glm::vec3 &chunkPos, uint32_t offset,
+                           const glm::vec3 &skyColor, const glm::vec3 &sunColor,
+                           const glm::vec3 &viewPos, const glm::vec3& lightPos,
+                           bool isDay) {
     glm::mat4 mvp = m_PersProj * m_View;
     shader.Bind();
     shader.SetUniformMat4f("u_MVP", mvp);
@@ -42,6 +44,9 @@ void Renderer::RenderChunk(
     shader.SetUniform3fv("u_ChunkPos", chunkPos);
     shader.SetUniform3fv("u_SkyColor", skyColor);
     shader.SetUniform3fv("u_SunColor", sunColor);
+    shader.SetUniform3fv("u_ViewPos", viewPos);
+    shader.SetUniform3fv("u_LightDir", lightPos);
+    shader.SetUniform1i("u_IsDay", isDay);
     texture.Bind(0);
     vao.Bind();
     ibo.Bind(vao.GetId());
@@ -49,7 +54,7 @@ void Renderer::RenderChunk(
 }
 
 void Renderer::RenderQuad(const VertexArray &vao, Shader &shader, const Texture &texture,
-                          const glm::mat4& model, bool ortho) {
+                          const glm::mat4 &model, bool ortho) {
     glm::mat4 mvp;
     if (ortho)
         mvp = m_OrthoProj * model;
@@ -62,8 +67,23 @@ void Renderer::RenderQuad(const VertexArray &vao, Shader &shader, const Texture 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
 
+void Renderer::RenderQuad(const VertexArray &vao, Shader &shader, const glm::vec3& color,
+                          const glm::mat4 &model, bool ortho) {
+    glm::mat4 mvp;
+    if (ortho)
+        mvp = m_OrthoProj * model;
+    else
+        mvp = m_PersProj * m_View * model;
+    shader.Bind();
+    shader.SetUniform4fv("u_Color", glm::vec4(color, 1.0f));
+    shader.SetUniformMat4f("u_MVP", mvp);
+    vao.Bind();
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+}
+
 void Renderer::RenderOutline(
-        const VertexArray &vao, const IndexBuffer &ibo, Shader& shader, GLenum type, const glm::vec3 &chunkPos,
+        const VertexArray &vao, const IndexBuffer &ibo, Shader &shader, GLenum type,
+        const glm::vec3 &chunkPos,
         int i, int j, int k) {
 //    glDisable(GL_DEPTH_TEST);
 //    glEnable(GL_STENCIL_TEST);

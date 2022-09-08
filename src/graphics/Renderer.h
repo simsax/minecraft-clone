@@ -15,12 +15,15 @@ public:
 
     void RenderChunk(const VertexArray &vao, const IndexBuffer &ibo, Shader &shader,
                      const Texture &texture, GLenum type, const glm::vec3 &chunkPos,
-                     uint32_t offset, const glm::vec3& skyColor, const glm::vec3& sunColor);
+                     uint32_t offset, const glm::vec3 &skyColor, const glm::vec3 &sunColor,
+                     const glm::vec3 &viewPos, const glm::vec3& lightPos, bool isDay);
 
     void RenderQuad(const VertexArray &vao, Shader &shader, const Texture &texture,
                     const glm::mat4 &model, bool ortho);
+    void RenderQuad(const VertexArray &vao, Shader &shader, const glm::vec3& color,
+                    const glm::mat4 &model, bool ortho);
 
-    void RenderOutline(const VertexArray &vao, const IndexBuffer &ibo, Shader& shader, GLenum type,
+    void RenderOutline(const VertexArray &vao, const IndexBuffer &ibo, Shader &shader, GLenum type,
                        const glm::vec3 &chunkPos, int i, int j, int k);
 
     void SetViewMatrix(const glm::mat4 &mv);

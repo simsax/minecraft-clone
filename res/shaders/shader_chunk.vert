@@ -22,20 +22,22 @@ const vec2 texCoords[4] = vec2[4](
 	vec2(0.0f, 1.0f)
 );
 
-const vec3 normals[6] = vec3[6](
+const vec3 normals[8] = vec3[8](
 	vec3(1.0f, 0.0f, 0.0f),
 	vec3(-1.0f, 0.0f, 0.0f),
 	vec3(0.0f, 1.0f, 0.0f),
 	vec3(0.0f, -1.0f, 0.0f),
 	vec3(0.0f, 0.0f, 1.0f),
-	vec3(0.0f, 0.0f, -1.0f)
+	vec3(0.0f, 0.0f, -1.0f),
+	vec3(0.5f, 0.0f, 0.5f),
+	vec3(-0.5f, 0.0f, -0.5f)
 );
 
 void main() {
 	float x = float(in_VertexCoord >> 24 & 0x1Fu) + u_ChunkPos.x;
 	float y = float(in_VertexCoord >> 15 & 0x1FFu) + u_ChunkPos.y;
 	float z = float(in_VertexCoord >> 10 & 0x1Fu) + u_ChunkPos.z;
-	uint normalIndex = in_VertexCoord >> 29 & 0x3u;
+	uint normalIndex = in_VertexCoord >> 29 & 0x7u;
 	normal = normals[normalIndex];
 	fragPos = vec3(x, y, z);
 

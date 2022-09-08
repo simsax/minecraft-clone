@@ -4,8 +4,10 @@
 #include "world/ChunkManager.h"
 #include "gui/GuiManager.h"
 #include "graphics/WindowListener.h"
-#include "entities/SunEntity.h"
+#include "entities/Sun.h"
+#include "entities/Moon.h"
 #include "graphics/Window.h"
+#include "entities/Sky.h"
 
 class Game : public WindowListener {
 public:
@@ -45,5 +47,8 @@ private:
     GuiManager m_GuiManager;
     bool m_ShowGui;
     float m_VerticalVelocity;
-    SunEntity m_Sun;
+    Sun m_Sun;
+    Moon m_Moon;
+    bool m_Pause;
+    Sky m_Sky;
 };

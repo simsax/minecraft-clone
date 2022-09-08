@@ -2,6 +2,7 @@
 #include "glm/gtx/norm.hpp"
 #include <iostream>
 #include "../utils/Timer.h"
+#include "../utils/Logger.h"
 #include "Config.h"
 
 using namespace std::chrono_literals;
@@ -72,7 +73,7 @@ void ChunkManager::InitWorld() {
 }
 
 void
-ChunkManager::Render(Renderer &renderer, const glm::vec3 &skyColor, const glm::vec3 &sunColor) {
+ChunkManager::Render(Renderer &renderer, const glm::vec3 &skyColor, const Sun &sun) {
     LoadChunks();
     MeshChunks();
     if (m_SortChunks) {
@@ -83,12 +84,14 @@ ChunkManager::Render(Renderer &renderer, const glm::vec3 &skyColor, const glm::v
     // frustum culling
     m_Camera->UpdateFrustum();
     ChunkCoord playerChunk = CalculateChunkCoord(m_Camera->GetPlayerPosition());
+    glm::vec3 sunDir = m_Camera->GetPlayerPosition() - sun.GetPosition();
     static constexpr int radius = 20;
     for (Chunk *chunk: m_ChunksToRender) {
         glm::vec3 center = chunk->GetCenterPosition();
         if (m_Camera->IsInFrustum(center))
             chunk->Render(renderer, m_VAO, m_IBO, m_ChunkShader, m_TextureAtlas, playerChunk,
-                          radius, skyColor, sunColor);
+                          radius, skyColor, sun.GetColor(), m_Camera->GetPlayerPosition(),
+                          sunDir, sun.IsDay());
     }
 
     if (m_Raycast.selected) {

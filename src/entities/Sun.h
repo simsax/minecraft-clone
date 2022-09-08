@@ -2,17 +2,20 @@
 
 #include "QuadEntity.h"
 
-class SunEntity : public QuadEntity {
+class Sun : public QuadEntity {
 public:
-    SunEntity(std::string name, std::string texturePath, const glm::vec3 &position,
-              const glm::vec3 &scale, const glm::vec3& color = glm::vec3(1.0f));
+    Sun(std::string name, std::string texturePath, const glm::vec3 &position,
+        const glm::vec3 &scale, const glm::vec3& color = glm::vec3(1.0f));
     static void InitShaders(const std::string &vertShaderPath, const std::string &fragShaderPath);
+    virtual void IncrTime(float deltaTime);
     glm::vec3 GetColor() const;
     void SetColor(const glm::vec3& lightColor);
-    void IncrTime(float deltaTime);
     void Render(Renderer &renderer) override;
-private:
+    bool IsDay() const;
+
+protected:
     static Shader s_Shader;
     glm::vec3 m_Color;
     float m_Time;
+    bool m_Day;
 };

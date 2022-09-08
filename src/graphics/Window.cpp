@@ -39,7 +39,7 @@ Window::Window(WindowListener* windowListener, int width, int height, const char
         throw std::runtime_error("Failed to initialize GLEW");
     }
 
-    std::cout << glGetString(GL_VERSION) << "\n";
+//    std::cout << glGetString(GL_VERSION) << "\n";
 
     // set callbacks
     glfwSetCursorPosCallback(m_Window, MouseCallback);

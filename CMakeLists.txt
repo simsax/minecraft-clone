@@ -72,11 +72,13 @@ add_executable(${PROJECT_NAME}
         src/utils/Physics.cpp
         src/camera/Constants.h
         src/utils/Random.hpp
-        src/entities/SunEntity.cpp
         src/entities/Entity.cpp
         src/entities/QuadEntity.cpp
         src/entities/GuiEntity.cpp
         src/entities/CursorEntity.cpp
+        src/entities/Sun.cpp
+        src/entities/Moon.cpp
+        src/entities/Sky.cpp
         src/utils/Logger.cpp)
 
 add_subdirectory(extern/glfw)

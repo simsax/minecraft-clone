@@ -3,6 +3,7 @@
 #include "../camera/Camera.h"
 #include "Chunk.h"
 #include "../utils/Physics.h"
+#include "../entities/Sun.h"
 #include <future>
 #include <queue>
 #include <unordered_set>
@@ -11,18 +12,28 @@ class ChunkManager {
 public:
     explicit ChunkManager(Camera *camera);
 
-    ChunkManager(const ChunkManager&) = delete;
-    ChunkManager& operator=(const ChunkManager&) = delete;
+    ChunkManager(const ChunkManager &) = delete;
+
+    ChunkManager &operator=(const ChunkManager &) = delete;
 
     void InitWorld();
+
     int SpawnHeight();
+
     ChunkCoord CalculateChunkCoord(const glm::vec3 &position);
-    void Render(Renderer &renderer, const glm::vec3& skyColor, const glm::vec3& sunColor);
+
+    void Render(Renderer &renderer, const glm::vec3 &skyColor, const Sun& sun);
+
     std::array<uint32_t, 3> GetChunkSize() const;
+
     bool IsVoxelSolid(const glm::vec3 &voxel);
+
     void DestroyBlock();
+
     void PlaceBlock(Block block);
+
     bool CalculateCollision(const glm::vec3 &playerSpeed);
+
     void UpdateChunks();
 
 private:
@@ -39,11 +50,17 @@ private:
     };
 
     void SortChunks();
+
     void LoadChunks();
+
     void MeshChunks();
+
     std::pair<ChunkCoord, glm::uvec3> GlobalToLocal(const glm::vec3 &playerPosition);
-    void UpdateNeighbors(const glm::uvec3& voxel, const ChunkCoord& chunkCoord);
-    void AddBlocks(const ChunkCoord& chunkCoord, BlockVec& blockVec);
+
+    void UpdateNeighbors(const glm::uvec3 &voxel, const ChunkCoord &chunkCoord);
+
+    void AddBlocks(const ChunkCoord &chunkCoord, BlockVec &blockVec);
+
     void GenerateChunks();
 
     std::array<uint32_t, 3> m_ChunkSize;
@@ -56,9 +73,9 @@ private:
     Shader m_OutlineShader;
     Texture m_TextureAtlas;
     std::vector<uint32_t> m_Indices;
-    std::vector<Chunk*> m_ChunksToRender;
-    std::queue<Chunk*> m_ChunksToMesh;
-    std::queue<Chunk*> m_ChunksInBorder;
+    std::vector<Chunk *> m_ChunksToRender;
+    std::queue<Chunk *> m_ChunksToMesh;
+    std::queue<Chunk *> m_ChunksInBorder;
     std::queue<ChunkCoord> m_ChunksToLoad;
     std::unordered_set<ChunkCoord, hash_fn> m_ChunksToUpload;
     std::unordered_map<ChunkCoord, BlockVec, hash_fn> m_BlocksToSet;
