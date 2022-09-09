@@ -20,7 +20,7 @@ public:
 
     void RenderQuad(const VertexArray &vao, Shader &shader, const Texture &texture,
                     const glm::mat4 &model, bool ortho);
-    void RenderQuad(const VertexArray &vao, Shader &shader, const glm::vec3& color,
+    void RenderQuad(const VertexArray &vao, Shader &shader, const std::array<glm::vec4, 4>& color,
                     const glm::mat4 &model, bool ortho);
 
     void RenderOutline(const VertexArray &vao, const IndexBuffer &ibo, Shader &shader, GLenum type,

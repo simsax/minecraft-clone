@@ -35,7 +35,7 @@ void Renderer::RenderChunk(const VertexArray &vao, const IndexBuffer &ibo, Shade
                            const Texture &texture,
                            GLenum type, const glm::vec3 &chunkPos, uint32_t offset,
                            const glm::vec3 &skyColor, const glm::vec3 &sunColor,
-                           const glm::vec3 &viewPos, const glm::vec3& lightPos,
+                           const glm::vec3 &viewPos, const glm::vec3 &lightPos,
                            bool isDay) {
     glm::mat4 mvp = m_PersProj * m_View;
     shader.Bind();
@@ -67,15 +67,17 @@ void Renderer::RenderQuad(const VertexArray &vao, Shader &shader, const Texture 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
 
-void Renderer::RenderQuad(const VertexArray &vao, Shader &shader, const glm::vec3& color,
-                          const glm::mat4 &model, bool ortho) {
+void
+Renderer::RenderQuad(const VertexArray &vao, Shader &shader, const std::array<glm::vec4, 4> &color,
+                     const glm::mat4 &model, bool ortho) {
     glm::mat4 mvp;
     if (ortho)
         mvp = m_OrthoProj * model;
     else
         mvp = m_PersProj * m_View * model;
     shader.Bind();
-    shader.SetUniform4fv("u_Color", glm::vec4(color, 1.0f));
+    shader.SetUniform4fv("u_Colors", 4,
+                         reinterpret_cast<float *>(const_cast<glm::vec4 *>(color.data())));
     shader.SetUniformMat4f("u_MVP", mvp);
     vao.Bind();
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);

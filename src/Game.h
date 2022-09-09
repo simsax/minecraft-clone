@@ -32,6 +32,7 @@ private:
     void UpdateChunks();
     void Move(float deltaTime);
     void HandleInput();
+    void SetSkyColor(const glm::vec4& topColor, const glm::vec4& bottomColor);
 
     int m_Width;
     int m_Height;

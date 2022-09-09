@@ -1,9 +1,8 @@
 #version 450 core
 
+in vec4 vColor;
 out vec4 texColor;
 
-uniform vec4 u_Color;
-
 void main() {
-    texColor = u_Color;
+    texColor = vColor;
 }

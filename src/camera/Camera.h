@@ -17,9 +17,11 @@ public:
     glm::vec3& GetPlayerPosition();
     glm::vec3 GetPlayerDirection() const;
     glm::vec3 GetCameraSpeed();
+    glm::vec3 GetFrontVector() const;
     void UpdateFrustum();
     bool IsInFrustum(const glm::vec3& point);
     void Resize(int width, int height);
+
 
 private:
     frustum::Frustum m_Frustum;

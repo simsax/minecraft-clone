@@ -5,13 +5,13 @@
 class Sky : public QuadEntity {
 public:
     Sky(std::string name, std::string texturePath, const glm::vec3 &position,
-        const glm::vec3 &scale, const glm::vec3& color);
+        const glm::vec3 &scale);
     static void InitShaders(const std::string &vertShaderPath, const std::string &fragShaderPath);
-    glm::vec3 GetColor() const;
-    void SetColor(const glm::vec3 &color);
+    void SetColor(const glm::vec4 &topColor, const glm::vec4& bottomColor);
     void Render(Renderer &renderer) override;
+    std::array<glm::vec4, 4> GetColor() const;
 
 private:
     static Shader s_Shader;
-    glm::vec3 m_Color;
+    std::array<glm::vec4, 4> m_Color;
 };

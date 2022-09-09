@@ -15,7 +15,8 @@ public:
 
 protected:
     static Shader s_Shader;
+    static bool s_Day;
+    static constexpr float s_TimeSpeed = 0.001f;
     glm::vec3 m_Color;
     float m_Time;
-    bool m_Day;
 };

@@ -96,3 +96,7 @@ bool Camera::IsInFrustum(const glm::vec3& point)
 void Camera::Resize(int width, int height) {
     m_Frustum.Resize(width, height);
 }
+
+glm::vec3 Camera::GetFrontVector() const {
+    return m_CameraFront;
+}

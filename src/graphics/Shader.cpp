@@ -67,6 +67,11 @@ void Shader::SetUniform4fv(const std::string& name, const glm::vec4& value)
     glUniform4fv(GetUniformLocation(name), 1, &value[0]);
 }
 
+void Shader::SetUniform4fv(const std::string& name, int length, float* v)
+{
+    glUniform4fv(GetUniformLocation(name), length, v);
+}
+
 GLint Shader::GetUniformLocation(const std::string& name)
 {
     if (m_UniformLocationCache.find(name) != m_UniformLocationCache.end())

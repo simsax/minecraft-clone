@@ -28,6 +28,7 @@ public:
     void SetUniform2fv(const std::string& name, const glm::vec2& value);
     void SetUniform3fv(const std::string& name, const glm::vec3& value);
     void SetUniform4fv(const std::string& name, const glm::vec4& value);
+    void SetUniform4fv(const std::string& name, int length, float* v);
 
 private:
     GLint GetUniformLocation(const std::string& name);

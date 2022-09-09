@@ -9,7 +9,11 @@ using namespace std::chrono_literals;
 
 #define MAX_INDEX_COUNT 18432 // each cube has 6 faces, each face has 6 indexes
 #define MAX_VERTEX_COUNT 24000 // each cube has 6 faces, each face has 4 vertices
+#ifndef NDEBUG
+#define VIEW_DISTANCE 4
+#else
 #define VIEW_DISTANCE 24 // how far the player sees
+#endif
 #define MAX_CHUNK_TO_LOAD 8
 #define PLAYER_HALF_WIDTH 0.3f
 #define PLAYER_TOP_HEIGHT 0.2f
@@ -81,17 +85,17 @@ ChunkManager::Render(Renderer &renderer, const glm::vec3 &skyColor, const Sun &s
         SortChunks();
     }
 
+    auto& cameraPos = m_Camera->GetPlayerPosition();
     // frustum culling
     m_Camera->UpdateFrustum();
-    ChunkCoord playerChunk = CalculateChunkCoord(m_Camera->GetPlayerPosition());
-    glm::vec3 sunDir = m_Camera->GetPlayerPosition() - sun.GetPosition();
-    static constexpr int radius = 20;
+    ChunkCoord playerChunk = CalculateChunkCoord(cameraPos);
+    glm::vec3 sunDir = cameraPos - sun.GetPosition();
+    static constexpr int spireradius = 20;
     for (Chunk *chunk: m_ChunksToRender) {
         glm::vec3 center = chunk->GetCenterPosition();
         if (m_Camera->IsInFrustum(center))
             chunk->Render(renderer, m_VAO, m_IBO, m_ChunkShader, m_TextureAtlas, playerChunk,
-                          radius, skyColor, sun.GetColor(), m_Camera->GetPlayerPosition(),
-                          sunDir, sun.IsDay());
+                          spireradius, skyColor, sun.GetColor(), cameraPos, sunDir, sun.IsDay());
     }
 
     if (m_Raycast.selected) {

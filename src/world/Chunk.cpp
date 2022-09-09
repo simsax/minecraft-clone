@@ -1,9 +1,9 @@
 #include "Chunk.h"
 #include "glm/gtx/norm.hpp"
-#include <iostream>
 #include <map>
 #include "../camera/Camera.h"
 #include "../utils/Random.hpp"
+#include "../utils/Logger.h"
 
 #define assertm(exp, msg) assert(((void)msg, exp))
 
@@ -458,14 +458,14 @@ Chunk::Render(Renderer &renderer, const VertexArray &vao, IndexBuffer &ibo, Shad
                              m_Mesh.size(), skyColor, sunColor, viewPos, sunPos, isDay);
         glEnable(GL_CULL_FACE);
     }
-//    if (!m_SpriteMesh.empty() && ChunkIsVisible(playerChunk, radius)) {
-//        ibo.SetCount(m_SIBOCount);
-//        glDisable(GL_CULL_FACE);
-//        renderer.RenderChunk(vao, ibo, shader, texture, GL_UNSIGNED_INT, m_ChunkPosition,
-//                             m_Mesh.size() + m_TransparentMesh.size(), skyColor, sunColor, viewPos,
-//                             sunPos, isDay);
-//        glEnable(GL_CULL_FACE);
-//    }
+    if (!m_SpriteMesh.empty() && ChunkIsVisible(playerChunk, radius)) {
+        ibo.SetCount(m_SIBOCount);
+        glDisable(GL_CULL_FACE);
+        renderer.RenderChunk(vao, ibo, shader, texture, GL_UNSIGNED_INT, m_ChunkPosition,
+                             m_Mesh.size() + m_TransparentMesh.size(), skyColor, sunColor, viewPos,
+                             sunPos, isDay);
+        glEnable(GL_CULL_FACE);
+    }
 }
 
 void Chunk::RenderOutline(Renderer &renderer, const VertexArray &vao, VertexBuffer &vbo,
