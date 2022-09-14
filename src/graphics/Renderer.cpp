@@ -84,6 +84,25 @@ Renderer::RenderQuad(const VertexArray &vao, Shader &shader, const std::array<gl
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
 
+void
+Renderer::RenderSky(const VertexArray &vao, Shader &shader, const glm::vec4 &color,
+                    const glm::vec4 &fogColor, const glm::mat4 &model, bool ortho,
+                    float lowerLimit) {
+    glm::mat4 mvp;
+    if (ortho)
+        mvp = m_OrthoProj * model;
+    else
+        mvp = m_PersProj * m_View * model;
+    shader.Bind();
+    shader.SetUniform4fv("u_Color", color);
+    shader.SetUniform4fv("u_FogColor", fogColor);
+    shader.SetUniformMat4f("u_MVP", mvp);
+    shader.SetUniformMat4f("u_Model", model);
+    shader.SetUniform1f("u_LowerLimit", lowerLimit);
+    vao.Bind();
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+}
+
 void Renderer::RenderOutline(
         const VertexArray &vao, const IndexBuffer &ibo, Shader &shader, GLenum type,
         const glm::vec3 &chunkPos,
@@ -154,7 +173,7 @@ void Renderer::Resize(int width, int height) {
                              1.0f);
 }
 
-void Renderer::Clear(const glm::vec3 &skyColor) {
+void Renderer::Clear(const glm::vec4 &skyColor) {
     glClearColor(skyColor.x, skyColor.y, skyColor.z, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }

@@ -44,7 +44,7 @@ bool Sun::IsDay() const {
 void Sun::SetPosition(const glm::vec3 &position) {
     s_Day = true;
     static constexpr float sunHeight = 1000.0f;
-    static constexpr int dayLevel = 50;
+    static constexpr int dayLevel = 40;
 //    static constexpr glm::vec3 rotAxis = glm::vec3{1, 0, 0.7};
     static constexpr glm::vec3 rotAxis = glm::vec3{1, 0, 0};
 

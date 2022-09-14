@@ -9,7 +9,7 @@ Game::Game()
           m_Blocks(std::vector({Block::DIRT, Block::GRASS, Block::SAND, Block::SNOW, Block::STONE,
                                 Block::WOOD, Block::DIAMOND, Block::EMPTY, Block::EMPTY})),
           m_HoldingBlock(0),
-          m_SkyColor(0, 0, 0),
+          m_SkyColor(0, 0, 0, 1),
           m_ShowGui(true), m_VerticalVelocity(0.0f),
           m_Sun("sun", "sun.png", glm::vec3(0), glm::vec3(300.0f, 1.0f, 300.0f)),
           m_Moon("moon", "moon.png", glm::vec3(0), glm::vec3(300.0f, 1.0f, 300.0f)),
@@ -87,8 +87,7 @@ void Game::OnUpdate(float deltaTime) {
 }
 
 void Game::OnRender() {
-//    Renderer::Clear(m_Sky.GetColor());
-    Renderer::Clear(glm::vec3(0));
+    Renderer::Clear(m_SkyColor);
     const glm::vec3 sunDir = glm::normalize(m_Sun.GetPosition() - m_Camera.GetPlayerPosition());
     UpdateSkyColor(sunDir);
     UpdateAmbient(sunDir);
@@ -96,7 +95,6 @@ void Game::OnRender() {
     m_Sky.Render(m_Renderer);
     m_Sun.Render(m_Renderer);
     m_Moon.Render(m_Renderer);
-//    m_ChunkManager.Render(m_Renderer, m_Sky.GetColor(), m_Sun.IsDay() ? m_Sun : m_Moon);
     m_ChunkManager.Render(m_Renderer, m_SkyColor, m_Sun.IsDay() ? m_Sun : m_Moon,
                           m_Sun.IsDay() ? -sunDir : sunDir, m_AmbientStrength);
     if (m_ShowGui)
@@ -293,35 +291,23 @@ void Game::UpdateFPS(uint32_t numFrames) {
 //    m_Window.ChangeTitle(newTitle);
 }
 
-void Game::SetSkyColor(const glm::vec4& topColor, const glm::vec4& bottomColor) {
-    static constexpr glm::vec3 upVector = {0, 1, 0};
-    const glm::vec3 frontVector = m_Camera.GetFrontVector();
-//    float d = std::max(glm::dot(upVector, frontVector), 0.0f);
-    if (frontVector.y >= 0) {
-        float d = glm::dot(upVector, frontVector);
-        glm::vec4 resultBottomColor = d * topColor + (1 - d) * bottomColor;
-        m_Sky.SetColor(topColor, resultBottomColor);
-    } else {
-        static constexpr float gradStrenght = 0.8f;
-        float d = - glm::dot(upVector, frontVector) * gradStrenght;
-        glm::vec4 resultTopColor = d * bottomColor + (1 - d) * topColor;
-        m_Sky.SetColor(resultTopColor, bottomColor);
-    }
-}
-
 void Game::UpdateSkyColor(const glm::vec3& sunDir) {
     static constexpr glm::vec3 upVector = {0, 1, 0};
-    float d = glm::dot(upVector, sunDir);
+    const glm::vec3 frontVector = m_Camera.GetFrontVector();
+    const float d = glm::dot(upVector, sunDir);
+    const float x = glm::dot(upVector, frontVector);
 
     if (d >= 0) {
-        glm::vec4 resultBottomColor = d * SkyColors::bc1 + (1 - d) * SkyColors::bc2;
-        glm::vec4 resultTopColor = d * SkyColors::tc1 + (1 - d) * SkyColors::tc2;
-        SetSkyColor(resultTopColor, resultBottomColor);
+        glm::vec4 color = d * SkyColors::tc1 + (1 - d) * SkyColors::tc2;
+        m_SkyColor = d * SkyColors::bc1 + (1 - d) * SkyColors::bc2;
+        m_Sky.SetColor(color, m_SkyColor);
     } else {
-        glm::vec4 resultBottomColor = -d * SkyColors::tc3 + (1 + d) * SkyColors::bc2;
-        glm::vec4 resultTopColor = -d * SkyColors::tc3 + (1 + d) * SkyColors::tc2;
-        SetSkyColor(resultTopColor, resultBottomColor);
+        m_SkyColor = -d * SkyColors::tc2 + (1 + d) * SkyColors::bc2;
+        m_Sky.SetColor(SkyColors::tc2, m_SkyColor);
     }
+
+    float lowerLimit = m_Height * ( -glm::asin(x) * 0.5f / glm::radians(35.0f) + 0.5f);
+    m_Sky.SetLowerLimit(lowerLimit);
 }
 
 void Game::UpdateAmbient(const glm::vec3 &sunDir) {

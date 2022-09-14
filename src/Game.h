@@ -46,7 +46,7 @@ private:
     ChunkManager m_ChunkManager;
     std::vector<Block> m_Blocks;
     int m_HoldingBlock;
-    glm::vec3 m_SkyColor;
+    glm::vec4 m_SkyColor;
     GuiManager m_GuiManager;
     bool m_ShowGui;
     float m_VerticalVelocity;
