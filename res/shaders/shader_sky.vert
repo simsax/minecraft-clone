@@ -7,13 +7,6 @@ uniform vec4 u_Colors[4];
 
 out vec4 vColor;
 
-//const vec4 colors[4] = vec4[4](
-//    vec4(0, 0, 1, 1),
-//    vec4(1, 1, 1, 1),
-//    vec4(0, 0, 1, 1),
-//    vec4(1, 1, 1, 1));
-
-
 void main() {
     gl_Position = u_MVP * vec4(in_VertexCoord.x, in_VertexCoord.z, 0.0f, 1.0f);
     vColor = u_Colors[gl_VertexID];

@@ -33,6 +33,8 @@ private:
     void Move(float deltaTime);
     void HandleInput();
     void SetSkyColor(const glm::vec4& topColor, const glm::vec4& bottomColor);
+    void UpdateSkyColor(const glm::vec3& sunDir);
+    void UpdateAmbient(const glm::vec3& sunDir);
 
     int m_Width;
     int m_Height;
@@ -52,4 +54,5 @@ private:
     Moon m_Moon;
     bool m_Pause;
     Sky m_Sky;
+    float m_AmbientStrength;
 };

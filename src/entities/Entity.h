@@ -18,7 +18,7 @@ public:
     glm::vec3 GetScale() const;
     glm::vec3 GetPosition() const;
     void SetScale(const glm::vec3 &scale);
-    void SetPosition(const glm::vec3 &position);
+    virtual void SetPosition(const glm::vec3 &position);
 
     virtual void Render(Renderer &renderer) = 0;
 

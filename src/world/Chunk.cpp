@@ -446,16 +446,17 @@ bool Chunk::GenerateMesh() {
 void
 Chunk::Render(Renderer &renderer, const VertexArray &vao, IndexBuffer &ibo, Shader &shader,
               const Texture &texture, ChunkCoord playerChunk, int radius, const glm::vec3 &skyColor,
-              const glm::vec3 &sunColor, const glm::vec3 &viewPos, const glm::vec3 &sunPos, bool isDay) {
+              const glm::vec3 &sunColor, const glm::vec3 &viewPos, const glm::vec3 &sunPos, bool isDay,
+              float ambientStrength) {
     ibo.SetCount(m_IBOCount);
     m_VBO.Bind(vao.GetId());
     renderer.RenderChunk(vao, ibo, shader, texture, GL_UNSIGNED_INT, m_ChunkPosition, 0, skyColor,
-                         sunColor, viewPos, sunPos, isDay);
+                         sunColor, viewPos, sunPos, isDay, ambientStrength);
     if (!m_TransparentMesh.empty()) {
         ibo.SetCount(m_TIBOCount);
         glDisable(GL_CULL_FACE);
         renderer.RenderChunk(vao, ibo, shader, texture, GL_UNSIGNED_INT, m_ChunkPosition,
-                             m_Mesh.size(), skyColor, sunColor, viewPos, sunPos, isDay);
+                             m_Mesh.size(), skyColor, sunColor, viewPos, sunPos, isDay, ambientStrength);
         glEnable(GL_CULL_FACE);
     }
     if (!m_SpriteMesh.empty() && ChunkIsVisible(playerChunk, radius)) {
@@ -463,7 +464,7 @@ Chunk::Render(Renderer &renderer, const VertexArray &vao, IndexBuffer &ibo, Shad
         glDisable(GL_CULL_FACE);
         renderer.RenderChunk(vao, ibo, shader, texture, GL_UNSIGNED_INT, m_ChunkPosition,
                              m_Mesh.size() + m_TransparentMesh.size(), skyColor, sunColor, viewPos,
-                             sunPos, isDay);
+                             sunPos, isDay, ambientStrength);
         glEnable(GL_CULL_FACE);
     }
 }

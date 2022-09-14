@@ -12,11 +12,13 @@ public:
     void SetColor(const glm::vec3& lightColor);
     void Render(Renderer &renderer) override;
     bool IsDay() const;
+    void SetPosition(const glm::vec3 &position) override;
 
 protected:
     static Shader s_Shader;
     static bool s_Day;
-    static constexpr float s_TimeSpeed = 0.001f;
+    static constexpr float s_TimeSpeed = 0.1f;
     glm::vec3 m_Color;
     float m_Time;
+    glm::mat4 m_Model;
 };

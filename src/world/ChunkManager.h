@@ -18,11 +18,13 @@ public:
 
     void InitWorld();
 
-    int SpawnHeight();
+    void Spawn();
 
     ChunkCoord CalculateChunkCoord(const glm::vec3 &position);
 
-    void Render(Renderer &renderer, const glm::vec3 &skyColor, const Sun& sun);
+    void
+    Render(Renderer &renderer, const glm::vec3 &skyColor, const Sun &sun, const glm::vec3 &sunDir,
+           float ambientStrength);
 
     std::array<uint32_t, 3> GetChunkSize() const;
 

@@ -36,7 +36,7 @@ void Renderer::RenderChunk(const VertexArray &vao, const IndexBuffer &ibo, Shade
                            GLenum type, const glm::vec3 &chunkPos, uint32_t offset,
                            const glm::vec3 &skyColor, const glm::vec3 &sunColor,
                            const glm::vec3 &viewPos, const glm::vec3 &lightPos,
-                           bool isDay) {
+                           bool isDay, float ambientStrength) {
     glm::mat4 mvp = m_PersProj * m_View;
     shader.Bind();
     shader.SetUniformMat4f("u_MVP", mvp);
@@ -47,6 +47,7 @@ void Renderer::RenderChunk(const VertexArray &vao, const IndexBuffer &ibo, Shade
     shader.SetUniform3fv("u_ViewPos", viewPos);
     shader.SetUniform3fv("u_LightDir", lightPos);
     shader.SetUniform1i("u_IsDay", isDay);
+    shader.SetUniform1f("u_AmbientStrength", ambientStrength);
     texture.Bind(0);
     vao.Bind();
     ibo.Bind(vao.GetId());

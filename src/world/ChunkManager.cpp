@@ -77,7 +77,8 @@ void ChunkManager::InitWorld() {
 }
 
 void
-ChunkManager::Render(Renderer &renderer, const glm::vec3 &skyColor, const Sun &sun) {
+ChunkManager::Render(Renderer &renderer, const glm::vec3 &skyColor, const Sun &sun,
+                     const glm::vec3 &sunDir, float ambientStrength) {
     LoadChunks();
     MeshChunks();
     if (m_SortChunks) {
@@ -85,23 +86,23 @@ ChunkManager::Render(Renderer &renderer, const glm::vec3 &skyColor, const Sun &s
         SortChunks();
     }
 
-    auto& cameraPos = m_Camera->GetPlayerPosition();
+    auto &cameraPos = m_Camera->GetPlayerPosition();
     // frustum culling
     m_Camera->UpdateFrustum();
     ChunkCoord playerChunk = CalculateChunkCoord(cameraPos);
-    glm::vec3 sunDir = cameraPos - sun.GetPosition();
     static constexpr int spireradius = 20;
     for (Chunk *chunk: m_ChunksToRender) {
         glm::vec3 center = chunk->GetCenterPosition();
         if (m_Camera->IsInFrustum(center))
             chunk->Render(renderer, m_VAO, m_IBO, m_ChunkShader, m_TextureAtlas, playerChunk,
-                          spireradius, skyColor, sun.GetColor(), cameraPos, sunDir, sun.IsDay());
+                          spireradius, skyColor, sun.GetColor(), cameraPos, sunDir, sun.IsDay(),
+                          ambientStrength);
     }
 
     if (m_Raycast.selected) {
         m_OutlineVBO.Bind(m_VAO.GetId());
-//        m_Raycast.chunk->RenderOutline(renderer, m_VAO, m_OutlineVBO, m_IBO, m_OutlineShader,
-//                                       m_Raycast.localVoxel);
+        m_Raycast.chunk->RenderOutline(renderer, m_VAO, m_OutlineVBO, m_IBO, m_OutlineShader,
+                                       m_Raycast.localVoxel);
     }
 }
 
@@ -191,15 +192,23 @@ void ChunkManager::GenerateChunks() {
     }
 }
 
-int ChunkManager::SpawnHeight() {
+void ChunkManager::Spawn() {
     Chunk *chunk = &m_ChunkMap.at({0, 0});
-    int water_level = 63;
-    int i;
-    for (i = water_level; i < YSIZE; i++) {
+    glm::vec3 &currentPosition = m_Camera->GetPlayerPosition();
+    static constexpr int water_level = 63;
+    int i = water_level;
+    for (; i < YSIZE; i++) {
         if (chunk->GetBlock(0, i, 0) == Block::EMPTY)
             break;
     }
-    return i + PLAYER_BOTTOM_HEIGHT + 3;
+    float y = i + PLAYER_BOTTOM_HEIGHT + 3;
+    currentPosition.y = y;
+
+    physics::Aabb playerBbox = physics::CreatePlayerAabb(currentPosition);
+    physics::Aabb blockBbox = physics::CreateBlockAabb({0, y + 0.8f, 0}); // occupies two blocks
+    while (physics::Intersect(playerBbox, blockBbox)) {
+        currentPosition.x += 1;
+    }
 }
 
 void ChunkManager::SortChunks() {

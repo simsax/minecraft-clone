@@ -14,22 +14,13 @@ uniform vec3 u_ViewPos;
 //uniform vec3 u_LightPos;
 uniform vec3 u_LightDir;
 uniform bool u_IsDay;
+uniform float u_AmbientStrength;
 
-float ambientStrength = 0.3f;
 float specularStrength = 0.1f;
 int shininess = 16;
 
 void main() {
-	if (u_IsDay) {
-		ambientStrength = 0.3f;
-		specularStrength = 0.1f;
-		shininess = 16;
-	} else {
-		ambientStrength = 0.1f;
-		specularStrength = 0.1f;
-		shininess = 16;
-	}
-	vec3 ambient = u_SunColor * ambientStrength;
+	vec3 ambient = u_SunColor * u_AmbientStrength;
 	//		vec3 lightDir = normalize(u_LightPos - fragPos);
 	vec3 lightDir = normalize(-u_LightDir);
 	vec3 norm = normalize(normal);
