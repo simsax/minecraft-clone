@@ -8,7 +8,7 @@
 class Window {
 public:
     Window(WindowListener* windowListener, int width, int height, const char* name);
-    void WindowLoop();
+    void Loop();
     void ChangeTitle(const std::string& newTitle);
 
 private:

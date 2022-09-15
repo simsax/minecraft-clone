@@ -86,7 +86,7 @@ ChunkManager::Render(Renderer &renderer, const glm::vec3 &skyColor, const Sun &s
         SortChunks();
     }
 
-    auto &cameraPos = m_Camera->GetPlayerPosition();
+    auto &cameraPos = m_Camera->GetCameraPosition();
     // frustum culling
     m_Camera->UpdateFrustum();
     ChunkCoord playerChunk = CalculateChunkCoord(cameraPos);
@@ -106,11 +106,11 @@ ChunkManager::Render(Renderer &renderer, const glm::vec3 &skyColor, const Sun &s
     }
 }
 
-std::array<uint32_t, 3> ChunkManager::GetChunkSize() const { return m_ChunkSize; }
+glm::vec3 ChunkManager::GetChunkSize() const { return m_ChunkSize; }
 
-ChunkCoord ChunkManager::CalculateChunkCoord(const glm::vec3 &position) {
-    int chunkPosX = static_cast<int>(std::floor(position.x / m_ChunkSize[0]));
-    int chunkPosZ = static_cast<int>(std::floor(position.z / m_ChunkSize[2]));
+ChunkCoord ChunkManager::CalculateChunkCoord(const glm::vec3 &position) const {
+    int chunkPosX = static_cast<int>(std::floor(position.x / XSIZE));
+    int chunkPosZ = static_cast<int>(std::floor(position.z / ZSIZE));
     return {chunkPosX, chunkPosZ};
 }
 
@@ -168,7 +168,7 @@ void ChunkManager::MeshChunks() {
 
 void ChunkManager::GenerateChunks() {
 //    std::cout << "Chunks in RAM: " << m_ChunkMap.size() << "\n";
-    ChunkCoord playerChunk = CalculateChunkCoord(m_Camera->GetPlayerPosition());
+    ChunkCoord playerChunk = CalculateChunkCoord(m_Camera->GetCameraPosition());
 
     // remove chunks outside of render distance (should be further than this when I'll add serialization)
 //    for (auto& chunk : m_ChunksToRender) {
@@ -192,27 +192,8 @@ void ChunkManager::GenerateChunks() {
     }
 }
 
-void ChunkManager::Spawn() {
-    Chunk *chunk = &m_ChunkMap.at({0, 0});
-    glm::vec3 &currentPosition = m_Camera->GetPlayerPosition();
-    static constexpr int water_level = 63;
-    int i = water_level;
-    for (; i < YSIZE; i++) {
-        if (chunk->GetBlock(0, i, 0) == Block::EMPTY)
-            break;
-    }
-    float y = i + PLAYER_BOTTOM_HEIGHT + 3;
-    currentPosition.y = y;
-
-    physics::Aabb playerBbox = physics::CreatePlayerAabb(currentPosition);
-    physics::Aabb blockBbox = physics::CreateBlockAabb({0, y + 0.8f, 0}); // occupies two blocks
-    while (physics::Intersect(playerBbox, blockBbox)) {
-        currentPosition.x += 1;
-    }
-}
-
 void ChunkManager::SortChunks() {
-    glm::vec3 playerPos = m_Camera->GetPlayerPosition() * glm::vec3(1.0f, 0, 1.0f);
+    glm::vec3 playerPos = m_Camera->GetCameraPosition() * glm::vec3(1.0f, 0, 1.0f);
     std::sort(m_ChunksToRender.begin(), m_ChunksToRender.end(), [&playerPos](Chunk *a, Chunk *b) {
         return glm::length2(playerPos - a->GetCenterPosition())
                > glm::length2(playerPos - b->GetCenterPosition());
@@ -266,7 +247,7 @@ void ChunkManager::PlaceBlock(Block block) {
         globalVoxel = m_Raycast.prevGlobalVoxel;
     }
     if (!physics::Intersect(
-            physics::CreatePlayerAabb(m_Camera->GetPlayerPosition()),
+            physics::CreatePlayerAabb(m_Camera->GetCameraPosition()),
             physics::CreateBlockAabb(globalVoxel))) {
         m_Raycast.prevChunk->SetBlock(localVoxel[0], localVoxel[1], localVoxel[2], block);
         m_ChunksToUpload.insert(chunkCoord);
@@ -275,7 +256,7 @@ void ChunkManager::PlaceBlock(Block block) {
     }
 }
 
-std::pair<ChunkCoord, glm::uvec3> ChunkManager::GlobalToLocal(const glm::vec3 &playerPosition) {
+std::pair<ChunkCoord, glm::uvec3> ChunkManager::GlobalToLocal(const glm::vec3 &playerPosition) const {
     ChunkCoord chunkCoord = CalculateChunkCoord(playerPosition);
     uint32_t playerPosX =
             mod(static_cast<int>(std::floor(playerPosition.x)), m_ChunkSize[0]);
@@ -286,54 +267,23 @@ std::pair<ChunkCoord, glm::uvec3> ChunkManager::GlobalToLocal(const glm::vec3 &p
     return std::make_pair(chunkCoord, playerPos);
 }
 
-bool ChunkManager::CalculateCollision(const glm::vec3 &playerSpeed) {
-    glm::vec3 &currentPosition = m_Camera->GetPlayerPosition();
-    glm::vec3 finalPosition = currentPosition + playerSpeed;
-    int startX, endX, startY, endY, startZ, endZ;
-    if (finalPosition.x >= currentPosition.x) {
-        startX = std::floor(currentPosition.x - PLAYER_HALF_WIDTH);
-        endX = std::floor(finalPosition.x + PLAYER_HALF_WIDTH);
-    } else {
-        startX = std::floor(finalPosition.x - PLAYER_HALF_WIDTH);
-        endX = std::floor(currentPosition.x + PLAYER_HALF_WIDTH);
-    }
-    if (finalPosition.y >= currentPosition.y) {
-        startY = std::floor(currentPosition.y - PLAYER_BOTTOM_HEIGHT);
-        endY = std::floor(finalPosition.y + PLAYER_TOP_HEIGHT);
-    } else {
-        startY = std::floor(finalPosition.y - PLAYER_BOTTOM_HEIGHT);
-        endY = std::floor(currentPosition.y + PLAYER_TOP_HEIGHT);
-    }
-    if (finalPosition.z >= currentPosition.z) {
-        startZ = std::floor(currentPosition.z - PLAYER_HALF_WIDTH);
-        endZ = std::floor(finalPosition.z + PLAYER_HALF_WIDTH);
-    } else {
-        startZ = std::floor(finalPosition.z - PLAYER_HALF_WIDTH);
-        endZ = std::floor(currentPosition.z + PLAYER_HALF_WIDTH);
-    }
-
-    physics::Aabb playerBbox = physics::CreatePlayerAabb(currentPosition);
-    for (int i = startX; i <= endX; i++) {
-        for (int j = startY; j <= endY; j++) {
-            for (int k = startZ; k <= endZ; k++) {
-                std::pair<ChunkCoord, glm::vec3> localPos = GlobalToLocal({i, j, k});
-                if (const auto it = m_ChunkMap.find(localPos.first); it != m_ChunkMap.end()) {
-                    Chunk *chunk = &it->second;
-                    Block block = chunk->GetBlock(
-                            localPos.second[0], localPos.second[1], localPos.second[2]);
-                    if (block != Block::EMPTY && block != Block::WATER &&
-                        block != Block::FLOWER_BLUE && block != Block::FLOWER_YELLOW
-                        && block != Block::BUSH) {
-                        physics::Aabb blockBbox = physics::CreateBlockAabb({i, j, k});
-                        physics::SnapAabb(playerBbox, blockBbox, playerSpeed, currentPosition);
-                        return true;
-                    }
-                }
-            }
+bool ChunkManager::IsBlockSolid(const glm::vec3& globalCoords) const {
+    std::pair<ChunkCoord, glm::vec3> localPos = GlobalToLocal(globalCoords);
+    if (const auto it = m_ChunkMap.find(localPos.first); it != m_ChunkMap.end()) {
+        const Chunk *chunk = &it->second;
+        Block block = chunk->GetBlock(
+                localPos.second[0], localPos.second[1], localPos.second[2]);
+        if (block != Block::EMPTY &&
+            block != Block::WATER &&
+            block != Block::FLOWER_BLUE &&
+            block != Block::FLOWER_YELLOW &&
+            block != Block::BUSH) {
+            return true;
         }
     }
     return false;
 }
+
 
 void ChunkManager::AddBlocks(const ChunkCoord &chunkCoord, BlockVec &blockVec) {
     for (auto &[block, voxel]: blockVec) {
@@ -376,7 +326,7 @@ void ChunkManager::UpdateNeighbors(const glm::uvec3 &voxel, const ChunkCoord &ch
 }
 
 void ChunkManager::UpdateChunks() {
-    ChunkCoord currentChunk = CalculateChunkCoord(m_Camera->GetPlayerPosition());
+    ChunkCoord currentChunk = CalculateChunkCoord(m_Camera->GetCameraPosition());
     if (m_CurrentChunk != currentChunk) {
         m_CurrentChunk = currentChunk;
         m_SortChunks = true;

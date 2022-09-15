@@ -1,20 +1,25 @@
 #pragma once
 #include "Frustum.h"
-#include "../utils/Keycodes.h"
 #include "glm/glm.hpp"
 #include <array>
 
 class Camera {
 public:
     Camera(const glm::vec3& position, int width, int height);
-
-    void HandleInput(const std::array<bool, GLFW_KEY_LAST>& keyPressed);
-    void ProcessMouse(float xoffset, float yoffset);
+    void Forward();
+    void Backward();
+    void Left();
+    void Right();
+    void Up();
+    void Down();
+    void Sprint();
+    void Move();
+    void Stop();
+    void Watch(float xoffset, float yoffset);
     void ToggleFlyMode();
     bool GetFlyMode() const;
-    void Move(float deltaTime);
     glm::mat4 GetViewMatrix() const;
-    glm::vec3& GetPlayerPosition();
+    glm::vec3& GetCameraPosition();
     glm::vec3 GetPlayerDirection() const;
     glm::vec3 GetCameraSpeed();
     glm::vec3 GetFrontVector() const;

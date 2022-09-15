@@ -1,10 +1,6 @@
 #include "Physics.h"
 #include "../world/Chunk.h"
 
-#define BLOCK_SIZE 1.0f
-#define PLAYER_HALF_WIDTH 0.3f
-#define PLAYER_TOP_HEIGHT 0.2f
-#define PLAYER_BOTTOM_HEIGHT 1.6f
 
 namespace physics {
 
@@ -79,4 +75,16 @@ float AabbDistance(Aabb a, Aabb b)
     return std::sqrt((b.minX - a.minX) * (b.minX - a.minX) + (b.minY - a.minY) * (b.minY - a.minY)
         + (b.minZ - a.minZ) * (b.minZ - a.minZ));
 }
+
+void ApplyGravity(Player& player, float deltaTime) {
+    if (!player.IsFlying()) { // apply gravity
+        if (!player.IsOnGround())
+            player.SetVerticalVelocity(player.GetVerticalVelocity() - GRAVITY * deltaTime);
+        else
+            player.SetVerticalVelocity(-GRAVITY * deltaTime);
+    }
+}
+
+
+
 }

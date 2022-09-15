@@ -80,13 +80,13 @@ void GuiManager::Render(Renderer &renderer) {
     }
 }
 
-void GuiManager::PressKey(int key) {
-    glm::vec3 squarePosition = m_GuiElements[2]->GetPosition();
-    squarePosition.x = m_SquareBase + BAR_OFFSET * key;
-    m_GuiElements[2]->SetPosition({squarePosition.x, 0, squarePosition.z});
-}
-
 void GuiManager::Resize(int width, int height) {
     m_GuiElements.clear();
     MakeGui(width, height);
+}
+
+void GuiManager::OnNotify(int key) {
+    glm::vec3 squarePosition = m_GuiElements[2]->GetPosition();
+    squarePosition.x = m_SquareBase + BAR_OFFSET * key;
+    m_GuiElements[2]->SetPosition({squarePosition.x, 0, squarePosition.z});
 }

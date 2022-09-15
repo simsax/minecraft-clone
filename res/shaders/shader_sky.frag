@@ -16,5 +16,6 @@ void main() {
     float factor = (fragPos.y - u_LowerLimit) / (upperLimit - u_LowerLimit);
     factor = clamp(factor, 0.0f, 1.0f);
     texColor = mix(u_FogColor, u_Color, factor);
+//    texColor = mix(vec4(u_Color.xyz, 0.0f), u_Color, factor);
 //    texColor = vColor;
 }

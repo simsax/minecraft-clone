@@ -79,7 +79,12 @@ add_executable(${PROJECT_NAME}
         src/entities/Sun.cpp
         src/entities/Moon.cpp
         src/entities/Sky.cpp
-        src/utils/Logger.cpp)
+        src/utils/Logger.cpp
+        src/entities/Player.cpp
+        src/entities/Player.h
+        src/utils/InputHandler.cpp
+        src/utils/InputHandler.h
+        src/utils/Subject.hpp)
 
 add_subdirectory(extern/glfw)
 add_subdirectory(extern/glew)

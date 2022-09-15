@@ -18,25 +18,20 @@ public:
 
     void InitWorld();
 
-    void Spawn();
-
-    ChunkCoord CalculateChunkCoord(const glm::vec3 &position);
+    ChunkCoord CalculateChunkCoord(const glm::vec3 &position) const;
 
     void
     Render(Renderer &renderer, const glm::vec3 &skyColor, const Sun &sun, const glm::vec3 &sunDir,
            float ambientStrength);
 
-    std::array<uint32_t, 3> GetChunkSize() const;
+    glm::vec3 GetChunkSize() const;
 
-    bool IsVoxelSolid(const glm::vec3 &voxel);
-
+    bool IsVoxelSolid(const glm::vec3 &voxel); // ???????
+    bool IsBlockSolid(const glm::vec3& globalCoords) const;
     void DestroyBlock();
-
     void PlaceBlock(Block block);
-
-    bool CalculateCollision(const glm::vec3 &playerSpeed);
-
     void UpdateChunks();
+
 
 private:
     struct Raycast {
@@ -57,7 +52,7 @@ private:
 
     void MeshChunks();
 
-    std::pair<ChunkCoord, glm::uvec3> GlobalToLocal(const glm::vec3 &playerPosition);
+    std::pair<ChunkCoord, glm::uvec3> GlobalToLocal(const glm::vec3 &playerPosition) const;
 
     void UpdateNeighbors(const glm::uvec3 &voxel, const ChunkCoord &chunkCoord);
 
@@ -65,7 +60,7 @@ private:
 
     void GenerateChunks();
 
-    std::array<uint32_t, 3> m_ChunkSize;
+    glm::vec3 m_ChunkSize;
     std::unordered_map<ChunkCoord, Chunk, hash_fn> m_ChunkMap;
     VertexBufferLayout m_VertexLayout;
     VertexArray m_VAO;

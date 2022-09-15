@@ -17,41 +17,56 @@ Camera::Camera(const glm::vec3& position, int width, int height)
 {
 }
 
-void Camera::HandleInput(const std::array<bool, GLFW_KEY_LAST>& keyPressed)
-{
-    m_CameraSpeed = glm::vec3(0.0f);
-    if (keyPressed[GLFW_KEY_SPACE] && m_FlyMode)
-        m_CameraSpeed += m_CameraUp;
-    if (keyPressed[GLFW_KEY_LEFT_CONTROL] && m_FlyMode)
-        m_CameraSpeed -= m_CameraUp;
-    if (keyPressed[GLFW_KEY_W])
-        m_CameraSpeed += glm::normalize(glm::vec3(m_CameraFront.x, 0, m_CameraFront.z));
-    if (keyPressed[GLFW_KEY_S])
-        m_CameraSpeed -= glm::normalize(glm::vec3(m_CameraFront.x, 0, m_CameraFront.z));
-    if (keyPressed[GLFW_KEY_A])
-        m_CameraSpeed -= glm::normalize(glm::cross(m_CameraFront, m_CameraUp));
-    if (keyPressed[GLFW_KEY_D])
-        m_CameraSpeed += glm::normalize(glm::cross(m_CameraFront, m_CameraUp));
-
-    m_CameraSpeed *= m_Speed;
-    if (keyPressed[GLFW_KEY_LEFT_SHIFT]) // sprint
-        m_CameraSpeed *= 2;
+void Camera::Forward() {
+    m_CameraSpeed += glm::normalize(glm::vec3(m_CameraFront.x, 0, m_CameraFront.z)) * m_Speed;
 }
 
-void Camera::Move(float deltaTime) { m_CameraPos += m_CameraSpeed * deltaTime; }
+void Camera::Backward() {
+    m_CameraSpeed -= glm::normalize(glm::vec3(m_CameraFront.x, 0, m_CameraFront.z)) * m_Speed;
+}
+
+void Camera::Right() {
+    m_CameraSpeed += glm::normalize(glm::cross(m_CameraFront, m_CameraUp)) * m_Speed;
+}
+
+void Camera::Left() {
+    m_CameraSpeed -= glm::normalize(glm::cross(m_CameraFront, m_CameraUp)) * m_Speed;
+}
+
+void Camera::Up() {
+    if (m_FlyMode)
+        m_CameraSpeed += m_CameraUp * m_Speed;
+}
+
+void Camera::Down() {
+    if (m_FlyMode)
+        m_CameraSpeed -= m_CameraUp * m_Speed;
+}
+
+void Camera::Sprint() {
+   m_CameraSpeed *= 2;
+}
+
+void Camera::Move() {
+    m_CameraSpeed *= m_Speed;
+}
+
+void Camera::Stop() {
+    m_CameraSpeed = glm::vec3(0.0f);
+}
 
 glm::mat4 Camera::GetViewMatrix() const
 {
     return glm::lookAt(m_CameraPos, m_CameraPos + m_CameraFront, m_CameraUp);
 }
 
-glm::vec3& Camera::GetPlayerPosition() { return m_CameraPos; }
+glm::vec3& Camera::GetCameraPosition() { return m_CameraPos; }
 
 glm::vec3 Camera::GetCameraSpeed() { return m_CameraSpeed; }
 
 glm::vec3 Camera::GetPlayerDirection() const { return m_CameraFront; }
 
-void Camera::ProcessMouse(float xoffset, float yoffset)
+void Camera::Watch(float xoffset, float yoffset)
 {
     yaw += xoffset;
     pitch += yoffset;

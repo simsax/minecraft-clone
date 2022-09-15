@@ -61,7 +61,7 @@ Window::Window(WindowListener* windowListener, int width, int height, const char
 #endif
 }
 
-void Window::WindowLoop() {
+void Window::Loop() {
     float currentFrame = 0.0f, deltaTime = 0.0f, lastFrame = 0.0f;
     //#ifndef NDEBUG
     float prevTime = 0.0f;
@@ -83,7 +83,7 @@ void Window::WindowLoop() {
 
         glfwPollEvents();
 
-        m_WindowListener->Update(deltaTime);
+        m_WindowListener->UpdateTime(deltaTime);
 
         glfwSwapBuffers(m_Window);
     }
