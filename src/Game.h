@@ -9,13 +9,12 @@
 #include "entities/Sky.h"
 #include "utils/InputHandler.h"
 #include "entities/Player.h"
+#include "utils/RayCast.hpp"
 
 class Game {
 public:
     Game();
     void Run();
-    void Pause();
-    void ShowGui();
 
 private:
     void Init();
@@ -28,8 +27,10 @@ private:
     void UpdateAmbient(const glm::vec3& sunDir);
     void BindCommands();
     void UpdateTime(float deltaTime);
-    void UpdateFPS(uint32_t numFrames);
+    static void UpdateFPS(uint32_t numFrames);
     void Resize(int width, int height);
+    void Pause();
+    void ShowGui();
 
     int m_Width;
     int m_Height;
@@ -38,7 +39,6 @@ private:
     Camera m_Camera;
     Renderer m_Renderer;
     ChunkManager m_ChunkManager;
-    std::vector<Block> m_Blocks;
     glm::vec4 m_SkyColor;
     GuiManager m_GuiManager;
     bool m_ShowGui;
@@ -48,4 +48,5 @@ private:
     Sky m_Sky;
     float m_AmbientStrength;
     Player m_Player;
+    RayCast<glm::vec3> m_RayCast;
 };

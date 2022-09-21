@@ -103,3 +103,15 @@ void InputHandler::Resize(int width, int height) {
 void InputHandler::UpdateFPS(uint32_t numFrames) {
     UpdateFPSEvent.Notify(numFrames);
 }
+
+bool InputHandler::RightMouseClick() {
+    bool prev = m_KeyPressed[GLFW_MOUSE_BUTTON_RIGHT];
+    m_KeyPressed[GLFW_MOUSE_BUTTON_RIGHT] = false;
+    return prev;
+}
+
+bool InputHandler::LeftMouseClick() {
+    bool prev = m_KeyPressed[GLFW_MOUSE_BUTTON_LEFT];
+    m_KeyPressed[GLFW_MOUSE_BUTTON_LEFT] = false;
+    return prev;
+}

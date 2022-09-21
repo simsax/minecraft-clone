@@ -4,7 +4,6 @@
 #include "Keycodes.h"
 #include "Subject.hpp"
 #include "../graphics/WindowListener.h"
-#include <memory>
 
 class InputHandler : public WindowListener {
 public:
@@ -12,6 +11,8 @@ public:
     InputHandler(const InputHandler &) = delete;
     InputHandler &operator=(const InputHandler &) = delete;
 
+    bool LeftMouseClick();
+    bool RightMouseClick();
     void UpdateTime(float deltaTime) override;
     void KeyPressed(int key) override;
     void KeyReleased(int key) override;

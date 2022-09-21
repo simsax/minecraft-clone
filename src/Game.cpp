@@ -8,8 +8,6 @@ Game::Game()
           m_Window(&m_InputHandler, m_Width, m_Height, "Minecraft clone"),
           m_Camera(glm::vec3(0.0f, 0.0f, 0.0f), 1920, 1080),
           m_ChunkManager(&m_Camera),
-          m_Blocks(std::vector({Block::DIRT, Block::GRASS, Block::SAND, Block::SNOW, Block::STONE,
-                                Block::WOOD, Block::DIAMOND, Block::EMPTY, Block::EMPTY})),
           m_SkyColor(0, 0, 0, 1),
           m_ShowGui(true),
           m_Sun("sun", "sun.png", glm::vec3(0), glm::vec3(300.0f, 1.0f, 300.0f)),
@@ -19,7 +17,8 @@ Game::Game()
                 {static_cast<float>(m_Width) / 2.0f, 0.0f, static_cast<float>(m_Height) / 2.0f},
                 {m_Width, 0.0f, m_Height}),
           m_AmbientStrength(0.5f),
-          m_Player(&m_Camera) {
+          m_Player(&m_Camera),
+          m_RayCast(5.0f, [this](const glm::vec3 &block) { return m_ChunkManager.IsBlockCastable(block); }) {
     Logger::Init();
     Logger::GetGLLogger()->set_level(spdlog::level::off); // opengl logger level
     this->Init();
@@ -52,7 +51,7 @@ void Game::UpdateTime(float deltaTime) {
 }
 
 void Game::OnUpdate(float deltaTime) {
-//    CheckRayCast();
+    CheckRayCast();
     physics::UpdatePlayer(m_Player, m_ChunkManager, deltaTime);
     UpdateChunks();
     m_Renderer.SetDeltaTime(deltaTime);
@@ -78,77 +77,16 @@ void Game::OnRender() {
 }
 
 void Game::CheckRayCast() {
-    glm::vec3 &playerPos = m_Camera.GetCameraPosition();
-    glm::vec3 playerDir = m_Camera.GetPlayerDirection();
-    float Sx = std::abs(1 / playerDir.x);
-    float Sy = std::abs(1 / playerDir.y);
-    float Sz = std::abs(1 / playerDir.z);
-    glm::vec3 currentVoxel
-            = {std::floor(playerPos.x), std::floor(playerPos.y), std::floor(playerPos.z)};
-    glm::vec3 rayLength;
-    glm::vec3 step;
-
-    if (playerDir.x < 0) {
-        step.x = -1;
-        rayLength.x = (playerPos.x - currentVoxel.x) * Sx;
-    } else {
-        step.x = 1;
-        rayLength.x = (currentVoxel.x + 1 - playerPos.x) * Sx;
-    }
-    if (playerDir.y < 0) {
-        step.y = -1;
-        rayLength.y = (playerPos.y - currentVoxel.y) * Sy;
-    } else {
-        step.y = 1;
-        rayLength.y = (currentVoxel.y + 1 - playerPos.y) * Sy;
-    }
-    if (playerDir.z < 0) {
-        step.z = -1;
-        rayLength.z = (playerPos.z - currentVoxel.z) * Sz;
-    } else {
-        step.z = 1;
-        rayLength.z = (currentVoxel.z + 1 - playerPos.z) * Sz;
-    }
-
-    bool voxelFound = false;
-    static constexpr float maxDistance = 5.0f;
-    float distance = 0.0f;
-    while (!voxelFound && distance < maxDistance) {
-        // walk
-        if (rayLength.x < rayLength.y) {
-            if (rayLength.x < rayLength.z) {
-                currentVoxel.x += step.x;
-                distance = rayLength.x;
-                rayLength.x += Sx;
-            } else {
-                currentVoxel.z += step.z;
-                distance = rayLength.z;
-                rayLength.z += Sz;
-            }
-        } else {
-            if (rayLength.y < rayLength.z) {
-                currentVoxel.y += step.y;
-                distance = rayLength.y;
-                rayLength.y += Sy;
-            } else {
-                currentVoxel.z += step.z;
-                distance = rayLength.z;
-                rayLength.z += Sz;
-            }
+    glm::vec3 playerPos = m_Player.GetPosition();
+    glm::vec3 playerDir = m_Player.GetDirection();
+    std::optional<glm::vec3> castedBlock = m_RayCast.Cast(playerPos, playerDir);
+    if (castedBlock) {
+        if (m_InputHandler.LeftMouseClick()) {
+            m_ChunkManager.DestroyBlock();
+        } else if (m_InputHandler.RightMouseClick()) {
+            m_ChunkManager.PlaceBlock(m_Player.GetHoldingBlock());
         }
-
-        voxelFound = m_ChunkManager.IsVoxelSolid(currentVoxel);
     }
-
-//    if (voxelFound) {
-//        if (m_KeyPressed[GLFW_MOUSE_BUTTON_LEFT]) {
-//            m_ChunkManager.DestroyBlock();
-//            m_KeyPressed[GLFW_MOUSE_BUTTON_LEFT] = false;
-//        } else if (m_KeyPressed[GLFW_MOUSE_BUTTON_RIGHT]) {
-//            m_ChunkManager.PlaceBlock(m_Blocks[m_HoldingBlock]);
-//            m_KeyPressed[GLFW_MOUSE_BUTTON_RIGHT] = false;
-//        }
-//    }
 }
 
 void Game::UpdateChunks() {
@@ -170,8 +108,6 @@ void Game::UpdateFPS(uint32_t numFrames) {
     std::string fps = std::to_string(numFrames);
     std::string ms = std::to_string(1000.0 / numFrames);
     LOG_INFO("{} FPS / {} ms", fps, ms);
-//    std::string newTitle = "Minecraft 2 - " + fps + "FPS / " + ms + "ms";
-//    m_Window.ChangeTitle(newTitle);
 }
 
 void Game::UpdateSkyColor(const glm::vec3 &sunDir) {

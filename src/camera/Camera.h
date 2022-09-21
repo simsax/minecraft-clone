@@ -20,7 +20,7 @@ public:
     bool GetFlyMode() const;
     glm::mat4 GetViewMatrix() const;
     glm::vec3& GetCameraPosition();
-    glm::vec3 GetPlayerDirection() const;
+    glm::vec3 GetCameraDirection() const;
     glm::vec3 GetCameraSpeed();
     glm::vec3 GetFrontVector() const;
     void UpdateFrustum();

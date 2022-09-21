@@ -7,6 +7,7 @@
 #include <future>
 #include <queue>
 #include <unordered_set>
+#include <optional>
 
 class ChunkManager {
 public:
@@ -26,8 +27,8 @@ public:
 
     glm::vec3 GetChunkSize() const;
 
-    bool IsVoxelSolid(const glm::vec3 &voxel); // ???????
     bool IsBlockSolid(const glm::vec3& globalCoords) const;
+    bool IsBlockCastable(const glm::vec3& voxel);
     void DestroyBlock();
     void PlaceBlock(Block block);
     void UpdateChunks();

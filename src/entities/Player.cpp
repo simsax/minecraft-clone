@@ -2,8 +2,13 @@
 #include "../utils/Logger.h"
 
 Player::Player(Camera *camera) : m_Camera(camera), m_Position(m_Camera->GetCameraPosition()),
-    m_OnGround(false), m_VerticalVelocity(0.0f), m_HoldingBlock(0)
-{ }
+                                 m_OnGround(false),
+                                 m_Inventory(std::vector(
+                                         {Block::DIRT, Block::GRASS, Block::SAND, Block::SNOW,
+                                          Block::STONE,
+                                          Block::WOOD, Block::DIAMOND, Block::EMPTY,
+                                          Block::EMPTY})),
+                                 m_VerticalVelocity(0.0f), m_HoldingBlock(0) {}
 
 void Player::Move(Movement direction) {
     switch (direction) {
@@ -61,7 +66,7 @@ void Player::SetVerticalVelocity(float verticalVelocity) {
     m_VerticalVelocity = verticalVelocity;
 }
 
-glm::vec3& Player::GetPosition() {
+glm::vec3 &Player::GetPosition() {
     return m_Position;
 }
 
@@ -93,4 +98,12 @@ void Player::OnNotify(float offset) {
 
 Subject<int> &Player::HoldingBlockChanged() {
     return m_HoldingBlockChanged;
+}
+
+glm::vec3 Player::GetDirection() const {
+    return m_Camera->GetCameraDirection();
+}
+
+Block Player::GetHoldingBlock() const {
+    return m_Inventory[m_HoldingBlock];
 }

@@ -64,7 +64,7 @@ glm::vec3& Camera::GetCameraPosition() { return m_CameraPos; }
 
 glm::vec3 Camera::GetCameraSpeed() { return m_CameraSpeed; }
 
-glm::vec3 Camera::GetPlayerDirection() const { return m_CameraFront; }
+glm::vec3 Camera::GetCameraDirection() const { return m_CameraFront; }
 
 void Camera::Watch(float xoffset, float yoffset)
 {

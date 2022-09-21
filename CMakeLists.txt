@@ -84,7 +84,7 @@ add_executable(${PROJECT_NAME}
         src/entities/Player.h
         src/utils/InputHandler.cpp
         src/utils/InputHandler.h
-        src/utils/Subject.hpp)
+        src/utils/Subject.hpp src/utils/RayCast.hpp src/utils/Items.h)
 
 add_subdirectory(extern/glfw)
 add_subdirectory(extern/glew)

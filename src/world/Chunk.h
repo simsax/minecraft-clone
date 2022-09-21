@@ -13,34 +13,11 @@
 #include <memory>
 #include <unordered_map>
 #include <vector>
+#include "../utils/Items.h"
 
 #define XSIZE 16
 #define YSIZE 256
 #define ZSIZE 16
-
-enum class Block : uint8_t {
-    EMPTY,
-    GRASS,
-    DIRT,
-    STONE,
-    SNOW,
-    DIAMOND,
-    GOLD,
-    COAL,
-    IRON,
-    LEAVES,
-    WOOD,
-    WATER,
-    SAND,
-    GRAVEL,
-    SNOWY_GRASS,
-    BEDROCK,
-    FLOWER_BLUE,
-    FLOWER_YELLOW,
-    BUSH,
-    WET_DIRT,
-    TERRACOTTA
-};
 
 struct ChunkCoord {
     int x;

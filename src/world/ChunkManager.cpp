@@ -200,7 +200,7 @@ void ChunkManager::SortChunks() {
     });
 }
 
-bool ChunkManager::IsVoxelSolid(const glm::vec3 &voxel) {
+bool ChunkManager::IsBlockCastable(const glm::vec3 &voxel) {
     std::pair<ChunkCoord, glm::uvec3> target = GlobalToLocal(voxel);
     m_Raycast.prevGlobalVoxel = m_Raycast.globalVoxel;
     m_Raycast.globalVoxel = voxel;
@@ -212,8 +212,10 @@ bool ChunkManager::IsVoxelSolid(const glm::vec3 &voxel) {
     if (m_Raycast.localVoxel.y >= 0 && m_Raycast.localVoxel.y < YSIZE) {
         if (const auto it = m_ChunkMap.find(m_Raycast.chunkCoord); it != m_ChunkMap.end()) {
             m_Raycast.chunk = &it->second;
-            if (m_Raycast.chunk->GetBlock(m_Raycast.localVoxel[0], m_Raycast.localVoxel[1],
-                                          m_Raycast.localVoxel[2]) != Block::EMPTY) {
+            Block block = m_Raycast.chunk->GetBlock(m_Raycast.localVoxel[0], m_Raycast.localVoxel[1],
+                                          m_Raycast.localVoxel[2]);
+            if (block != Block::EMPTY &&
+                block != Block::WATER) {
                 m_Raycast.selected = true;
                 return true;
             }
@@ -283,7 +285,6 @@ bool ChunkManager::IsBlockSolid(const glm::vec3& globalCoords) const {
     }
     return false;
 }
-
 
 void ChunkManager::AddBlocks(const ChunkCoord &chunkCoord, BlockVec &blockVec) {
     for (auto &[block, voxel]: blockVec) {
