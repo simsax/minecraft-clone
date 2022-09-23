@@ -7,8 +7,6 @@
 
 using namespace std::chrono_literals;
 
-#define MAX_INDEX_COUNT 18432 // each cube has 6 faces, each face has 6 indexes
-#define MAX_VERTEX_COUNT 24000 // each cube has 6 faces, each face has 4 vertices
 #ifndef NDEBUG
 #define VIEW_DISTANCE 4
 #else
@@ -26,50 +24,15 @@ static int mod(int a, int b) {
 
 ChunkManager::ChunkManager(Camera *camera)
         : m_ChunkSize({XSIZE, YSIZE, ZSIZE}), m_ViewDistance(VIEW_DISTANCE),
-          m_TextureAtlas(std::string(SOURCE_DIR) + "/res/textures/terrain.png"),
           m_Camera(camera), m_SortChunks(false), m_ChunksReadyToMesh(false),
-          m_BindingIndex(0), m_Raycast({}), m_LastChunk({0, 0}), m_CurrentChunk({0, 0}) {
-    m_VertexLayout.Push<uint32_t>(1); // position + texture coords
+          m_Raycast({}), m_LastChunk({0, 0}), m_CurrentChunk({0, 0}), m_Stride(0) {
 
     m_ChunksToRender.reserve(
             static_cast<uint32_t>((m_ViewDistance * 2 + 1) * (m_ViewDistance * 2 + 1)));
-
-    m_Indices.reserve(MAX_INDEX_COUNT);
-    uint32_t offset = 0;
-
-    for (size_t i = 0; i < MAX_INDEX_COUNT * 2; i += 6) {
-        m_Indices.push_back(0 + offset);
-        m_Indices.push_back(1 + offset);
-        m_Indices.push_back(2 + offset);
-
-        m_Indices.push_back(2 + offset);
-        m_Indices.push_back(3 + offset);
-        m_Indices.push_back(0 + offset);
-
-        offset += 4;
-    }
 }
 
-void ChunkManager::InitWorld() {
-    m_TextureAtlas.Init();
-    m_ChunkShader.Init(std::string(SOURCE_DIR) + "/res/shaders/shader_chunk.vert",
-                       std::string(SOURCE_DIR) + "/res/shaders/shader_chunk.frag");
-    m_ChunkShader.Bind();
-    m_ChunkShader.SetUniform1i("u_Texture", 0);
-
-    m_OutlineShader.Init(std::string(SOURCE_DIR) + "/res/shaders/shader_outline.vert",
-                         std::string(SOURCE_DIR) +
-                         "/res/shaders/shader_outline.frag");
-
-//    m_OutlineShader.Bind();
-//    m_OutlineShader.SetUniform1i("u_Texture", 0);
-
-    m_IBO.Init(m_Indices.size() * sizeof(uint32_t), m_Indices.data());
-    m_VAO.Init();
-    m_VAO.AddLayout(m_VertexLayout, m_BindingIndex);
-    m_OutlineVBO.Init(m_VertexLayout.GetStride(), m_BindingIndex);
-    m_OutlineVBO.CreateDynamic(sizeof(uint32_t) * 24);
-
+void ChunkManager::InitWorld(uint32_t stride) {
+    m_Stride = stride;
     GenerateChunks();
     while (!m_ChunksToLoad.empty())
         LoadChunks();
@@ -77,8 +40,7 @@ void ChunkManager::InitWorld() {
 }
 
 void
-ChunkManager::Render(Renderer &renderer, const glm::vec3 &skyColor, const Sun &sun,
-                     const glm::vec3 &sunDir, float ambientStrength) {
+ChunkManager::Render(ChunkRenderer &renderer) {
     LoadChunks();
     MeshChunks();
     if (m_SortChunks) {
@@ -94,15 +56,11 @@ ChunkManager::Render(Renderer &renderer, const glm::vec3 &skyColor, const Sun &s
     for (Chunk *chunk: m_ChunksToRender) {
         glm::vec3 center = chunk->GetCenterPosition();
         if (m_Camera->IsInFrustum(center))
-            chunk->Render(renderer, m_VAO, m_IBO, m_ChunkShader, m_TextureAtlas, playerChunk,
-                          spireradius, skyColor, sun.GetColor(), cameraPos, sunDir, sun.IsDay(),
-                          ambientStrength);
+            chunk->Render(renderer, playerChunk, spireradius);
     }
 
     if (m_Raycast.selected) {
-        m_OutlineVBO.Bind(m_VAO.GetId());
-        m_Raycast.chunk->RenderOutline(renderer, m_VAO, m_OutlineVBO, m_IBO, m_OutlineShader,
-                                       m_Raycast.localVoxel);
+        m_Raycast.chunk->RenderOutline(renderer, m_Raycast.localVoxel);
     }
 }
 
@@ -127,8 +85,7 @@ void ChunkManager::LoadChunks() {
         }
 
         Chunk chunk(coords, {coords.x * static_cast<int>(m_ChunkSize[0]), 0.0f,
-                             coords.z * static_cast<int>(m_ChunkSize[2])},
-                    MAX_VERTEX_COUNT, m_Indices, m_VertexLayout, m_BindingIndex, &m_ChunkMap);
+                             coords.z * static_cast<int>(m_ChunkSize[2])}, m_Stride, &m_ChunkMap);
         BlockVec blocksToSet = chunk.CreateSurfaceLayer(blockList);
         AddBlocks(coords, blocksToSet);
         m_ChunkMap.insert({coords, std::move(chunk)});

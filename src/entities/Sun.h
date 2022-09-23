@@ -1,23 +1,22 @@
 #pragma once
 
-#include "QuadEntity.h"
+#include "Entity.hpp"
+#include "../graphics/QuadRenderer.h"
 
-class Sun : public QuadEntity {
+class Sun : public Entity<glm::vec3> {
 public:
     Sun(std::string name, std::string texturePath, const glm::vec3 &position,
-        const glm::vec3 &scale, const glm::vec3& color = glm::vec3(1.0f));
-    static void InitShaders(const std::string &vertShaderPath, const std::string &fragShaderPath);
+        const glm::vec3 &scale, const glm::vec3& color = glm::vec3(1.0f), float timeSpeed = 0.1f);
     virtual void IncrTime(float deltaTime);
     glm::vec3 GetColor() const;
     void SetColor(const glm::vec3& lightColor);
-    void Render(Renderer &renderer) override;
+    void Render(QuadRenderer &renderer);
     bool IsDay() const;
     void SetPosition(const glm::vec3 &position) override;
 
-protected:
-    static Shader s_Shader;
-    static bool s_Day;
-    static constexpr float s_TimeSpeed = 0.1f;
+private:
+    bool m_Day;
+    float m_TimeSpeed;
     glm::vec3 m_Color;
     float m_Time;
     glm::mat4 m_Model;

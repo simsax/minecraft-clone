@@ -4,6 +4,7 @@
 #include "Chunk.h"
 #include "../utils/Physics.h"
 #include "../entities/Sun.h"
+#include "../graphics/ChunkRenderer.h"
 #include <future>
 #include <queue>
 #include <unordered_set>
@@ -17,13 +18,11 @@ public:
 
     ChunkManager &operator=(const ChunkManager &) = delete;
 
-    void InitWorld();
+    void InitWorld(uint32_t stride);
 
     ChunkCoord CalculateChunkCoord(const glm::vec3 &position) const;
 
-    void
-    Render(Renderer &renderer, const glm::vec3 &skyColor, const Sun &sun, const glm::vec3 &sunDir,
-           float ambientStrength);
+    void Render(ChunkRenderer &renderer);
 
     glm::vec3 GetChunkSize() const;
 
@@ -32,7 +31,6 @@ public:
     void DestroyBlock();
     void PlaceBlock(Block block);
     void UpdateChunks();
-
 
 private:
     struct Raycast {
@@ -63,14 +61,6 @@ private:
 
     glm::vec3 m_ChunkSize;
     std::unordered_map<ChunkCoord, Chunk, hash_fn> m_ChunkMap;
-    VertexBufferLayout m_VertexLayout;
-    VertexArray m_VAO;
-    IndexBuffer m_IBO;
-    VertexBuffer m_OutlineVBO;
-    Shader m_ChunkShader;
-    Shader m_OutlineShader;
-    Texture m_TextureAtlas;
-    std::vector<uint32_t> m_Indices;
     std::vector<Chunk *> m_ChunksToRender;
     std::queue<Chunk *> m_ChunksToMesh;
     std::queue<Chunk *> m_ChunksInBorder;
@@ -82,8 +72,8 @@ private:
     bool m_SortChunks;
     bool m_ChunksReadyToMesh;
     std::pair<ChunkCoord, glm::vec3> m_SelectedBlock;
-    int m_BindingIndex;
     Raycast m_Raycast;
     ChunkCoord m_LastChunk;
     ChunkCoord m_CurrentChunk;
+    uint32_t m_Stride;
 };

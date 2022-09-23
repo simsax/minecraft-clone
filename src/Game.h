@@ -6,10 +6,11 @@
 #include "entities/Sun.h"
 #include "entities/Moon.h"
 #include "graphics/Window.h"
-#include "entities/Sky.h"
 #include "utils/InputHandler.h"
 #include "entities/Player.h"
 #include "utils/RayCast.hpp"
+#include "graphics/ChunkRenderer.h"
+#include "graphics/SkyRenderer.h"
 
 class Game {
 public:
@@ -45,7 +46,6 @@ private:
     Sun m_Sun;
     Moon m_Moon;
     bool m_Pause;
-    Sky m_Sky;
     float m_AmbientStrength;
     Player m_Player;
     RayCast<glm::vec3> m_RayCast;
