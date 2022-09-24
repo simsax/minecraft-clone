@@ -1,6 +1,6 @@
 #pragma once
 #include "../graphics/GuiRenderer.h"
-#include "../entities/Entity.hpp"
+#include "../utils/Entity.hpp"
 
 class GuiManager {
 public:
@@ -12,6 +12,6 @@ public:
 private:
     void MakeGui(int width, int height);
 
-    std::vector<Entity<glm::vec2>> m_GuiElements;
+    std::vector<std::unique_ptr<Entity<glm::vec2, GuiRenderer>>> m_GuiElements;
     float m_SquareBase;
 };

@@ -8,14 +8,13 @@ Game::Game()
           m_Window(&m_InputHandler, m_Width, m_Height, "Minecraft clone"),
           m_Camera(glm::vec3(0.0f, 0.0f, 0.0f), 1920, 1080),
           m_ChunkManager(&m_Camera),
-          m_SkyColor(0, 0, 0, 1),
           m_ShowGui(true),
-          m_Sun("sun", "sun.png", glm::vec3(0), glm::vec3(300.0f, 1.0f, 300.0f)),
-          m_Moon("moon", "moon.png", glm::vec3(0), glm::vec3(300.0f, 1.0f, 300.0f)),
           m_Pause(false),
-          m_AmbientStrength(0.5f),
           m_Player(&m_Camera),
-          m_RayCast(5.0f, [this](const glm::vec3 &block) { return m_ChunkManager.IsBlockCastable(block); }) {
+          m_RayCast(5.0f, [this](const glm::vec3 &block) {
+              return m_ChunkManager.IsBlockCastable(block);
+          }),
+          m_SkyEntities(&m_Renderer.skyRenderer, m_Height) {
     Logger::Init();
     Logger::GetGLLogger()->set_level(spdlog::level::off); // opengl logger level
     this->Init();
@@ -25,9 +24,7 @@ void Game::Init() {
     BindCommands();
     m_GuiManager.Init(m_Width, m_Height);
     m_ChunkManager.InitWorld(m_Renderer.chunkRenderer.GetStride());
-
     m_Renderer.Init(m_Width, m_Height);
-
     physics::Spawn(m_Player, m_ChunkManager);
 }
 
@@ -47,38 +44,23 @@ void Game::OnUpdate(float deltaTime) {
     CheckRayCast();
     physics::UpdatePlayer(m_Player, m_ChunkManager, deltaTime);
     UpdateChunks();
+    auto &cameraPos = m_Camera.GetCameraPosition();
+    m_SkyEntities.Update(deltaTime, cameraPos, m_Camera.GetFrontVector());
+
     m_Renderer.chunkRenderer.SetDeltaTime(deltaTime);
-    m_Sun.IncrTime(deltaTime);
-    m_Sun.SetPosition(m_Camera.GetCameraPosition());
-    m_Moon.IncrTime(deltaTime);
-    m_Moon.SetPosition(m_Camera.GetCameraPosition());
+    m_Renderer.chunkRenderer.SetViewPos(cameraPos);
+    m_Renderer.chunkRenderer.SetAmbientStrength(m_SkyEntities.GetAmbientStrength());
+    m_Renderer.chunkRenderer.SetSkyColor(m_SkyEntities.GetSkyColor());
+    m_Renderer.chunkRenderer.SetSunDir(m_SkyEntities.GetSunDir());
+    m_Renderer.chunkRenderer.SetSunColor(m_SkyEntities.GetSunColor());
+    m_Renderer.chunkRenderer.SetIsDay(m_SkyEntities.IsDay());
+    m_Renderer.SetViewMatrix(m_Camera.GetViewMatrix());
 }
 
 void Game::OnRender() {
-    Renderer::Clear(m_SkyColor);
-    auto &cameraPos = m_Camera.GetCameraPosition();
-    const glm::vec3 sunDir = glm::normalize(m_Sun.GetPosition() - cameraPos); // ???
-    UpdateSkyColor(sunDir);
-    UpdateAmbient(sunDir);
-    m_Renderer.SetViewMatrix(m_Camera.GetViewMatrix());
+    Renderer::Clear(m_SkyEntities.GetSkyColor());
     m_Renderer.skyRenderer.Render();
-    m_Sun.Render(m_Renderer.quadRenderer);
-    m_Moon.Render(m_Renderer.quadRenderer);
-
-    m_Renderer.chunkRenderer.SetViewPos(cameraPos);
-    m_Renderer.chunkRenderer.SetAmbientStrength(m_AmbientStrength);
-    m_Renderer.chunkRenderer.SetSkyColor(m_SkyColor);
-
-    // this is dumb, find alternative
-    m_Renderer.chunkRenderer.SetIsDay(m_Sun.IsDay());
-    if (m_Sun.IsDay()) {
-        m_Renderer.chunkRenderer.SetSunDir(-sunDir);
-        m_Renderer.chunkRenderer.SetSunColor(m_Sun.GetColor());
-    } else {
-        m_Renderer.chunkRenderer.SetSunDir(sunDir);
-        m_Renderer.chunkRenderer.SetSunColor(m_Moon.GetColor());
-    }
-
+    m_SkyEntities.Render(m_Renderer.quadRenderer);
     m_ChunkManager.Render(m_Renderer.chunkRenderer);
     if (m_ShowGui)
         m_GuiManager.Render(m_Renderer.guiRenderer);
@@ -113,38 +95,6 @@ void Game::UpdateFPS(uint32_t numFrames) {
     std::string fps = std::to_string(numFrames);
     std::string ms = std::to_string(1000.0 / numFrames);
     LOG_INFO("{} FPS / {} ms", fps, ms);
-}
-
-void Game::UpdateSkyColor(const glm::vec3 &sunDir) {
-    static constexpr glm::vec3 upVector = {0, 1, 0};
-    const glm::vec3 frontVector = m_Camera.GetFrontVector();
-    const float d = glm::dot(upVector, sunDir);
-    const float x = glm::dot(upVector, frontVector);
-
-    if (d >= 0) {
-        glm::vec4 color = d * SkyColors::tc1 + (1 - d) * SkyColors::tc2;
-        m_SkyColor = d * SkyColors::bc1 + (1 - d) * SkyColors::bc2;
-        m_Renderer.skyRenderer.SetSkyColor(color);
-        m_Renderer.skyRenderer.SetFogColor(m_SkyColor);
-    } else {
-        m_SkyColor = -d * SkyColors::tc2 + (1 + d) * SkyColors::bc2;
-        m_Renderer.skyRenderer.SetSkyColor(SkyColors::tc2);
-        m_Renderer.skyRenderer.SetFogColor(m_SkyColor);
-    }
-
-    float lowerLimit = m_Height * (-glm::asin(x) * 0.5f / glm::radians(35.0f) + 0.5f);
-    m_Renderer.skyRenderer.SetLowerLimit(lowerLimit);
-}
-
-void Game::UpdateAmbient(const glm::vec3 &sunDir) {
-    static constexpr glm::vec3 upVector = {0, 1, 0};
-    float d = glm::dot(upVector, sunDir);
-
-    if (d >= 0) {
-        m_AmbientStrength = d * 0.5f + (1 - d) * 0.1f;
-    } else {
-        m_AmbientStrength = -d * 0.05f + (1 + d) * 0.1f;
-    }
 }
 
 void Game::BindCommands() {

@@ -2,9 +2,10 @@
 #include "Config.h"
 
 Moon::Moon(std::string name, std::string texturePath, const glm::vec3 &position,
-           const glm::vec3 &scale, const glm::vec3 &color, float timeSpeed) : Entity(
-        std::move(name), std::move(std::string(SOURCE_DIR) + "/res/textures/" + texturePath), scale, position),
-m_TimeSpeed(timeSpeed), m_Time(0.0f), m_Color(color),m_Model(glm::mat4(1.0f)) {}
+           const glm::vec3 &scale, const glm::vec3 &color, float timeSpeed) :
+        Entity(std::move(name), std::move(std::string(SOURCE_DIR) + "/res/textures/" + texturePath),
+               scale, position),
+        m_TimeSpeed(timeSpeed), m_Time(0.0f), m_Color(color), m_Model(glm::mat4(1.0f)) {}
 
 void Moon::Render(QuadRenderer &renderer) {
     renderer.Render(m_Texture, m_Model);

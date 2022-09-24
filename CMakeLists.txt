@@ -71,8 +71,8 @@ add_executable(${PROJECT_NAME}
         src/utils/Physics.cpp
         src/camera/Constants.h
         src/utils/Random.hpp
-        src/entities/Sun.cpp
-        src/entities/Moon.cpp
+        src/sky/Sun.cpp
+        src/sky/Moon.cpp
         src/utils/Logger.cpp
         src/entities/Player.cpp
         src/utils/InputHandler.cpp
@@ -82,7 +82,7 @@ add_executable(${PROJECT_NAME}
         src/graphics/TextureAtlas.cpp
         src/graphics/GuiRenderer.cpp
         src/graphics/QuadRenderer.cpp
-        src/graphics/SkyRenderer.cpp)
+        src/graphics/SkyRenderer.cpp src/sky/SkyEntities.cpp src/sky/SkyEntities.h src/gui/Cursor.cpp src/gui/Cursor.h)
 
 add_subdirectory(extern/glfw)
 add_subdirectory(extern/glew)

@@ -7,13 +7,6 @@
 #include "../graphics/Texture.h"
 #include "../graphics/Shader.h"
 
-namespace SkyColors {
-    static constexpr glm::vec4 tc1 = {83.0f / 255.0f, 210.0f / 255.0f, 1.0f, 1.0f};
-    static constexpr glm::vec4 tc2 = {11.0f / 255.0f, 26.0f / 255.0f, 51.0f / 255.0f, 1.0f};
-    static constexpr glm::vec4 bc1 = {211.0f / 255.0f, 232.0f/ 255.0f, 232 / 255.0f, 1.0f};
-    static constexpr glm::vec4 bc2 = {242.0f / 255.0f , 110.0f / 255.0f, 34.0f / 255.0f, 1.0f};
-};
-
 class SkyRenderer {
 public:
     void Init(glm::mat4* proj);

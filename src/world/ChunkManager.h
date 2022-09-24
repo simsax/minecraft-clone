@@ -3,7 +3,7 @@
 #include "../camera/Camera.h"
 #include "Chunk.h"
 #include "../utils/Physics.h"
-#include "../entities/Sun.h"
+#include "../sky/Sun.h"
 #include "../graphics/ChunkRenderer.h"
 #include <future>
 #include <queue>

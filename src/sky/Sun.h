@@ -1,19 +1,21 @@
 #pragma once
 
-#include "Entity.hpp"
+#include "../utils/Entity.hpp"
 #include "../graphics/QuadRenderer.h"
 
-class Moon : public Entity<glm::vec3> {
+class Sun : public Entity<glm::vec3, QuadRenderer> {
 public:
-    Moon(std::string name, std::string texturePath, const glm::vec3 &position,
+    Sun(std::string name, std::string texturePath, const glm::vec3 &position,
         const glm::vec3 &scale, const glm::vec3& color = glm::vec3(1.0f), float timeSpeed = 0.1f);
     virtual void IncrTime(float deltaTime);
     glm::vec3 GetColor() const;
     void SetColor(const glm::vec3& lightColor);
-    void Render(QuadRenderer &renderer);
+    void Render(QuadRenderer &renderer) override;
+    bool IsDay() const;
     void SetPosition(const glm::vec3 &position) override;
 
 private:
+    bool m_Day;
     float m_TimeSpeed;
     glm::vec3 m_Color;
     float m_Time;
