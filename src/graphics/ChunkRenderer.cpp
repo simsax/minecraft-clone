@@ -6,7 +6,8 @@
 
 ChunkRenderer::ChunkRenderer() :
     m_BindingIndex(0), m_Visibility(0.5f), m_Increment(0.5f), m_DeltaTime(0) {
-    m_VertexLayout.Push<uint32_t>(1); // position + texture coords
+    m_VertexLayout.Push<uint32_t>(1); // position + texture coords + normals
+    m_VertexLayout.Push<uint32_t>(1); // lighting
 
     m_Indices.reserve(MAX_INDEX_COUNT);
     uint32_t offset = 0;
@@ -55,11 +56,11 @@ void ChunkRenderer::Render(const glm::vec3& chunkPosition, uint32_t offset) {
     m_ChunkShader.SetUniformMat4f("u_MV", *m_View);
     m_ChunkShader.SetUniform3fv("u_ChunkPos", chunkPosition);
     m_ChunkShader.SetUniform3fv("u_SkyColor", m_SkyColor);
-    m_ChunkShader.SetUniform3fv("u_SunColor", m_SunColor);
-    m_ChunkShader.SetUniform3fv("u_ViewPos", m_ViewPos);
-    m_ChunkShader.SetUniform3fv("u_LightDir", m_SunDir);
-    m_ChunkShader.SetUniform1i("u_IsDay", m_IsDay);
-    m_ChunkShader.SetUniform1f("u_AmbientStrength", m_AmbientStrength);
+//    m_ChunkShader.SetUniform3fv("u_SunColor", m_SunColor);
+//    m_ChunkShader.SetUniform3fv("u_ViewPos", m_ViewPos);
+//    m_ChunkShader.SetUniform3fv("u_LightDir", m_SunDir);
+//    m_ChunkShader.SetUniform1i("u_IsDay", m_IsDay);
+//    m_ChunkShader.SetUniform1f("u_AmbientStrength", m_AmbientStrength);
     TextureAtlas::GetTexture().Bind(0);
     m_VAO.Bind();
     m_IBO.Bind(m_VAO.GetId());

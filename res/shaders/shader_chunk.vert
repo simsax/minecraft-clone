@@ -1,11 +1,13 @@
 #version 450 core
 
 layout(location = 0) in uint in_VertexCoord;
+layout(location = 1) in uint in_Light;
 
 out vec2 v_TexCoord;
 out float visibility;
 out vec3 fragPos;
 out vec3 normal;
+out float sunLight;
 
 uniform mat4 u_MVP;
 uniform mat4 u_MV;
@@ -52,4 +54,6 @@ void main() {
 	float distance = length(posRelToCam.xyz);
 	visibility = exp(-pow((distance*density), gradient));
 	visibility = clamp(visibility, 0.0, 1.0);
+
+	sunLight = float(in_Light & 0xFu) / 15.0;
 }

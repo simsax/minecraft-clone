@@ -7,6 +7,8 @@
 template <typename T, size_t X, size_t Y, size_t Z> class Matrix3D {
 public:
     Matrix3D();
+    Matrix3D(T val);
+
     ~Matrix3D();
     Matrix3D(const Matrix3D& other);
     Matrix3D(Matrix3D&& other) noexcept ;
@@ -45,6 +47,12 @@ template <typename T, size_t X, size_t Y, size_t Z> inline Matrix3D<T, X, Y, Z>:
     m_Data = new T[X * Y * Z];
     m_Log2Z = MyLog2(Z);
     m_Log2XZSize = MyLog2(X * Z);
+}
+
+
+template<typename T, size_t X, size_t Y, size_t Z>
+Matrix3D<T, X, Y, Z>::Matrix3D(T val) : Matrix3D() {
+    std::fill(m_Data, m_Data + X * Y * Z, val);
 }
 
 template <typename T, size_t X, size_t Y, size_t Z> inline Matrix3D<T, X, Y, Z>::~Matrix3D()

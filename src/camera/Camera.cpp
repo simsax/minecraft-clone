@@ -3,7 +3,6 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "Constants.h"
 
-
 Camera::Camera(const glm::vec3& position, int width, int height)
     : m_Frustum(ZNEAR, ZFAR, glm::radians(FOV), width, height)
     , m_CameraPos(position)

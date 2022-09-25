@@ -23,5 +23,7 @@ enum class Block : uint8_t {
     FLOWER_YELLOW,
     BUSH,
     WET_DIRT,
-    TERRACOTTA
+    TERRACOTTA,
+    LIGHT_RED,
+    LIGHT_BLUE
 };

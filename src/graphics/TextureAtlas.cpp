@@ -26,6 +26,8 @@ namespace TextureAtlas {
                 {Block::BUSH,          {{14, 4},  {14, 4},  {14, 4}}},
                 {Block::WET_DIRT,      {{6,  10}, {6,  10}, {6,  10}}},
                 {Block::TERRACOTTA,    {{15, 14}, {15, 14}, {15, 14}}},
+                {Block::LIGHT_RED,     {{9 ,1}, {9, 1}, {9, 1}}},
+                {Block::LIGHT_BLUE,    {{10 ,1}, {10, 1}, {10, 1}}}
         };
 
         Texture texture(std::string(SOURCE_DIR) + "/res/textures/terrain.png");

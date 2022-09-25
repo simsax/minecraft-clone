@@ -8,7 +8,12 @@ float Window::lastX = 960.0f;
 float Window::lastY = 540.0f;
 float Window::mouseSensitivity = 0.1f;
 bool Window::wireframe = false;
+
+#ifndef NDEBUG
+bool Window::mouseCaptured = false;
+#else
 bool Window::mouseCaptured = true;
+#endif
 
 Window::Window(WindowListener* windowListener, int width, int height, const char *name)
         : m_WindowListener(windowListener), m_Width(width), m_Height(height), m_Name(name) {
@@ -50,7 +55,10 @@ Window::Window(WindowListener* windowListener, int width, int height, const char
     glfwSetFramebufferSizeCallback(m_Window, FramebufferSizeCallback);
 
     // capture cursor in the center and hide it
-    glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    if (mouseCaptured)
+        glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    else
+        glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
 #ifndef NDEBUG
     // debug stuff
@@ -123,11 +131,11 @@ void Window::KeyCallback(GLFWwindow *window, int key, int scancode, int action, 
     auto* windowListener = static_cast<WindowListener *>(glfwGetWindowUserPointer(window));
 
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-        if (mouseCaptured)
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        else
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         mouseCaptured = !mouseCaptured;
+        if (mouseCaptured)
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        else
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
     if (key == GLFW_KEY_Z && action == GLFW_PRESS) { // toggle wireframe mode
         wireframe = !wireframe;

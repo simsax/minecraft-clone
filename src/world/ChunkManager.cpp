@@ -59,9 +59,9 @@ ChunkManager::Render(ChunkRenderer &renderer) {
             chunk->Render(renderer, playerChunk, spireradius);
     }
 
-    if (m_Raycast.selected) {
-        m_Raycast.chunk->RenderOutline(renderer, m_Raycast.localVoxel);
-    }
+//    if (m_Raycast.selected) {
+//        m_Raycast.chunk->RenderOutline(renderer, m_Raycast.localVoxel);
+//    }
 }
 
 glm::vec3 ChunkManager::GetChunkSize() const { return m_ChunkSize; }

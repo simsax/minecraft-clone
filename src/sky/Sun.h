@@ -6,7 +6,7 @@
 class Sun : public Entity<glm::vec3, QuadRenderer> {
 public:
     Sun(std::string name, std::string texturePath, const glm::vec3 &position,
-        const glm::vec3 &scale, const glm::vec3& color = glm::vec3(1.0f), float timeSpeed = 0.1f);
+        const glm::vec3 &scale, const glm::vec3& color = glm::vec3(1.0f), float timeSpeed = 0.01f);
     virtual void IncrTime(float deltaTime);
     glm::vec3 GetColor() const;
     void SetColor(const glm::vec3& lightColor);

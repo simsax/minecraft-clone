@@ -38,6 +38,7 @@ int operator-(const ChunkCoord &l, const ChunkCoord &r);
 
 using BlockVec = std::vector<std::pair<Block, glm::vec3>>;
 
+
 class Chunk {
 public:
     using ChunkMap = std::unordered_map<ChunkCoord, Chunk, hash_fn>;
@@ -61,14 +62,31 @@ public:
     void UpdateMeshHeighLimit(uint32_t height);
 
 private:
+    struct Vertex {
+        Vertex(uint32_t b, uint16_t l) : base(b), light(l) {}
+        uint32_t base;
+        uint16_t light;
+    };
+
     void CreateHeightMap();
     void FastFill();
 
     template<typename... Args>
-    void GenCube(int i, int j, int k, std::vector<uint32_t> &target,
+    void GenCube(int i, int j, int k, std::vector<Vertex> &target,
                  const TextureAtlas::Coords &textureCoords,
                  const std::array<Chunk *, 4> &neighbors,
                  Args... voidBlocks);
+
+    void GenSprite(int i, int j, int k, std::vector<Vertex> &target,
+            const std::array<uint32_t, 4>& textureCoords);
+
+    void CreateQuad(std::vector<Vertex> &target, const glm::uvec3 &position,
+                           const std::array<uint32_t, 4>& textureCoords, const glm::uvec4 &offsetx,
+                           const glm::uvec4 &offsety,
+                           const glm::uvec4 &offsetz,
+                           uint8_t normalIndex);
+
+    void SetTorchLight(int i, int j, int k, int val);
 
     void SetBlocks(const BlockVec &blocksToSet);
     void CreateTrees(int i, int j, int k, BlockVec &blockVec);
@@ -84,9 +102,10 @@ private:
     ChunkCoord m_Coords;
     glm::vec3 m_ChunkPosition;
     Matrix3D<Block, XSIZE, YSIZE, ZSIZE> m_Chunk;
-    std::vector<uint32_t> m_Mesh;
-    std::vector<uint32_t> m_TransparentMesh;
-    std::vector<uint32_t> m_SpriteMesh;
+    Matrix3D<uint16_t, XSIZE, YSIZE, ZSIZE> m_LightMap;
+    std::vector<Vertex> m_Mesh;
+    std::vector<Vertex> m_TransparentMesh;
+    std::vector<Vertex> m_SpriteMesh;
     int m_MinHeight;
     int m_MaxHeight;
     size_t m_IBOCount;

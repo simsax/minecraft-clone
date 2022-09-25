@@ -22,8 +22,8 @@ std::size_t hash_fn::operator()(const ChunkCoord &coord) const {
     return h1 ^ h2;
 }
 
-static void CreateQuad(std::vector<uint32_t> &target, const glm::uvec3 &position,
-                       const std::array<uint32_t, 4>& textureCoords, const glm::uvec4 &offsetx,
+void Chunk::CreateQuad(std::vector<Vertex> &target, const glm::uvec3 &position,
+                       const std::array<uint32_t, 4> &textureCoords, const glm::uvec4 &offsetx,
                        const glm::uvec4 &offsety,
                        const glm::uvec4 &offsetz,
                        uint8_t normalIndex) {
@@ -33,19 +33,22 @@ static void CreateQuad(std::vector<uint32_t> &target, const glm::uvec3 &position
         uint32_t v = normalIndex << 29 | (position[0] + offsetx[i]) << 24 |
                      (position[1] + offsety[i]) << 15
                      | (position[2] + offsetz[i]) << 10 | textureCoords[i];
-        target.emplace_back(v);
+        uint16_t l = m_LightMap(position.x, position.y, position.z);
+        target.emplace_back(v, l);
     }
 }
 
-Chunk::Chunk(const ChunkCoord &coords, const glm::vec3 &position, uint32_t stride, ChunkMap *chunkMap)
+Chunk::Chunk(const ChunkCoord &coords, const glm::vec3 &position, uint32_t stride,
+             ChunkMap *chunkMap)
         : m_HeightMap({}), m_Coords(coords), m_ChunkPosition(position),
-          m_Chunk(Matrix3D<Block, XSIZE, YSIZE, ZSIZE>()),
+          m_Chunk{},
+          m_LightMap{4},
           m_MinHeight(YSIZE), m_MaxHeight(0), m_IBOCount(0), m_TIBOCount(0), m_SIBOCount(0),
           m_ChunkMap(chunkMap),
           m_CenterPosition({m_ChunkPosition.x + static_cast<float>(XSIZE) / 2, 0,
                             m_ChunkPosition.z + static_cast<float>(ZSIZE) / 2}) {
     m_VBO.Init(stride, 0);
-    m_VBO.CreateDynamic(sizeof(uint32_t) * MAX_VERTEX_COUNT);
+    m_VBO.CreateDynamic(sizeof(Vertex) * MAX_VERTEX_COUNT);
 
     m_Mesh.reserve(MAX_VERTEX_COUNT);
     m_TransparentMesh.reserve(MAX_VERTEX_COUNT / 4);
@@ -270,7 +273,7 @@ Chunk::CheckNeighbor(const Chunk *const chunk, const glm::uvec3 &position, Args.
 }
 
 template<typename... Args>
-void Chunk::GenCube(int i, int j, int k, std::vector<uint32_t> &target,
+void Chunk::GenCube(int i, int j, int k, std::vector<Vertex> &target,
                     const TextureAtlas::Coords &textureCoords,
                     const std::array<Chunk *, 4> &neighbors,
                     Args... voidBlocks) {
@@ -309,22 +312,21 @@ void Chunk::GenCube(int i, int j, int k, std::vector<uint32_t> &target,
     }
 }
 
-static void GenSprite(
-        int i, int j, int k, std::vector<uint32_t> &target,
-        const std::array<uint32_t, 4>& textureCoords) {
+void Chunk::GenSprite(
+        int i, int j, int k, std::vector<Vertex> &target,
+        const std::array<uint32_t, 4> &textureCoords) {
     static constexpr int vertices = 4;
     static constexpr std::array<uint8_t, 8> offsetx = {0, 1, 1, 0, 0, 1, 1, 0};
     static constexpr std::array<uint8_t, 8> offsety = {0, 0, 1, 1, 0, 0, 1, 1};
     static constexpr std::array<uint8_t, 8> offsetz = {0, 1, 1, 0, 1, 0, 0, 1};
-
-    // maybe a constant color that changes depending on the angle would be better
 
     for (int n = 0; n < 8; n++) {
         uint32_t v
                 = (n < 4 ? 7 << 29 : 6 << 29) | (i + offsetx[n]) << 24 | (j + offsety[n]) << 15 |
                   (k + offsetz[n]) << 10 |
                   textureCoords[n % vertices];
-        target.emplace_back(v);
+        uint16_t l = m_LightMap(i, j, k);
+        target.emplace_back(v, l);
     }
 }
 
@@ -386,14 +388,14 @@ bool Chunk::GenerateMesh() {
             // solid mesh
             size_t indexCount = m_Mesh.size() / 4 * 6; // num faces * 6
             m_IBOCount = indexCount;
-            uint32_t solidSize = m_Mesh.size() * sizeof(uint32_t);
+            uint32_t solidSize = m_Mesh.size() * sizeof(Vertex);
             uint32_t transSize = 0;
             m_VBO.SendData(solidSize, m_Mesh.data(), 0);
 
             if (!m_TransparentMesh.empty()) {
                 indexCount = m_TransparentMesh.size() / 4 * 6;
                 m_TIBOCount = indexCount;
-                transSize = m_TransparentMesh.size() * sizeof(uint32_t);
+                transSize = m_TransparentMesh.size() * sizeof(Vertex);
                 m_VBO.SendData(transSize,
                                m_TransparentMesh.data(), solidSize);
             }
@@ -401,7 +403,7 @@ bool Chunk::GenerateMesh() {
                 uint32_t offset = solidSize + transSize;
                 indexCount = m_SpriteMesh.size() / 4 * 6;
                 m_SIBOCount = indexCount;
-                m_VBO.SendData(m_SpriteMesh.size() * sizeof(uint32_t),
+                m_VBO.SendData(m_SpriteMesh.size() * sizeof(Vertex),
                                m_SpriteMesh.data(), offset);
             }
             return true;
@@ -411,7 +413,7 @@ bool Chunk::GenerateMesh() {
     return true;
 }
 
-void Chunk::Render(ChunkRenderer &renderer, const ChunkCoord& playerChunk, int radius) {
+void Chunk::Render(ChunkRenderer &renderer, const ChunkCoord &playerChunk, int radius) {
     renderer.SetIboCount(m_IBOCount);
     m_VBO.Bind(renderer.GetVaoId());
     renderer.Render(m_ChunkPosition, 0);
@@ -436,7 +438,7 @@ void Chunk::RenderOutline(ChunkRenderer &renderer, const glm::uvec3 &target) {
         int j = static_cast<int>(target.y);
         int k = static_cast<int>(target.z);
         if (m_Chunk(i, j, k) != Block::EMPTY && m_Chunk(i, j, k) != Block::WATER) {
-            std::vector<uint32_t> outlineMesh;
+            std::vector<Vertex> outlineMesh;
             TextureAtlas::Coords textureCoords = TextureAtlas::At(m_Chunk(i, j, k));
             GenCube(i, j, k, outlineMesh, textureCoords, neighbors, Block::EMPTY, Block::LEAVES,
                     Block::WATER);
@@ -457,6 +459,9 @@ void Chunk::SetBlock(uint32_t x, uint32_t y, uint32_t z, Block block) {
         m_MinHeight = y;
     else if (y > m_MaxHeight)
         m_MaxHeight = y;
+
+    if (block == Block::LIGHT_BLUE || block == Block::LIGHT_RED)
+        m_LightMap(x, y, z) = 15;
 
     ClearMesh();
 }
@@ -491,4 +496,8 @@ void Chunk::UpdateMeshHeighLimit(uint32_t height) {
         m_MaxHeight = height;
     else if (height < m_MinHeight)
         m_MinHeight = height;
+}
+
+void Chunk::SetTorchLight(int i, int j, int k, int val) {
+
 }

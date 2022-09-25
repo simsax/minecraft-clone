@@ -48,12 +48,12 @@ void Game::OnUpdate(float deltaTime) {
     m_SkyEntities.Update(deltaTime, cameraPos, m_Camera.GetFrontVector());
 
     m_Renderer.chunkRenderer.SetDeltaTime(deltaTime);
-    m_Renderer.chunkRenderer.SetViewPos(cameraPos);
-    m_Renderer.chunkRenderer.SetAmbientStrength(m_SkyEntities.GetAmbientStrength());
     m_Renderer.chunkRenderer.SetSkyColor(m_SkyEntities.GetSkyColor());
-    m_Renderer.chunkRenderer.SetSunDir(m_SkyEntities.GetSunDir());
-    m_Renderer.chunkRenderer.SetSunColor(m_SkyEntities.GetSunColor());
-    m_Renderer.chunkRenderer.SetIsDay(m_SkyEntities.IsDay());
+//    m_Renderer.chunkRenderer.SetViewPos(cameraPos);
+//    m_Renderer.chunkRenderer.SetAmbientStrength(m_SkyEntities.GetAmbientStrength());
+//    m_Renderer.chunkRenderer.SetSunDir(m_SkyEntities.GetSunDir());
+//    m_Renderer.chunkRenderer.SetSunColor(m_SkyEntities.GetSunColor());
+//    m_Renderer.chunkRenderer.SetIsDay(m_SkyEntities.IsDay());
     m_Renderer.SetViewMatrix(m_Camera.GetViewMatrix());
 }
 

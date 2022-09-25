@@ -6,8 +6,8 @@ Player::Player(Camera *camera) : m_Camera(camera), m_Position(m_Camera->GetCamer
                                  m_Inventory(std::vector(
                                          {Block::DIRT, Block::GRASS, Block::SAND, Block::SNOW,
                                           Block::STONE,
-                                          Block::WOOD, Block::DIAMOND, Block::EMPTY,
-                                          Block::EMPTY})),
+                                          Block::WOOD, Block::DIAMOND, Block::LIGHT_RED,
+                                          Block::LIGHT_BLUE})),
                                  m_VerticalVelocity(0.0f), m_HoldingBlock(0) {}
 
 void Player::Move(Movement direction) {
