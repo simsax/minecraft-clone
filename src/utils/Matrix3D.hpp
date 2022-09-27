@@ -31,7 +31,7 @@ private:
     T* m_Data;
 };
 
-static uint32_t MyLog2(uint32_t x)
+constexpr uint32_t MyLog2(uint32_t x)
 {
     int res = 0;
     while (x >>= 1)

@@ -4,6 +4,11 @@
 
 #define MAX_INDEX_COUNT 18432 // each cube has 6 faces, each face has 6 indexes
 
+struct Vertex {
+    uint32_t base;
+    uint16_t light;
+};
+
 ChunkRenderer::ChunkRenderer() :
     m_BindingIndex(0), m_Visibility(0.5f), m_Increment(0.5f), m_DeltaTime(0) {
     m_VertexLayout.Push<uint32_t>(1); // position + texture coords + normals
@@ -46,7 +51,7 @@ void ChunkRenderer::Init(glm::mat4* proj, glm::mat4* view) {
     m_VAO.Init();
     m_VAO.AddLayout(m_VertexLayout, m_BindingIndex);
     m_OutlineVBO.Init(m_VertexLayout.GetStride(), m_BindingIndex);
-    m_OutlineVBO.CreateDynamic(sizeof(uint32_t) * 24);
+    m_OutlineVBO.CreateDynamic(sizeof(Vertex) * 24);
 }
 
 void ChunkRenderer::Render(const glm::vec3& chunkPosition, uint32_t offset) {

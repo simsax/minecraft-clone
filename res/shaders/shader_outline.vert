@@ -1,6 +1,7 @@
 #version 450 core
 
 layout(location = 0) in uint in_VertexCoord;
+layout(location = 1) in uint in_Light;
 
 //out vec2 v_TexCoord;
 

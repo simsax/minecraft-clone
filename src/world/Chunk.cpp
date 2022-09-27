@@ -1,12 +1,18 @@
 #include "Chunk.h"
 #include "glm/gtx/norm.hpp"
 #include <map>
+#include <queue>
 #include "../camera/Camera.h"
 #include "../utils/Random.hpp"
 #include "../utils/Logger.h"
 
 #define MAX_VERTEX_COUNT 24000 // each cube has 6 faces, each face has 4 vertices
 #define assertm(exp, msg) assert(((void)msg, exp))
+
+static constexpr int WEST = 0;
+static constexpr int NORTH = 1;
+static constexpr int EAST = 2;
+static constexpr int SOUTH = 3;
 
 bool operator==(const ChunkCoord &l, const ChunkCoord &r) { return l.x == r.x && l.z == r.z; }
 
@@ -20,6 +26,11 @@ std::size_t hash_fn::operator()(const ChunkCoord &coord) const {
     std::size_t h1 = std::hash<int>()(coord.x);
     std::size_t h2 = std::hash<int>()(coord.z);
     return h1 ^ h2;
+}
+
+static int mod(int a, int b) {
+    int res = a % b;
+    return res >= 0 ? res : res + b;
 }
 
 void Chunk::CreateQuad(std::vector<Vertex> &target, const glm::uvec3 &position,
@@ -41,8 +52,7 @@ void Chunk::CreateQuad(std::vector<Vertex> &target, const glm::uvec3 &position,
 Chunk::Chunk(const ChunkCoord &coords, const glm::vec3 &position, uint32_t stride,
              ChunkMap *chunkMap)
         : m_HeightMap({}), m_Coords(coords), m_ChunkPosition(position),
-          m_Chunk{},
-          m_LightMap{4},
+          m_Chunk{}, m_LightMap{15}, m_Neighbors({nullptr}),
           m_MinHeight(YSIZE), m_MaxHeight(0), m_IBOCount(0), m_TIBOCount(0), m_SIBOCount(0),
           m_ChunkMap(chunkMap),
           m_CenterPosition({m_ChunkPosition.x + static_cast<float>(XSIZE) / 2, 0,
@@ -277,10 +287,6 @@ void Chunk::GenCube(int i, int j, int k, std::vector<Vertex> &target,
                     const TextureAtlas::Coords &textureCoords,
                     const std::array<Chunk *, 4> &neighbors,
                     Args... voidBlocks) {
-    static constexpr int west = 0;
-    static constexpr int north = 1;
-    static constexpr int east = 2;
-    static constexpr int south = 3;
 
     if (j == 0 || (j > 0 && ((m_Chunk(i, j - 1, k) == voidBlocks) || ...))) {
         CreateQuad(target, {i, j, k}, textureCoords.bottom, // D
@@ -290,22 +296,22 @@ void Chunk::GenCube(int i, int j, int k, std::vector<Vertex> &target,
         CreateQuad(target, {i, j, k}, textureCoords.top, // U
                    {0, 1, 1, 0}, glm::uvec4(1), {1, 1, 0, 0}, 2);
     }
-    if ((k == 0 && CheckNeighbor(neighbors[north], {i, j, ZSIZE - 1}, voidBlocks...))
+    if ((k == 0 && CheckNeighbor(neighbors[NORTH], {i, j, ZSIZE - 1}, voidBlocks...))
         || (k > 0 && ((m_Chunk(i, j, k - 1) == voidBlocks) || ...))) {
         CreateQuad(target, {i, j, k}, textureCoords.side, // B
                    {1, 0, 0, 1}, {0, 0, 1, 1}, glm::uvec4(0), 5);
     }
-    if ((k == ZSIZE - 1 && CheckNeighbor(neighbors[south], {i, j, 0}, voidBlocks...))
+    if ((k == ZSIZE - 1 && CheckNeighbor(neighbors[SOUTH], {i, j, 0}, voidBlocks...))
         || (k < ZSIZE - 1 && ((m_Chunk(i, j, k + 1) == voidBlocks) || ...))) {
         CreateQuad(target, {i, j, k}, textureCoords.side, // F
                    {0, 1, 1, 0}, {0, 0, 1, 1}, glm::uvec4(1), 4);
     }
-    if ((i == 0 && CheckNeighbor(neighbors[west], {XSIZE - 1, j, k}, voidBlocks...))
+    if ((i == 0 && CheckNeighbor(neighbors[WEST], {XSIZE - 1, j, k}, voidBlocks...))
         || (i > 0 && ((m_Chunk(i - 1, j, k) == voidBlocks) || ...))) {
         CreateQuad(target, {i, j, k}, textureCoords.side, // L
                    glm::uvec4(0), {0, 0, 1, 1}, {0, 1, 1, 0}, 1);
     }
-    if ((i == XSIZE - 1 && CheckNeighbor(neighbors[east], {0, j, k}, voidBlocks...))
+    if ((i == XSIZE - 1 && CheckNeighbor(neighbors[EAST], {0, j, k}, voidBlocks...))
         || (i < XSIZE - 1 && ((m_Chunk(i + 1, j, k) == voidBlocks) || ...))) {
         CreateQuad(target, {i, j, k}, textureCoords.side, // R
                    glm::uvec4(1), {0, 0, 1, 1}, {1, 0, 0, 1}, 0);
@@ -330,19 +336,19 @@ void Chunk::GenSprite(
     }
 }
 
-bool Chunk::FindNeighbors(std::array<Chunk *, 4> &neighbors) {
+bool Chunk::FindNeighbors() {
     int n = 0;
     for (int i = -1; i <= 1; i += 2) {
         if (const auto it = m_ChunkMap->find({m_Coords.x + i, m_Coords.z});
                 it != m_ChunkMap->end()) {
-            neighbors[n++] = &it->second;
+            m_Neighbors[n++] = &it->second;
         } else { // border chunk, don't generate the mesh
             return false;
         }
 
         if (const auto it = m_ChunkMap->find({m_Coords.x, m_Coords.z + i});
                 it != m_ChunkMap->end()) {
-            neighbors[n++] = &it->second;
+            m_Neighbors[n++] = &it->second;
         } else { // border chunk, don't generate the mesh
             return false;
         }
@@ -353,8 +359,8 @@ bool Chunk::FindNeighbors(std::array<Chunk *, 4> &neighbors) {
 bool Chunk::GenerateMesh() {
     if (m_Mesh.empty() && m_TransparentMesh.empty() && m_SpriteMesh.empty()) {
         // retrieve the 4 pointers from the map and continue only if all of them exist
-        std::array<Chunk *, 4> neighbors = {nullptr}; // west, north, east, south
-        if (FindNeighbors(neighbors)) {
+        m_Neighbors = {nullptr}; // west, north, east, south
+        if (FindNeighbors()) {
             if (m_MinHeight < 1)
                 m_MinHeight = 1;
             for (int j = m_MinHeight - 1; j <= m_MaxHeight; j++) {
@@ -372,12 +378,12 @@ bool Chunk::GenerateMesh() {
                                 break;
                             case Block::WATER:
                             case Block::LEAVES:
-                                GenCube(i, j, k, m_TransparentMesh, textureCoords, neighbors,
+                                GenCube(i, j, k, m_TransparentMesh, textureCoords, m_Neighbors,
                                         Block::EMPTY, Block::FLOWER_BLUE, Block::FLOWER_YELLOW,
                                         Block::BUSH);
                                 break;
                             default:
-                                GenCube(i, j, k, m_Mesh, textureCoords, neighbors, Block::EMPTY,
+                                GenCube(i, j, k, m_Mesh, textureCoords, m_Neighbors, Block::EMPTY,
                                         Block::LEAVES, Block::WATER, Block::FLOWER_BLUE,
                                         Block::FLOWER_YELLOW, Block::BUSH);
                                 break;
@@ -432,18 +438,18 @@ void Chunk::Render(ChunkRenderer &renderer, const ChunkCoord &playerChunk, int r
 }
 
 void Chunk::RenderOutline(ChunkRenderer &renderer, const glm::uvec3 &target) {
-    std::array<Chunk *, 4> neighbors = {nullptr};
-    if (FindNeighbors(neighbors)) {
+    m_Neighbors = {nullptr};
+    if (FindNeighbors()) {
         int i = static_cast<int>(target.x);
         int j = static_cast<int>(target.y);
         int k = static_cast<int>(target.z);
         if (m_Chunk(i, j, k) != Block::EMPTY && m_Chunk(i, j, k) != Block::WATER) {
             std::vector<Vertex> outlineMesh;
             TextureAtlas::Coords textureCoords = TextureAtlas::At(m_Chunk(i, j, k));
-            GenCube(i, j, k, outlineMesh, textureCoords, neighbors, Block::EMPTY, Block::LEAVES,
+            GenCube(i, j, k, outlineMesh, textureCoords, m_Neighbors, Block::EMPTY, Block::LEAVES,
                     Block::WATER);
             size_t indexCount = outlineMesh.size() / 4 * 6;
-            renderer.SendOutlineData(outlineMesh.size() * sizeof(uint32_t), outlineMesh.data(), 0);
+            renderer.SendOutlineData(outlineMesh.size() * sizeof(Vertex), outlineMesh.data(), 0);
             renderer.SetIboCount(indexCount);
             renderer.RenderOutline(m_ChunkPosition, target);
         }
@@ -455,13 +461,11 @@ Block Chunk::GetBlock(uint32_t x, uint32_t y, uint32_t z) const { return m_Chunk
 void Chunk::SetBlock(uint32_t x, uint32_t y, uint32_t z, Block block) {
     assertm(x < XSIZE && y < YSIZE && z < ZSIZE, "indices out of bounds.");
     m_Chunk(x, y, z) = block;
+    LOG_INFO("Adding block at position ({}, {}, {})", x, y, z);
     if (y < m_MinHeight)
         m_MinHeight = y;
     else if (y > m_MaxHeight)
         m_MaxHeight = y;
-
-    if (block == Block::LIGHT_BLUE || block == Block::LIGHT_RED)
-        m_LightMap(x, y, z) = 15;
 
     ClearMesh();
 }
@@ -498,6 +502,15 @@ void Chunk::UpdateMeshHeighLimit(uint32_t height) {
         m_MinHeight = height;
 }
 
+// temporary
 void Chunk::SetTorchLight(int i, int j, int k, int val) {
+    m_LightMap(i, j, k) = val;
+}
 
+int Chunk::GetTorchLight(int i, int j, int k) {
+    return m_LightMap(i, j, k);
+}
+
+std::array<Chunk *, 4> Chunk::GetNeighbors() const {
+    return m_Neighbors;
 }

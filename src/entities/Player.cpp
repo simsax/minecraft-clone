@@ -37,6 +37,7 @@ void Player::Move(Movement direction) {
             m_Camera->Sprint();
             break;
         case Movement::FLY:
+            m_VerticalVelocity = 0.0f;
             m_Camera->ToggleFlyMode();
             break;
         default:

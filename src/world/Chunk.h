@@ -60,6 +60,9 @@ public:
     bool ChunkIsVisible(ChunkCoord playerChunk, int radius) const;
     void ClearMesh();
     void UpdateMeshHeighLimit(uint32_t height);
+    void SetTorchLight(int i, int j, int k, int val);
+    int GetTorchLight(int i, int j, int k);
+    std::array<Chunk*, 4> GetNeighbors() const;
 
 private:
     struct Vertex {
@@ -86,12 +89,11 @@ private:
                            const glm::uvec4 &offsetz,
                            uint8_t normalIndex);
 
-    void SetTorchLight(int i, int j, int k, int val);
 
     void SetBlocks(const BlockVec &blocksToSet);
     void CreateTrees(int i, int j, int k, BlockVec &blockVec);
     void CreateSprites(int i, int j, int k, BlockVec &blockVec);
-    bool FindNeighbors(std::array<Chunk *, 4> &neighbors);
+    bool FindNeighbors();
 
     template<typename... Args>
     bool CheckNeighbor(const Chunk *chunk, const glm::uvec3 &position, Args... voidBlocks);
@@ -106,6 +108,7 @@ private:
     std::vector<Vertex> m_Mesh;
     std::vector<Vertex> m_TransparentMesh;
     std::vector<Vertex> m_SpriteMesh;
+    std::array<Chunk*, 4> m_Neighbors;
     int m_MinHeight;
     int m_MaxHeight;
     size_t m_IBOCount;
