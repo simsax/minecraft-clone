@@ -1,3 +1,5 @@
+#include <array>
+#include <cstdint>
 #include "QuadRenderer.h"
 #include "glm/gtc/matrix_transform.hpp"
 #include "Config.h"

@@ -1,6 +1,8 @@
 #include "SkyRenderer.h"
 #include "glm/gtc/matrix_transform.hpp"
 #include "Config.h"
+#include <array>
+#include <cstdint>
 
 static constexpr std::array<float, 8> positions = {
         0.0f, 1.0f, // bottom left
