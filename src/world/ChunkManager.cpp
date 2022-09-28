@@ -215,29 +215,31 @@ void ChunkManager::PlaceBlock(Block block) {
     glm::uvec3 localVoxel = m_Raycast.localVoxel;
     ChunkCoord chunkCoord = m_Raycast.chunkCoord;
     glm::vec3 globalVoxel = m_Raycast.globalVoxel;
-    Block target = m_Raycast.chunk->GetBlock(localVoxel[0], localVoxel[1], localVoxel[2]);
-//    if (target != Block::FLOWER_BLUE &&
-//        target != Block::FLOWER_YELLOW &&
-//        target != Block::BUSH) {
-//        localVoxel = m_Raycast.prevLocalVoxel;
-//        chunkCoord = m_Raycast.prevChunkCoord;
-//        globalVoxel = m_Raycast.prevGlobalVoxel;
-//    }
+    Chunk* chunk = m_Raycast.chunk;
+    Block target = chunk->GetBlock(localVoxel[0], localVoxel[1], localVoxel[2]);
+    if (target != Block::FLOWER_BLUE &&
+        target != Block::FLOWER_YELLOW &&
+        target != Block::BUSH) {
+        localVoxel = m_Raycast.prevLocalVoxel;
+        chunkCoord = m_Raycast.prevChunkCoord;
+        globalVoxel = m_Raycast.prevGlobalVoxel;
+        chunk = m_Raycast.prevChunk;
+    }
     uint8_t x = localVoxel[0];
     uint8_t y = localVoxel[1];
     uint8_t z = localVoxel[2];
     if (!physics::Intersect(
             physics::CreatePlayerAabb(m_Camera->GetCameraPosition()),
             physics::CreateBlockAabb(globalVoxel))) {
-        m_Raycast.prevChunk->SetBlock(x, y, z, block);
+        chunk->SetBlock(x, y, z, block);
         m_ChunksToUpload.insert(chunkCoord);
         // check if the target is in the chunk border
         UpdateNeighbors(localVoxel, chunkCoord);
     }
     // if block is light source
     if (block == Block::LIGHT_BLUE || block == Block::LIGHT_RED) {
-        m_Raycast.prevChunk->SetTorchLight(x, y, z, 15);
-        LightPlacedBFS(x, y, z, m_Raycast.prevChunk);
+        chunk->SetTorchLight(x, y, z, 15);
+        LightPlacedBFS(x, y, z, chunk);
     }
 }
 

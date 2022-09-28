@@ -4,6 +4,7 @@
 #include "GL/glew.h"
 #include "GLFW/glfw3.h"
 #include "WindowListener.h"
+#include <string>
 
 class Window {
 public:

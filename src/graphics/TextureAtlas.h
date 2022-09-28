@@ -5,6 +5,7 @@
 #include "glm/glm.hpp"
 #include "Texture.h"
 #include "Config.h"
+#include <array>
 
 namespace TextureAtlas {
 

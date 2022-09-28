@@ -1,6 +1,7 @@
 #include "QuadRenderer.h"
 #include "glm/gtc/matrix_transform.hpp"
 #include "Config.h"
+#include <array>
 
 static constexpr std::array<float, 12> positions = {
         0.0f, 0.0f, 1.0f, // bottom left

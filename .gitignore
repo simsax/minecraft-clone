@@ -13,6 +13,7 @@ TODO
 /build
 /Cmake
 prova.txt
+CMakeSettings.json
 *.rsuser
 *.suo
 *.user
