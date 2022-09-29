@@ -39,14 +39,35 @@ private:
         bool selected;
     };
 
-    void SortChunks();
+    struct LightAddNode {
+        LightAddNode(Chunk *c, uint16_t i) : chunk(c), index(i) {}
+
+        Chunk *chunk;
+        uint16_t index;
+    };
+
+    struct LightRemNode {
+        LightRemNode(Chunk *c, uint16_t i, uint8_t v) : chunk(c), index(i), val(v) {}
+
+        Chunk *chunk;
+        uint16_t index;
+        uint8_t val;
+    };
+
+    void SortChunks(const glm::vec3& cameraPos);
     void LoadChunks();
     void MeshChunks();
     std::pair<ChunkCoord, glm::uvec3> GlobalToLocal(const glm::vec3 &playerPosition) const;
     void UpdateNeighbors(const glm::uvec3 &voxel, const ChunkCoord &chunkCoord);
     void AddBlocks(const ChunkCoord &chunkCoord, BlockVec &blockVec);
     void GenerateChunks();
-    void LightPlacedBFS(uint8_t i, uint8_t j, uint8_t k, Chunk* start);
+    void LightPlacedBFS(std::queue<LightAddNode> lightQueue);
+    void LightRemovedBFS(std::queue<LightRemNode> lightRemQueue);
+    static void UpdateLightPlacedQueue(std::queue<LightAddNode> &queue, int lightLevel, uint8_t i,
+                                uint8_t j, uint8_t k, Chunk *chunk);
+    static void UpdateLightRemovedQueue(std::queue<LightAddNode> &placeQueue,
+                                 std::queue<LightRemNode> &removeQueue,
+                                 int lightLevel, uint8_t i, uint8_t j, uint8_t k, Chunk *chunk);
 
     glm::vec3 m_ChunkSize;
     std::unordered_map<ChunkCoord, Chunk, hash_fn> m_ChunkMap;

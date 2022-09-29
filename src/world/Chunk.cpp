@@ -52,7 +52,7 @@ void Chunk::CreateQuad(std::vector<Vertex> &target, const glm::uvec3 &position,
 Chunk::Chunk(const ChunkCoord &coords, const glm::vec3 &position, uint32_t stride,
              ChunkMap *chunkMap)
         : m_HeightMap({}), m_Coords(coords), m_ChunkPosition(position),
-          m_Chunk{}, m_LightMap{15}, m_Neighbors({nullptr}),
+          m_Chunk{}, m_LightMap{0}, m_Neighbors({nullptr}),
           m_MinHeight(YSIZE), m_MaxHeight(0), m_IBOCount(0), m_TIBOCount(0), m_SIBOCount(0),
           m_ChunkMap(chunkMap),
           m_CenterPosition({m_ChunkPosition.x + static_cast<float>(XSIZE) / 2, 0,
@@ -461,7 +461,6 @@ Block Chunk::GetBlock(uint32_t x, uint32_t y, uint32_t z) const { return m_Chunk
 void Chunk::SetBlock(uint32_t x, uint32_t y, uint32_t z, Block block) {
     assertm(x < XSIZE && y < YSIZE && z < ZSIZE, "indices out of bounds.");
     m_Chunk(x, y, z) = block;
-    LOG_INFO("Adding block at position ({}, {}, {})", x, y, z);
     if (y < m_MinHeight)
         m_MinHeight = y;
     else if (y > m_MaxHeight)
