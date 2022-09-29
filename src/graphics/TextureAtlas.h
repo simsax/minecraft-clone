@@ -1,6 +1,8 @@
 #pragma once
 
 #include <unordered_map>
+#include <array>
+#include <cstdint>
 #include "../utils/Items.h"
 #include "glm/glm.hpp"
 #include "Texture.h"
