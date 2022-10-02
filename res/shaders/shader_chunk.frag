@@ -5,6 +5,9 @@ in float visibility;
 in vec3 normal;
 in vec3 fragPos;
 in float sunLight;
+in float redLight;
+in float greenLight;
+in float blueLight;
 
 out vec4 texColor;
 
@@ -34,7 +37,7 @@ void main() {
 //	}
 //	else
 //		texColor = texture(u_Texture, v_TexCoord) * vec4(ambient + diffuse + specular, 1.0f) * vec4(0.5f, 0.5f, 0.5f, 1.0f);
-    texColor = texture(u_Texture, v_TexCoord) * vec4(sunLight, sunLight, sunLight, 1.0f);
+    texColor = texture(u_Texture, v_TexCoord) * vec4(redLight, greenLight, blueLight, 1.0f);
 	if (texColor.a < 0.01)
 		discard;
 	texColor = mix(vec4(u_SkyColor, 1.0f), texColor, visibility);

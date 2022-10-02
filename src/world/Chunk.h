@@ -60,8 +60,14 @@ public:
     bool ChunkIsVisible(ChunkCoord playerChunk, int radius) const;
     void ClearMesh();
     void UpdateMeshHeighLimit(uint32_t height);
-    void SetTorchLight(int i, int j, int k, int val);
-    int GetTorchLight(int i, int j, int k);
+    void SetSunLight(int i, int j, int k, uint8_t val);
+    uint8_t GetSunLight(int i, int j, int k);
+    void SetRedLight(int i, int j, int k, uint8_t val);
+    uint8_t GetRedLight(int i, int j, int k);
+    void SetGreenLight(int i, int j, int k, uint8_t val);
+    uint8_t GetGreenLight(int i, int j, int k);
+    void SetBlueLight(int i, int j, int k, uint8_t val);
+    uint8_t GetBlueLight(int i, int j, int k);
     std::array<Chunk*, 4> GetNeighbors() const;
 
 private:

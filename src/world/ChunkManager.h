@@ -54,6 +54,8 @@ private:
         uint8_t val;
     };
 
+    enum class Channel {RED, GREEN, BLUE};
+
     void SortChunks(const glm::vec3& cameraPos);
     void LoadChunks();
     void MeshChunks();
@@ -61,13 +63,14 @@ private:
     void UpdateNeighbors(const glm::uvec3 &voxel, const ChunkCoord &chunkCoord);
     void AddBlocks(const ChunkCoord &chunkCoord, BlockVec &blockVec);
     void GenerateChunks();
-    void LightPlacedBFS(std::queue<LightAddNode> lightQueue);
-    void LightRemovedBFS(std::queue<LightRemNode> lightRemQueue);
-    static void UpdateLightPlacedQueue(std::queue<LightAddNode> &queue, int lightLevel, uint8_t i,
-                                uint8_t j, uint8_t k, Chunk *chunk);
+    void LightPlacedBFS(std::queue<LightAddNode> lightQueue, Channel channel);
+    std::queue<LightAddNode> LightRemovedBFS(std::queue<LightRemNode> lightRemQueue, Channel channel);
+    static void UpdateLightPlacedQueue(std::queue<LightAddNode> &queue, uint8_t lightLevel, uint8_t i,
+                                uint8_t j, uint8_t k, Chunk *chunk, Channel channel);
     static void UpdateLightRemovedQueue(std::queue<LightAddNode> &placeQueue,
                                  std::queue<LightRemNode> &removeQueue,
-                                 int lightLevel, uint8_t i, uint8_t j, uint8_t k, Chunk *chunk);
+                                 int lightLevel, uint8_t i, uint8_t j, uint8_t k, Chunk *chunk,
+                                 Channel channel);
 
     glm::vec3 m_ChunkSize;
     std::unordered_map<ChunkCoord, Chunk, hash_fn> m_ChunkMap;
@@ -86,4 +89,5 @@ private:
     ChunkCoord m_LastChunk;
     ChunkCoord m_CurrentChunk;
     uint32_t m_Stride;
+    std::unordered_map<Block, glm::uvec3> m_LightBlocks;
 };

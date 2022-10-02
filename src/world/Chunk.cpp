@@ -501,15 +501,36 @@ void Chunk::UpdateMeshHeighLimit(uint32_t height) {
         m_MinHeight = height;
 }
 
-// temporary
-void Chunk::SetTorchLight(int i, int j, int k, int val) {
-    m_LightMap(i, j, k) = val;
+// SSSS RRRR GGGG BBBB
+void Chunk::SetSunLight(int i, int j, int k, uint8_t val) {
+    m_LightMap(i, j, k) = (m_LightMap(i, j, k) & 0x0FFF) | (val & 0xF) << 12;
 }
 
-int Chunk::GetTorchLight(int i, int j, int k) {
-    return m_LightMap(i, j, k);
+uint8_t Chunk::GetSunLight(int i, int j, int k) {
+    return m_LightMap(i, j, k) >> 12 & 0xF;
 }
 
+void Chunk::SetRedLight(int i, int j, int k, uint8_t val) {
+    m_LightMap(i, j, k) = (m_LightMap(i, j, k) & 0xF0FF) | (val & 0xF) << 8;
+}
+
+uint8_t Chunk::GetRedLight(int i, int j, int k) {
+    return m_LightMap(i, j, k) >> 8 & 0xF;
+}
+void Chunk::SetGreenLight(int i, int j, int k, uint8_t val) {
+    m_LightMap(i, j, k) = (m_LightMap(i, j, k) & 0xFF0F) | (val & 0xF) << 4;
+}
+
+uint8_t Chunk::GetGreenLight(int i, int j, int k) {
+    return m_LightMap(i, j, k) >> 4 & 0xF;
+}
+void Chunk::SetBlueLight(int i, int j, int k, uint8_t val) {
+    m_LightMap(i, j, k) = (m_LightMap(i, j, k) & 0xFFF0) | (val & 0xF);
+}
+
+uint8_t Chunk::GetBlueLight(int i, int j, int k) {
+    return m_LightMap(i, j, k) & 0xF;
+}
 std::array<Chunk *, 4> Chunk::GetNeighbors() const {
     return m_Neighbors;
 }

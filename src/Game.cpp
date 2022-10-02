@@ -94,7 +94,7 @@ void Game::Resize(int width, int height) {
 void Game::UpdateFPS(uint32_t numFrames) {
     std::string fps = std::to_string(numFrames);
     std::string ms = std::to_string(1000.0 / numFrames);
-//    LOG_INFO("{} FPS / {} ms", fps, ms);
+    LOG_INFO("{} FPS / {} ms", fps, ms);
 }
 
 void Game::BindCommands() {

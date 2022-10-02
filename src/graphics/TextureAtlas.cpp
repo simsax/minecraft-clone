@@ -27,6 +27,7 @@ namespace TextureAtlas {
                 {Block::WET_DIRT,      {{6,  10}, {6,  10}, {6,  10}}},
                 {Block::TERRACOTTA,    {{15, 14}, {15, 14}, {15, 14}}},
                 {Block::LIGHT_RED,     {{9 ,1}, {9, 1}, {9, 1}}},
+                {Block::LIGHT_GREEN,     {{9 ,2}, {9, 2}, {9, 2}}},
                 {Block::LIGHT_BLUE,    {{10 ,1}, {10, 1}, {10, 1}}}
         };
 
