@@ -38,23 +38,7 @@ private:
         glm::vec3 prevGlobalVoxel;
         bool selected;
     };
-
-    struct LightAddNode {
-        LightAddNode(Chunk *c, uint16_t i) : chunk(c), index(i) {}
-
-        Chunk *chunk;
-        uint16_t index;
-    };
-
-    struct LightRemNode {
-        LightRemNode(Chunk *c, uint16_t i, uint8_t v) : chunk(c), index(i), val(v) {}
-
-        Chunk *chunk;
-        uint16_t index;
-        uint8_t val;
-    };
-
-    enum class Channel {RED, GREEN, BLUE};
+    enum class Channel {SUN, RED, GREEN, BLUE};
 
     void SortChunks(const glm::vec3& cameraPos);
     void LoadChunks();
@@ -65,9 +49,9 @@ private:
     void GenerateChunks();
     void LightPlacedBFS(std::queue<LightAddNode> lightQueue, Channel channel);
     std::queue<LightAddNode> LightRemovedBFS(std::queue<LightRemNode> lightRemQueue, Channel channel);
-    static void UpdateLightPlacedQueue(std::queue<LightAddNode> &queue, uint8_t lightLevel, uint8_t i,
+    void UpdateLightPlacedQueue(std::queue<LightAddNode> &queue, uint8_t lightLevel, uint8_t i,
                                 uint8_t j, uint8_t k, Chunk *chunk, Channel channel);
-    static void UpdateLightRemovedQueue(std::queue<LightAddNode> &placeQueue,
+    void UpdateLightRemovedQueue(std::queue<LightAddNode> &placeQueue,
                                  std::queue<LightRemNode> &removeQueue,
                                  int lightLevel, uint8_t i, uint8_t j, uint8_t k, Chunk *chunk,
                                  Channel channel);

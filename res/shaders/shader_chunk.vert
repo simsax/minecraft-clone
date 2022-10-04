@@ -60,7 +60,8 @@ void main() {
 	visibility = clamp(visibility, 0.0, 1.0);
 
 	sunLight = float(in_Light >> 12 & 0xFu) / 15.0;
-	redLight = float(in_Light >> 8 & 0xFu) / 15.0;
-	greenLight = float(in_Light >> 4 & 0xFu) / 15.0;
-	blueLight = float(in_Light & 0xFu) / 15.0;
+
+	redLight =   clamp(float(in_Light >> 8 & 0xFu) / 15.0 + sunLight, 0.0, 1.0);
+	greenLight = clamp(float(in_Light >> 4 & 0xFu) / 15.0 + sunLight, 0.0, 1.0);
+	blueLight =  clamp(float(in_Light & 0xFu) / 15.0 + sunLight, 0.0, 1.0);
 }

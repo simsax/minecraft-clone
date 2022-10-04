@@ -13,6 +13,7 @@ static constexpr int WEST = 0;
 static constexpr int NORTH = 1;
 static constexpr int EAST = 2;
 static constexpr int SOUTH = 3;
+static constexpr uint16_t sunLight = 0xF000;
 
 bool operator==(const ChunkCoord &l, const ChunkCoord &r) { return l.x == r.x && l.z == r.z; }
 
@@ -31,6 +32,10 @@ std::size_t hash_fn::operator()(const ChunkCoord &coord) const {
 static int mod(int a, int b) {
     int res = a % b;
     return res >= 0 ? res : res + b;
+}
+
+uint32_t Chunk::GetIndex(uint8_t i, uint8_t j, uint8_t k) const {
+    return m_Chunk.GetIndex(i, j, k);
 }
 
 void Chunk::CreateQuad(std::vector<Vertex> &target, const glm::uvec3 &position,
@@ -52,7 +57,7 @@ void Chunk::CreateQuad(std::vector<Vertex> &target, const glm::uvec3 &position,
 Chunk::Chunk(const ChunkCoord &coords, const glm::vec3 &position, uint32_t stride,
              ChunkMap *chunkMap)
         : m_HeightMap({}), m_Coords(coords), m_ChunkPosition(position),
-          m_Chunk{}, m_LightMap{0}, m_Neighbors({nullptr}),
+          m_Chunk(), m_LightMap(), m_Neighbors({nullptr}),
           m_MinHeight(YSIZE), m_MaxHeight(0), m_IBOCount(0), m_TIBOCount(0), m_SIBOCount(0),
           m_ChunkMap(chunkMap),
           m_CenterPosition({m_ChunkPosition.x + static_cast<float>(XSIZE) / 2, 0,
@@ -136,13 +141,19 @@ void Chunk::CreateHeightMap() {
 #endif
 
 void Chunk::FastFill() {
+    assertm(m_MinHeight > 1, "minHeight too small");
+    assertm(m_MaxHeight < YSIZE - 1, "maxHeight too big");
     static constexpr int level_size = XSIZE * ZSIZE;
+    // chunk blocks
     auto begin = m_Chunk.GetRawPtr();
+    auto lightBegin = m_LightMap.GetRawPtr();
     std::fill(begin, begin + level_size, Block::BEDROCK);
-    if (m_MinHeight > 1)
-        std::fill(begin + level_size, begin + level_size * (m_MinHeight), Block::STONE);
-    if (m_MaxHeight < YSIZE - 1)
-        std::fill(begin + level_size * (m_MaxHeight + 1), begin + level_size * YSIZE, Block::EMPTY);
+    std::fill(begin + level_size, begin + level_size * (m_MinHeight), Block::STONE);
+    std::fill(begin + level_size * (m_MaxHeight + 1), begin + level_size * YSIZE, Block::EMPTY);
+
+    // lightMap
+    std::fill(lightBegin, lightBegin + level_size * m_MinHeight, 0);
+    std::fill(lightBegin + level_size * (m_MaxHeight + 1), lightBegin + level_size * YSIZE, sunLight);
 }
 
 BlockVec Chunk::CreateSurfaceLayer(const BlockVec &blocksToSet) {
@@ -159,6 +170,7 @@ BlockVec Chunk::CreateSurfaceLayer(const BlockVec &blocksToSet) {
                 int height = m_HeightMap[index++];
                 if (m_Chunk(i, j, k) != Block::WOOD && m_Chunk(i, j, k) != Block::LEAVES) {
                     if (j < height) {
+                        m_LightMap(i, j, k) = 0;
                         float dirt = m_Noise.OctaveNoiseSingle(k + m_ChunkPosition.z + 1000.1f,
                                                                i + m_ChunkPosition.x, 4, 0.001f);
 
@@ -167,6 +179,8 @@ BlockVec Chunk::CreateSurfaceLayer(const BlockVec &blocksToSet) {
                         else
                             m_Chunk(i, j, k) = Block::STONE;
                     } else if (j == height) {
+                        m_LightMap(i, j, k) = sunLight;
+                        m_SunQueue.emplace(this, GetIndex(i, j, k));
                         float noise_chance
                                 = m_Noise.OctaveNoiseSingle(k + m_ChunkPosition.z,
                                                             i + m_ChunkPosition.x + 100.0f,
@@ -196,6 +210,8 @@ BlockVec Chunk::CreateSurfaceLayer(const BlockVec &blocksToSet) {
                         } else
                             m_Chunk(i, j, k) = Block::GRASS;
                     } else { // j > height
+                        m_LightMap(i, j, k) = sunLight;
+                        m_SunQueue.emplace(this, GetIndex(i, j, k));
                         if (j <= water_level)
                             m_Chunk(i, j, k) = Block::WATER;
                         else
@@ -226,6 +242,7 @@ void Chunk::CreateTrees(int i, int j, int k, BlockVec &blockVec) {
                     if (height > YSIZE)
                         break;
                     m_Chunk(i, height, k) = Block::WOOD;
+//                    m_LightMap(i, height, k) = sunLight;
                 }
                 const int top = height + Random::GetRand<int>(1, 3);
                 const int bottom = height - Random::GetRand<int>(2, 3);
@@ -240,8 +257,10 @@ void Chunk::CreateTrees(int i, int j, int k, BlockVec &blockVec) {
                             const int leafz = k + z;
                             if (leafx >= 0 && leafz >= 0 && leafx < XSIZE && leafz < ZSIZE) {
                                 if (m_Chunk(leafx, leaves_height, leafz) != Block::WOOD
-                                    && Random::GetRand<double>(0, 1) > 0.2)
+                                    && Random::GetRand<double>(0, 1) > 0.2) {
                                     m_Chunk(leafx, leaves_height, leafz) = Block::LEAVES;
+//                                    m_LightMap(i, height, k) = sunLight;
+                                }
                             } else {
                                 blockVec.emplace_back(
                                         Block::LEAVES, glm::vec3(leafx, leaves_height, leafz));
@@ -481,6 +500,8 @@ void Chunk::SetBlocks(const BlockVec &blocksToSet) {
     for (const auto &[block, vec]: blocksToSet) {
         glm::uvec3 pos = vec;
         SetBlock(pos.x, pos.y, pos.z, block);
+//        m_LightMap(pos.x, pos.y, pos.z) = sunLight;
+//        m_SunQueue.emplace(this, GetIndex(pos.x, pos.y, pos.z));
     }
 }
 
@@ -533,4 +554,12 @@ uint8_t Chunk::GetBlueLight(int i, int j, int k) {
 }
 std::array<Chunk *, 4> Chunk::GetNeighbors() const {
     return m_Neighbors;
+}
+
+glm::uvec3 Chunk::GetCoordsFromIndex(uint32_t index) const {
+    return m_Chunk.GetCoordsFromIndex(index);
+}
+
+std::queue<LightAddNode>& Chunk::GetSunQueueRef() {
+    return m_SunQueue;
 }

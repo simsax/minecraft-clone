@@ -16,10 +16,11 @@
 #include "../utils/Items.h"
 #include "../graphics/TextureAtlas.h"
 #include "../graphics/ChunkRenderer.h"
+#include <queue>
 
-#define XSIZE 16
-#define YSIZE 256
-#define ZSIZE 16
+static constexpr uint32_t XSIZE = 16;
+static constexpr uint32_t YSIZE = 256;
+static constexpr uint32_t ZSIZE = 16;
 
 struct ChunkCoord {
     int x;
@@ -29,6 +30,9 @@ struct ChunkCoord {
 struct hash_fn {
     std::size_t operator()(const ChunkCoord &coord) const;
 };
+
+struct LightAddNode;
+struct LightRemNode;
 
 bool operator==(const ChunkCoord &l, const ChunkCoord &r);
 
@@ -69,6 +73,10 @@ public:
     void SetBlueLight(int i, int j, int k, uint8_t val);
     uint8_t GetBlueLight(int i, int j, int k);
     std::array<Chunk*, 4> GetNeighbors() const;
+    uint32_t GetIndex(uint8_t i, uint8_t j, uint8_t k) const;
+    glm::uvec3 GetCoordsFromIndex(uint32_t index) const;
+    std::queue<LightAddNode>& GetSunQueueRef();
+    bool FindNeighbors();
 
 private:
     struct Vertex {
@@ -99,7 +107,6 @@ private:
     void SetBlocks(const BlockVec &blocksToSet);
     void CreateTrees(int i, int j, int k, BlockVec &blockVec);
     void CreateSprites(int i, int j, int k, BlockVec &blockVec);
-    bool FindNeighbors();
 
     template<typename... Args>
     bool CheckNeighbor(const Chunk *chunk, const glm::uvec3 &position, Args... voidBlocks);
@@ -122,4 +129,20 @@ private:
     size_t m_SIBOCount;
     ChunkMap *m_ChunkMap;
     glm::vec3 m_CenterPosition;
+    std::queue<LightAddNode> m_SunQueue;
+};
+
+struct LightAddNode {
+    LightAddNode(Chunk *c, uint16_t i) : chunk(c), index(i) {}
+
+    Chunk *chunk;
+    uint16_t index;
+};
+
+struct LightRemNode {
+    LightRemNode(Chunk *c, uint16_t i, uint8_t v) : chunk(c), index(i), val(v) {}
+
+    Chunk *chunk;
+    uint16_t index;
+    uint8_t val;
 };
