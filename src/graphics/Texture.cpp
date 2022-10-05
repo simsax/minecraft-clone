@@ -31,6 +31,7 @@ void Texture::Init()
     glTextureParameteri(m_TextureId, GL_TEXTURE_MAX_LEVEL, 4);
 
     glTextureStorage2D(m_TextureId, 4, GL_RGBA8, m_Width, m_Height);
+    // glTextureStorage2D(m_TextureId, 4, GL_SRGB8_ALPHA8, m_Width, m_Height);
     glTextureSubImage2D(
         m_TextureId, 0, 0, 0, m_Width, m_Height, GL_RGBA, GL_UNSIGNED_BYTE, m_LocalBuffer);
     glGenerateTextureMipmap(m_TextureId);
@@ -38,9 +39,7 @@ void Texture::Init()
         stbi_image_free(m_LocalBuffer);
 }
 
-Texture::~Texture() {
-    glDeleteTextures(1, &m_TextureId);
-}
+Texture::~Texture() { glDeleteTextures(1, &m_TextureId); }
 
 void Texture::Bind(GLuint slot) const
 {
@@ -50,7 +49,8 @@ void Texture::Bind(GLuint slot) const
     }
 }
 
-Texture::Texture(Texture&& other)  noexcept {
+Texture::Texture(Texture&& other) noexcept
+{
     this->m_TextureId = other.m_TextureId;
     this->m_LocalBuffer = other.m_LocalBuffer;
     this->m_Width = other.m_Width;
@@ -62,17 +62,18 @@ Texture::Texture(Texture&& other)  noexcept {
     other.m_BindId = -1;
 }
 
-Texture &Texture::operator=(Texture &&other)  noexcept {
-   if (this != &other) {
-       this->m_TextureId = other.m_TextureId;
-       this->m_LocalBuffer = other.m_LocalBuffer;
-       this->m_Width = other.m_Width;
-       this->m_Height = other.m_Height;
-       this->m_BPP = other.m_BPP;
-       this->m_BindId = other.m_BindId;
-       this->m_FilePath = other.m_FilePath;
-       other.m_TextureId = 0;
-       other.m_BindId = -1;
-   }
-   return *this;
+Texture& Texture::operator=(Texture&& other) noexcept
+{
+    if (this != &other) {
+        this->m_TextureId = other.m_TextureId;
+        this->m_LocalBuffer = other.m_LocalBuffer;
+        this->m_Width = other.m_Width;
+        this->m_Height = other.m_Height;
+        this->m_BPP = other.m_BPP;
+        this->m_BindId = other.m_BindId;
+        this->m_FilePath = other.m_FilePath;
+        other.m_TextureId = 0;
+        other.m_BindId = -1;
+    }
+    return *this;
 }

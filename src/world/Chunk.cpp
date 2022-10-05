@@ -15,53 +15,62 @@ static constexpr int EAST = 2;
 static constexpr int SOUTH = 3;
 static constexpr uint16_t sunLight = 0xF000;
 
-bool operator==(const ChunkCoord &l, const ChunkCoord &r) { return l.x == r.x && l.z == r.z; }
+bool operator==(const ChunkCoord& l, const ChunkCoord& r) { return l.x == r.x && l.z == r.z; }
 
-bool operator!=(const ChunkCoord &l, const ChunkCoord &r) { return l.x != r.x || l.z != r.z; }
+bool operator!=(const ChunkCoord& l, const ChunkCoord& r) { return l.x != r.x || l.z != r.z; }
 
-int operator-(const ChunkCoord &l, const ChunkCoord &r) {
+int operator-(const ChunkCoord& l, const ChunkCoord& r)
+{
     return static_cast<int>(round(sqrt(pow(l.x - r.x, 2) + pow(l.z - r.z, 2))));
 }
 
-std::size_t hash_fn::operator()(const ChunkCoord &coord) const {
+std::size_t hash_fn::operator()(const ChunkCoord& coord) const
+{
     std::size_t h1 = std::hash<int>()(coord.x);
     std::size_t h2 = std::hash<int>()(coord.z);
     return h1 ^ h2;
 }
 
-static int mod(int a, int b) {
+static int mod(int a, int b)
+{
     int res = a % b;
     return res >= 0 ? res : res + b;
 }
 
-uint32_t Chunk::GetIndex(uint8_t i, uint8_t j, uint8_t k) const {
+uint32_t Chunk::GetIndex(uint8_t i, uint8_t j, uint8_t k) const
+{
     return m_Chunk.GetIndex(i, j, k);
 }
 
-void Chunk::CreateQuad(std::vector<Vertex> &target, const glm::uvec3 &position,
-                       const std::array<uint32_t, 4> &textureCoords, const glm::uvec4 &offsetx,
-                       const glm::uvec4 &offsety,
-                       const glm::uvec4 &offsetz,
-                       uint8_t normalIndex) {
+void Chunk::CreateQuad(std::vector<Vertex>& target, const glm::uvec3& position,
+    const std::array<uint32_t, 4>& textureCoords, const glm::uvec4& offsetx,
+    const glm::uvec4& offsety, const glm::uvec4& offsetz, uint8_t normalIndex, uint16_t lightVal)
+{
     static constexpr int vertices = 4;
 
     for (int i = 0; i < vertices; i++) {
-        uint32_t v = normalIndex << 29 | (position[0] + offsetx[i]) << 24 |
-                     (position[1] + offsety[i]) << 15
-                     | (position[2] + offsetz[i]) << 10 | textureCoords[i];
-        uint16_t l = m_LightMap(position.x, position.y, position.z);
-        target.emplace_back(v, l);
+        uint32_t v = normalIndex << 29 | (position[0] + offsetx[i]) << 24
+            | (position[1] + offsety[i]) << 15 | (position[2] + offsetz[i]) << 10
+            | textureCoords[i];
+        target.emplace_back(v, lightVal);
     }
 }
 
-Chunk::Chunk(const ChunkCoord &coords, const glm::vec3 &position, uint32_t stride,
-             ChunkMap *chunkMap)
-        : m_HeightMap({}), m_Coords(coords), m_ChunkPosition(position),
-          m_Chunk(), m_LightMap(), m_Neighbors({nullptr}),
-          m_MinHeight(YSIZE), m_MaxHeight(0), m_IBOCount(0), m_TIBOCount(0), m_SIBOCount(0),
-          m_ChunkMap(chunkMap),
-          m_CenterPosition({m_ChunkPosition.x + static_cast<float>(XSIZE) / 2, 0,
-                            m_ChunkPosition.z + static_cast<float>(ZSIZE) / 2}) {
+Chunk::Chunk(
+    const ChunkCoord& coords, const glm::vec3& position, uint32_t stride, ChunkMap* chunkMap)
+    : m_HeightMap({})
+    , m_Coords(coords)
+    , m_ChunkPosition(position)
+    , m_Neighbors({ nullptr })
+    , m_MinHeight(YSIZE)
+    , m_MaxHeight(0)
+    , m_IBOCount(0)
+    , m_TIBOCount(0)
+    , m_SIBOCount(0)
+    , m_ChunkMap(chunkMap)
+    , m_CenterPosition({ m_ChunkPosition.x + static_cast<float>(XSIZE) / 2, 0,
+          m_ChunkPosition.z + static_cast<float>(ZSIZE) / 2 })
+{
     m_VBO.Init(stride, 0);
     m_VBO.CreateDynamic(sizeof(Vertex) * MAX_VERTEX_COUNT);
 
@@ -74,25 +83,26 @@ Chunk::Chunk(const ChunkCoord &coords, const glm::vec3 &position, uint32_t strid
 
 #if 1
 
-void Chunk::CreateHeightMap() {
+void Chunk::CreateHeightMap()
+{
     int index = 0;
     static constexpr float fudge_factor = 1.0f;
     static constexpr float exp = 3.0f;
 
-    std::array<float, ZSIZE * XSIZE> noiseMapA = m_Noise.OctaveNoiseGrid<ZSIZE, XSIZE>(
-            m_ChunkPosition.z, m_ChunkPosition.x, 6, 0.001f);
+    std::array<float, ZSIZE* XSIZE> noiseMapA
+        = m_Noise.OctaveNoiseGrid<ZSIZE, XSIZE>(m_ChunkPosition.z, m_ChunkPosition.x, 6, 0.001f);
 
     int n = 0;
     for (int i = 0; i < XSIZE; i++) {
         for (int k = 0; k < ZSIZE; k++) {
             float a = (noiseMapA[n++] + 1) * 0.5f; // [0, 1]
-//            a = std::pow(a * fudge_factor, exp);
+            //            a = std::pow(a * fudge_factor, exp);
             if (a >= 0.5)
                 a = 6.0f * std::pow(a - 0.5f, exp) + 0.25f;
             else
                 a *= 0.5f;
-//            else
-//                a = 2.0f * std::pow(a - 0.5f, exp) + 0.25f;
+            //            else
+            //                a = 2.0f * std::pow(a - 0.5f, exp) + 0.25f;
             int terrain_height = static_cast<int>(a * YSIZE); // [0, 255]
 
             m_MinHeight = std::min(m_MinHeight, terrain_height);
@@ -104,14 +114,15 @@ void Chunk::CreateHeightMap() {
 }
 
 #else
-void Chunk::CreateHeightMap() {
+void Chunk::CreateHeightMap()
+{
     static constexpr int elevation = 50; // increase for less water
     int index = 0;
 
-    std::array<float, ZSIZE * XSIZE> noiseMapA = m_Noise.OctaveNoiseGrid<ZSIZE, XSIZE>(
-            m_ChunkPosition.z, m_ChunkPosition.x, 6, 0.002f);
-    std::array<float, XSIZE * ZSIZE> noiseMapM = m_Noise.OctaveNoiseGrid<XSIZE, ZSIZE>(
-            m_ChunkPosition.z + 12.3f, m_ChunkPosition.x + 12.3f, 8, 0.01f);
+    std::array<float, ZSIZE* XSIZE> noiseMapA
+        = m_Noise.OctaveNoiseGrid<ZSIZE, XSIZE>(m_ChunkPosition.z, m_ChunkPosition.x, 6, 0.002f);
+    std::array<float, XSIZE* ZSIZE> noiseMapM = m_Noise.OctaveNoiseGrid<XSIZE, ZSIZE>(
+        m_ChunkPosition.z + 12.3f, m_ChunkPosition.x + 12.3f, 8, 0.01f);
 
     int n = 0;
     for (int i = 0; i < XSIZE; i++) {
@@ -126,7 +137,7 @@ void Chunk::CreateHeightMap() {
                 a = m * (1 - (1 - a) * (1 - a) * 2);
             int terrain_height = static_cast<int>(a * 200.0f) + elevation;
             int height = static_cast<int>(
-                    m_Noise.OctaveNoiseSingle(k + m_ChunkPosition.z, i + m_ChunkPosition.x, 8) * 5.0f);
+                m_Noise.OctaveNoiseSingle(k + m_ChunkPosition.z, i + m_ChunkPosition.x, 8) * 5.0f);
 
             int final_height = height + terrain_height;
             if (final_height > YSIZE)
@@ -140,7 +151,8 @@ void Chunk::CreateHeightMap() {
 }
 #endif
 
-void Chunk::FastFill() {
+void Chunk::FastFill()
+{
     assertm(m_MinHeight > 1, "minHeight too small");
     assertm(m_MaxHeight < YSIZE - 1, "maxHeight too big");
     static constexpr int level_size = XSIZE * ZSIZE;
@@ -153,10 +165,12 @@ void Chunk::FastFill() {
 
     // lightMap
     std::fill(lightBegin, lightBegin + level_size * m_MinHeight, 0);
-    std::fill(lightBegin + level_size * (m_MaxHeight + 1), lightBegin + level_size * YSIZE, sunLight);
+    std::fill(
+        lightBegin + level_size * (m_MaxHeight + 1), lightBegin + level_size * YSIZE, sunLight);
 }
 
-BlockVec Chunk::CreateSurfaceLayer(const BlockVec &blocksToSet) {
+BlockVec Chunk::CreateSurfaceLayer(const BlockVec& blocksToSet)
+{
     BlockVec blockVec = {};
     static constexpr int water_level = 63;
     static constexpr int snow_level = 120;
@@ -171,8 +185,8 @@ BlockVec Chunk::CreateSurfaceLayer(const BlockVec &blocksToSet) {
                 if (m_Chunk(i, j, k) != Block::WOOD && m_Chunk(i, j, k) != Block::LEAVES) {
                     if (j < height) {
                         m_LightMap(i, j, k) = 0;
-                        float dirt = m_Noise.OctaveNoiseSingle(k + m_ChunkPosition.z + 1000.1f,
-                                                               i + m_ChunkPosition.x, 4, 0.001f);
+                        float dirt = m_Noise.OctaveNoiseSingle(
+                            k + m_ChunkPosition.z + 1000.1f, i + m_ChunkPosition.x, 4, 0.001f);
 
                         if (dirt >= 0)
                             m_Chunk(i, j, k) = Block::DIRT;
@@ -180,11 +194,9 @@ BlockVec Chunk::CreateSurfaceLayer(const BlockVec &blocksToSet) {
                             m_Chunk(i, j, k) = Block::STONE;
                     } else if (j == height) {
                         m_LightMap(i, j, k) = sunLight;
-                        m_SunQueue.emplace(this, GetIndex(i, j, k));
-                        float noise_chance
-                                = m_Noise.OctaveNoiseSingle(k + m_ChunkPosition.z,
-                                                            i + m_ChunkPosition.x + 100.0f,
-                                                            8, 0.002f);
+                        // m_SunQueue.emplace(this, GetIndex(i, j, k));
+                        float noise_chance = m_Noise.OctaveNoiseSingle(
+                            k + m_ChunkPosition.z, i + m_ChunkPosition.x + 100.0f, 8, 0.002f);
                         if (j == water_level) {
                             if (noise_chance >= 0.3)
                                 m_Chunk(i, j, k) = Block::GRAVEL;
@@ -202,8 +214,8 @@ BlockVec Chunk::CreateSurfaceLayer(const BlockVec &blocksToSet) {
                         } else if (j >= snow_level)
                             m_Chunk(i, j, k) = Block::SNOW;
                         else if (j >= snow_level - 20) {
-                            if (Random::GetRand<double>(0, 1) <
-                                (3.0f / static_cast<float>(snow_level - j)))
+                            if (Random::GetRand<double>(0, 1)
+                                < (3.0f / static_cast<float>(snow_level - j)))
                                 m_Chunk(i, j, k) = Block::SNOWY_GRASS;
                             else
                                 m_Chunk(i, j, k) = Block::GRASS;
@@ -211,7 +223,7 @@ BlockVec Chunk::CreateSurfaceLayer(const BlockVec &blocksToSet) {
                             m_Chunk(i, j, k) = Block::GRASS;
                     } else { // j > height
                         m_LightMap(i, j, k) = sunLight;
-                        m_SunQueue.emplace(this, GetIndex(i, j, k));
+                        // m_SunQueue.emplace(this, GetIndex(i, j, k));
                         if (j <= water_level)
                             m_Chunk(i, j, k) = Block::WATER;
                         else
@@ -230,19 +242,20 @@ BlockVec Chunk::CreateSurfaceLayer(const BlockVec &blocksToSet) {
 }
 
 // move this into a terrain generator class
-void Chunk::CreateTrees(int i, int j, int k, BlockVec &blockVec) {
+void Chunk::CreateTrees(int i, int j, int k, BlockVec& blockVec)
+{
     int treeHeight = Random::GetRand<int>(3, 9) + j;
     if (j > 0 && m_Chunk(i, j, k) == Block::EMPTY && m_Chunk(i, j - 1, k) == Block::GRASS) {
         if (Random::GetRand<double>(0, 1) < 0.005) {
             float noise_chance = m_Noise.OctaveNoiseSingle(
-                    k + m_ChunkPosition.z, i + m_ChunkPosition.x + 1000.0f, 4, 0.008f);
+                k + m_ChunkPosition.z, i + m_ChunkPosition.x + 1000.0f, 4, 0.008f);
             if (noise_chance < 0) {
                 int height;
                 for (height = j; height < treeHeight; height++) {
                     if (height > YSIZE)
                         break;
                     m_Chunk(i, height, k) = Block::WOOD;
-//                    m_LightMap(i, height, k) = sunLight;
+                    //                    m_LightMap(i, height, k) = sunLight;
                 }
                 const int top = height + Random::GetRand<int>(1, 3);
                 const int bottom = height - Random::GetRand<int>(2, 3);
@@ -259,11 +272,12 @@ void Chunk::CreateTrees(int i, int j, int k, BlockVec &blockVec) {
                                 if (m_Chunk(leafx, leaves_height, leafz) != Block::WOOD
                                     && Random::GetRand<double>(0, 1) > 0.2) {
                                     m_Chunk(leafx, leaves_height, leafz) = Block::LEAVES;
-//                                    m_LightMap(i, height, k) = sunLight;
+                                    //                                    m_LightMap(i, height, k) =
+                                    //                                    sunLight;
                                 }
                             } else {
                                 blockVec.emplace_back(
-                                        Block::LEAVES, glm::vec3(leafx, leaves_height, leafz));
+                                    Block::LEAVES, glm::vec3(leafx, leaves_height, leafz));
                             }
                         }
                     }
@@ -275,11 +289,12 @@ void Chunk::CreateTrees(int i, int j, int k, BlockVec &blockVec) {
     }
 }
 
-void Chunk::CreateSprites(int i, int j, int k, BlockVec &blockVec) {
+void Chunk::CreateSprites(int i, int j, int k, BlockVec& blockVec)
+{
     if (j > 0 && m_Chunk(i, j, k) == Block::EMPTY && m_Chunk(i, j - 1, k) == Block::GRASS) {
         if (Random::GetRand<double>(0, 1) < 0.005) {
             const float noise_chance = m_Noise.OctaveNoiseSingle(
-                    k + m_ChunkPosition.z + 1000.1f, i + m_ChunkPosition.x + 1000.1f, 4, 0.02f);
+                k + m_ChunkPosition.z + 1000.1f, i + m_ChunkPosition.x + 1000.1f, 4, 0.02f);
             if (noise_chance < 0) {
                 if (Random::GetRand<double>(0, 1) < 0.6)
                     m_Chunk(i, j, k) = Block::FLOWER_BLUE;
@@ -292,81 +307,120 @@ void Chunk::CreateSprites(int i, int j, int k, BlockVec &blockVec) {
     }
 }
 
-template<typename... Args>
-bool
-Chunk::CheckNeighbor(const Chunk *const chunk, const glm::uvec3 &position, Args... voidBlocks) {
+template <typename... Args>
+bool Chunk::CheckNeighbor(const Chunk* const chunk, const glm::uvec3& position, Args... voidBlocks)
+{
     if (((chunk->m_Chunk(position.x, position.y, position.z) == voidBlocks) || ...))
         return true;
     else
         return false;
 }
 
-template<typename... Args>
-void Chunk::GenCube(int i, int j, int k, std::vector<Vertex> &target,
-                    const TextureAtlas::Coords &textureCoords,
-                    const std::array<Chunk *, 4> &neighbors,
-                    Args... voidBlocks) {
-
-    if (j == 0 || (j > 0 && ((m_Chunk(i, j - 1, k) == voidBlocks) || ...))) {
-        CreateQuad(target, {i, j, k}, textureCoords.bottom, // D
-                   {0, 0, 1, 1}, glm::uvec4(0), {1, 0, 0, 1}, 3);
+template <typename... Args>
+void Chunk::GenCube(int i, int j, int k, std::vector<Vertex>& target,
+    const TextureAtlas::Coords& textureCoords, bool lightBlock, Args... voidBlocks)
+{
+    if (j > 0 && ((m_Chunk(i, j - 1, k) == voidBlocks) || ...)) {
+        int16_t lightVal;
+        if (lightBlock)
+            lightVal = m_LightMap(i, j, k);
+        else
+            lightVal = m_LightMap(i, j - 1, k);
+        CreateQuad(target, { i, j, k }, textureCoords.bottom, // D
+            { 0, 0, 1, 1 }, glm::uvec4(0), { 1, 0, 0, 1 }, 3, lightVal);
     }
-    if (j == YSIZE - 1 || (j < YSIZE - 1 && ((m_Chunk(i, j + 1, k) == voidBlocks) || ...))) {
-        CreateQuad(target, {i, j, k}, textureCoords.top, // U
-                   {0, 1, 1, 0}, glm::uvec4(1), {1, 1, 0, 0}, 2);
+    if (j < YSIZE - 1 && ((m_Chunk(i, j + 1, k) == voidBlocks) || ...)) {
+        int16_t lightVal;
+        if (lightBlock)
+            lightVal = m_LightMap(i, j, k);
+        else
+            lightVal = m_LightMap(i, j + 1, k);
+        CreateQuad(target, { i, j, k }, textureCoords.top, // U
+            { 0, 1, 1, 0 }, glm::uvec4(1), { 1, 1, 0, 0 }, 2, lightVal);
     }
-    if ((k == 0 && CheckNeighbor(neighbors[NORTH], {i, j, ZSIZE - 1}, voidBlocks...))
+    if ((k == 0 && CheckNeighbor(m_Neighbors[NORTH], { i, j, ZSIZE - 1 }, voidBlocks...))
         || (k > 0 && ((m_Chunk(i, j, k - 1) == voidBlocks) || ...))) {
-        CreateQuad(target, {i, j, k}, textureCoords.side, // B
-                   {1, 0, 0, 1}, {0, 0, 1, 1}, glm::uvec4(0), 5);
+        uint16_t lightVal;
+        if (lightBlock)
+            lightVal = m_LightMap(i, j, k);
+        else if (k == 0) {
+            lightVal = m_Neighbors[NORTH]->m_LightMap(i, j, ZSIZE - 1);
+        } else {
+            lightVal = m_LightMap(i, j, k - 1);
+        }
+        CreateQuad(target, { i, j, k }, textureCoords.side, // B
+            { 1, 0, 0, 1 }, { 0, 0, 1, 1 }, glm::uvec4(0), 5, lightVal);
     }
-    if ((k == ZSIZE - 1 && CheckNeighbor(neighbors[SOUTH], {i, j, 0}, voidBlocks...))
+    if ((k == ZSIZE - 1 && CheckNeighbor(m_Neighbors[SOUTH], { i, j, 0 }, voidBlocks...))
         || (k < ZSIZE - 1 && ((m_Chunk(i, j, k + 1) == voidBlocks) || ...))) {
-        CreateQuad(target, {i, j, k}, textureCoords.side, // F
-                   {0, 1, 1, 0}, {0, 0, 1, 1}, glm::uvec4(1), 4);
+        uint16_t lightVal;
+        if (lightBlock)
+            lightVal = m_LightMap(i, j, k);
+        else if (k == ZSIZE - 1) {
+            lightVal = m_Neighbors[SOUTH]->m_LightMap(i, j, 0);
+        } else {
+            lightVal = m_LightMap(i, j, k + 1);
+        }
+        CreateQuad(target, { i, j, k }, textureCoords.side, // F
+            { 0, 1, 1, 0 }, { 0, 0, 1, 1 }, glm::uvec4(1), 4, lightVal);
     }
-    if ((i == 0 && CheckNeighbor(neighbors[WEST], {XSIZE - 1, j, k}, voidBlocks...))
+    if ((i == 0 && CheckNeighbor(m_Neighbors[WEST], { XSIZE - 1, j, k }, voidBlocks...))
         || (i > 0 && ((m_Chunk(i - 1, j, k) == voidBlocks) || ...))) {
-        CreateQuad(target, {i, j, k}, textureCoords.side, // L
-                   glm::uvec4(0), {0, 0, 1, 1}, {0, 1, 1, 0}, 1);
+        uint16_t lightVal;
+        if (lightBlock)
+            lightVal = m_LightMap(i, j, k);
+        else if (i == 0) {
+            lightVal = m_Neighbors[WEST]->m_LightMap(XSIZE - 1, j, k);
+        } else {
+            lightVal = m_LightMap(i - 1, j, k);
+        }
+        CreateQuad(target, { i, j, k }, textureCoords.side, // L
+            glm::uvec4(0), { 0, 0, 1, 1 }, { 0, 1, 1, 0 }, 1, lightVal);
     }
-    if ((i == XSIZE - 1 && CheckNeighbor(neighbors[EAST], {0, j, k}, voidBlocks...))
+    if ((i == XSIZE - 1 && CheckNeighbor(m_Neighbors[EAST], { 0, j, k }, voidBlocks...))
         || (i < XSIZE - 1 && ((m_Chunk(i + 1, j, k) == voidBlocks) || ...))) {
-        CreateQuad(target, {i, j, k}, textureCoords.side, // R
-                   glm::uvec4(1), {0, 0, 1, 1}, {1, 0, 0, 1}, 0);
+        uint16_t lightVal;
+        if (lightBlock)
+            lightVal = m_LightMap(i, j, k);
+        else if (i == XSIZE - 1) {
+            lightVal = m_Neighbors[EAST]->m_LightMap(0, j, k);
+        } else {
+            lightVal = m_LightMap(i + 1, j, k);
+        }
+        CreateQuad(target, { i, j, k }, textureCoords.side, // R
+            glm::uvec4(1), { 0, 0, 1, 1 }, { 1, 0, 0, 1 }, 0, lightVal);
     }
 }
 
 void Chunk::GenSprite(
-        int i, int j, int k, std::vector<Vertex> &target,
-        const std::array<uint32_t, 4> &textureCoords) {
+    int i, int j, int k, std::vector<Vertex>& target, const std::array<uint32_t, 4>& textureCoords)
+{
     static constexpr int vertices = 4;
-    static constexpr std::array<uint8_t, 8> offsetx = {0, 1, 1, 0, 0, 1, 1, 0};
-    static constexpr std::array<uint8_t, 8> offsety = {0, 0, 1, 1, 0, 0, 1, 1};
-    static constexpr std::array<uint8_t, 8> offsetz = {0, 1, 1, 0, 1, 0, 0, 1};
+    static constexpr std::array<uint8_t, 8> offsetx = { 0, 1, 1, 0, 0, 1, 1, 0 };
+    static constexpr std::array<uint8_t, 8> offsety = { 0, 0, 1, 1, 0, 0, 1, 1 };
+    static constexpr std::array<uint8_t, 8> offsetz = { 0, 1, 1, 0, 1, 0, 0, 1 };
 
     for (int n = 0; n < 8; n++) {
-        uint32_t v
-                = (n < 4 ? 7 << 29 : 6 << 29) | (i + offsetx[n]) << 24 | (j + offsety[n]) << 15 |
-                  (k + offsetz[n]) << 10 |
-                  textureCoords[n % vertices];
+        uint32_t v = (n < 4 ? 7 << 29 : 6 << 29) | (i + offsetx[n]) << 24 | (j + offsety[n]) << 15
+            | (k + offsetz[n]) << 10 | textureCoords[n % vertices];
         uint16_t l = m_LightMap(i, j, k);
         target.emplace_back(v, l);
     }
 }
 
-bool Chunk::FindNeighbors() {
+bool Chunk::FindNeighbors()
+{
     int n = 0;
     for (int i = -1; i <= 1; i += 2) {
-        if (const auto it = m_ChunkMap->find({m_Coords.x + i, m_Coords.z});
-                it != m_ChunkMap->end()) {
+        if (const auto it = m_ChunkMap->find({ m_Coords.x + i, m_Coords.z });
+            it != m_ChunkMap->end()) {
             m_Neighbors[n++] = &it->second;
         } else { // border chunk, don't generate the mesh
             return false;
         }
 
-        if (const auto it = m_ChunkMap->find({m_Coords.x, m_Coords.z + i});
-                it != m_ChunkMap->end()) {
+        if (const auto it = m_ChunkMap->find({ m_Coords.x, m_Coords.z + i });
+            it != m_ChunkMap->end()) {
             m_Neighbors[n++] = &it->second;
         } else { // border chunk, don't generate the mesh
             return false;
@@ -375,37 +429,41 @@ bool Chunk::FindNeighbors() {
     return true;
 }
 
-bool Chunk::GenerateMesh() {
+bool Chunk::GenerateMesh()
+{
     if (m_Mesh.empty() && m_TransparentMesh.empty() && m_SpriteMesh.empty()) {
         // retrieve the 4 pointers from the map and continue only if all of them exist
-        m_Neighbors = {nullptr}; // west, north, east, south
+        m_Neighbors = { nullptr }; // west, north, east, south
         if (FindNeighbors()) {
             if (m_MinHeight < 1)
                 m_MinHeight = 1;
             for (int j = m_MinHeight - 1; j <= m_MaxHeight; j++) {
                 for (int i = 0; i < XSIZE; i++) {
                     for (int k = 0; k < ZSIZE; k++) {
-                        TextureAtlas::Coords textureCoords
-                                = TextureAtlas::At(m_Chunk(i, j, k));
+                        TextureAtlas::Coords textureCoords = TextureAtlas::At(m_Chunk(i, j, k));
                         switch (m_Chunk(i, j, k)) {
-                            case Block::EMPTY:
-                                break;
-                            case Block::FLOWER_YELLOW:
-                            case Block::FLOWER_BLUE:
-                            case Block::BUSH:
-                                GenSprite(i, j, k, m_SpriteMesh, textureCoords.side);
-                                break;
-                            case Block::WATER:
-                            case Block::LEAVES:
-                                GenCube(i, j, k, m_TransparentMesh, textureCoords, m_Neighbors,
-                                        Block::EMPTY, Block::FLOWER_BLUE, Block::FLOWER_YELLOW,
-                                        Block::BUSH);
-                                break;
-                            default:
-                                GenCube(i, j, k, m_Mesh, textureCoords, m_Neighbors, Block::EMPTY,
-                                        Block::LEAVES, Block::WATER, Block::FLOWER_BLUE,
-                                        Block::FLOWER_YELLOW, Block::BUSH);
-                                break;
+                        case Block::EMPTY:
+                            break;
+                        case Block::FLOWER_YELLOW:
+                        case Block::FLOWER_BLUE:
+                        case Block::BUSH:
+                            GenSprite(i, j, k, m_SpriteMesh, textureCoords.side);
+                            break;
+                        case Block::WATER:
+                        case Block::LEAVES:
+                            GenCube(i, j, k, m_TransparentMesh, textureCoords, false, Block::EMPTY,
+                                Block::FLOWER_BLUE, Block::FLOWER_YELLOW, Block::BUSH);
+                            break;
+                        case Block::LIGHT_RED:
+                        case Block::LIGHT_BLUE:
+                        case Block::LIGHT_GREEN:
+                            GenCube(i, j, k, m_TransparentMesh, textureCoords, true, Block::EMPTY,
+                                Block::FLOWER_BLUE, Block::FLOWER_YELLOW, Block::BUSH);
+                        default:
+                            GenCube(i, j, k, m_Mesh, textureCoords, false, Block::EMPTY,
+                                Block::LEAVES, Block::WATER, Block::FLOWER_BLUE,
+                                Block::FLOWER_YELLOW, Block::BUSH);
+                            break;
                         }
                     }
                 }
@@ -421,15 +479,13 @@ bool Chunk::GenerateMesh() {
                 indexCount = m_TransparentMesh.size() / 4 * 6;
                 m_TIBOCount = indexCount;
                 transSize = m_TransparentMesh.size() * sizeof(Vertex);
-                m_VBO.SendData(transSize,
-                               m_TransparentMesh.data(), solidSize);
+                m_VBO.SendData(transSize, m_TransparentMesh.data(), solidSize);
             }
             if (!m_SpriteMesh.empty()) {
                 uint32_t offset = solidSize + transSize;
                 indexCount = m_SpriteMesh.size() / 4 * 6;
                 m_SIBOCount = indexCount;
-                m_VBO.SendData(m_SpriteMesh.size() * sizeof(Vertex),
-                               m_SpriteMesh.data(), offset);
+                m_VBO.SendData(m_SpriteMesh.size() * sizeof(Vertex), m_SpriteMesh.data(), offset);
             }
             return true;
         } else
@@ -438,7 +494,8 @@ bool Chunk::GenerateMesh() {
     return true;
 }
 
-void Chunk::Render(ChunkRenderer &renderer, const ChunkCoord &playerChunk, int radius) {
+void Chunk::Render(ChunkRenderer& renderer, const ChunkCoord& playerChunk, int radius)
+{
     renderer.SetIboCount(m_IBOCount);
     m_VBO.Bind(renderer.GetVaoId());
     renderer.Render(m_ChunkPosition, 0);
@@ -456,8 +513,9 @@ void Chunk::Render(ChunkRenderer &renderer, const ChunkCoord &playerChunk, int r
     }
 }
 
-void Chunk::RenderOutline(ChunkRenderer &renderer, const glm::uvec3 &target) {
-    m_Neighbors = {nullptr};
+void Chunk::RenderOutline(ChunkRenderer& renderer, const glm::uvec3& target)
+{
+    m_Neighbors = { nullptr };
     if (FindNeighbors()) {
         int i = static_cast<int>(target.x);
         int j = static_cast<int>(target.y);
@@ -465,8 +523,8 @@ void Chunk::RenderOutline(ChunkRenderer &renderer, const glm::uvec3 &target) {
         if (m_Chunk(i, j, k) != Block::EMPTY && m_Chunk(i, j, k) != Block::WATER) {
             std::vector<Vertex> outlineMesh;
             TextureAtlas::Coords textureCoords = TextureAtlas::At(m_Chunk(i, j, k));
-            GenCube(i, j, k, outlineMesh, textureCoords, m_Neighbors, Block::EMPTY, Block::LEAVES,
-                    Block::WATER);
+            GenCube(i, j, k, outlineMesh, textureCoords, false, Block::EMPTY, Block::LEAVES,
+                Block::WATER);
             size_t indexCount = outlineMesh.size() / 4 * 6;
             renderer.SendOutlineData(outlineMesh.size() * sizeof(Vertex), outlineMesh.data(), 0);
             renderer.SetIboCount(indexCount);
@@ -477,7 +535,8 @@ void Chunk::RenderOutline(ChunkRenderer &renderer, const glm::uvec3 &target) {
 
 Block Chunk::GetBlock(uint32_t x, uint32_t y, uint32_t z) const { return m_Chunk(x, y, z); }
 
-void Chunk::SetBlock(uint32_t x, uint32_t y, uint32_t z, Block block) {
+void Chunk::SetBlock(uint32_t x, uint32_t y, uint32_t z, Block block)
+{
     assertm(x < XSIZE && y < YSIZE && z < ZSIZE, "indices out of bounds.");
     m_Chunk(x, y, z) = block;
     if (y < m_MinHeight)
@@ -488,7 +547,8 @@ void Chunk::SetBlock(uint32_t x, uint32_t y, uint32_t z, Block block) {
     ClearMesh();
 }
 
-void Chunk::ClearMesh() {
+void Chunk::ClearMesh()
+{
     m_Mesh.clear();
     m_TransparentMesh.clear();
     m_SpriteMesh.clear();
@@ -496,18 +556,20 @@ void Chunk::ClearMesh() {
 
 glm::vec3 Chunk::GetCenterPosition() const { return m_CenterPosition; }
 
-void Chunk::SetBlocks(const BlockVec &blocksToSet) {
-    for (const auto &[block, vec]: blocksToSet) {
+void Chunk::SetBlocks(const BlockVec& blocksToSet)
+{
+    for (const auto& [block, vec] : blocksToSet) {
         glm::uvec3 pos = vec;
         SetBlock(pos.x, pos.y, pos.z, block);
-//        m_LightMap(pos.x, pos.y, pos.z) = sunLight;
-//        m_SunQueue.emplace(this, GetIndex(pos.x, pos.y, pos.z));
+        //        m_LightMap(pos.x, pos.y, pos.z) = sunLight;
+        //        m_SunQueue.emplace(this, GetIndex(pos.x, pos.y, pos.z));
     }
 }
 
 ChunkCoord Chunk::GetCoord() const { return m_Coords; }
 
-bool Chunk::ChunkIsVisible(ChunkCoord playerChunk, int radius) const {
+bool Chunk::ChunkIsVisible(ChunkCoord playerChunk, int radius) const
+{
     if (std::abs(playerChunk.x - m_Coords.x) > radius
         || std::abs(playerChunk.z - m_Coords.z) > radius)
         return false;
@@ -515,7 +577,8 @@ bool Chunk::ChunkIsVisible(ChunkCoord playerChunk, int radius) const {
         return true;
 }
 
-void Chunk::UpdateMeshHeighLimit(uint32_t height) {
+void Chunk::UpdateMeshHeighLimit(uint32_t height)
+{
     if (height > m_MaxHeight)
         m_MaxHeight = height;
     else if (height < m_MinHeight)
@@ -523,43 +586,36 @@ void Chunk::UpdateMeshHeighLimit(uint32_t height) {
 }
 
 // SSSS RRRR GGGG BBBB
-void Chunk::SetSunLight(int i, int j, int k, uint8_t val) {
+void Chunk::SetSunLight(int i, int j, int k, uint8_t val)
+{
     m_LightMap(i, j, k) = (m_LightMap(i, j, k) & 0x0FFF) | (val & 0xF) << 12;
 }
 
-uint8_t Chunk::GetSunLight(int i, int j, int k) {
-    return m_LightMap(i, j, k) >> 12 & 0xF;
-}
+uint8_t Chunk::GetSunLight(int i, int j, int k) { return m_LightMap(i, j, k) >> 12 & 0xF; }
 
-void Chunk::SetRedLight(int i, int j, int k, uint8_t val) {
+void Chunk::SetRedLight(int i, int j, int k, uint8_t val)
+{
     m_LightMap(i, j, k) = (m_LightMap(i, j, k) & 0xF0FF) | (val & 0xF) << 8;
 }
 
-uint8_t Chunk::GetRedLight(int i, int j, int k) {
-    return m_LightMap(i, j, k) >> 8 & 0xF;
-}
-void Chunk::SetGreenLight(int i, int j, int k, uint8_t val) {
+uint8_t Chunk::GetRedLight(int i, int j, int k) { return m_LightMap(i, j, k) >> 8 & 0xF; }
+void Chunk::SetGreenLight(int i, int j, int k, uint8_t val)
+{
     m_LightMap(i, j, k) = (m_LightMap(i, j, k) & 0xFF0F) | (val & 0xF) << 4;
 }
 
-uint8_t Chunk::GetGreenLight(int i, int j, int k) {
-    return m_LightMap(i, j, k) >> 4 & 0xF;
-}
-void Chunk::SetBlueLight(int i, int j, int k, uint8_t val) {
+uint8_t Chunk::GetGreenLight(int i, int j, int k) { return m_LightMap(i, j, k) >> 4 & 0xF; }
+void Chunk::SetBlueLight(int i, int j, int k, uint8_t val)
+{
     m_LightMap(i, j, k) = (m_LightMap(i, j, k) & 0xFFF0) | (val & 0xF);
 }
 
-uint8_t Chunk::GetBlueLight(int i, int j, int k) {
-    return m_LightMap(i, j, k) & 0xF;
-}
-std::array<Chunk *, 4> Chunk::GetNeighbors() const {
-    return m_Neighbors;
-}
+uint8_t Chunk::GetBlueLight(int i, int j, int k) { return m_LightMap(i, j, k) & 0xF; }
+std::array<Chunk*, 4> Chunk::GetNeighbors() const { return m_Neighbors; }
 
-glm::uvec3 Chunk::GetCoordsFromIndex(uint32_t index) const {
+glm::uvec3 Chunk::GetCoordsFromIndex(uint32_t index) const
+{
     return m_Chunk.GetCoordsFromIndex(index);
 }
 
-std::queue<LightAddNode>& Chunk::GetSunQueueRef() {
-    return m_SunQueue;
-}
+// std::queue<LightAddNode>& Chunk::GetSunQueueRef() { return m_SunQueue; }

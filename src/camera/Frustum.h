@@ -1,7 +1,6 @@
 #pragma once
-#include <array>
-
 #include "glm/glm.hpp"
+#include <array>
 
 namespace frustum {
 struct Plane {
