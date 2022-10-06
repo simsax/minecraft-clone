@@ -56,6 +56,18 @@ void Chunk::CreateQuad(std::vector<Vertex>& target, const glm::uvec3& position,
     }
 }
 
+void Chunk::CreateQuadOutline(std::vector<uint32_t>& target, const glm::uvec3& position,
+    const glm::uvec4& offsetx, const glm::uvec4& offsety, const glm::uvec4& offsetz)
+{
+    static constexpr int vertices = 4;
+
+    for (int i = 0; i < vertices; i++) {
+        uint32_t v = (position[0] + offsetx[i]) << 24 | (position[1] + offsety[i]) << 15
+            | (position[2] + offsetz[i]) << 10;
+        target.emplace_back(v);
+    }
+}
+
 Chunk::Chunk(
     const ChunkCoord& coords, const glm::vec3& position, uint32_t stride, ChunkMap* chunkMap)
     : m_HeightMap({})
@@ -316,6 +328,22 @@ bool Chunk::CheckNeighbor(const Chunk* const chunk, const glm::uvec3& position, 
         return false;
 }
 
+void Chunk::GenCubeOutline(int i, int j, int k, std::vector<uint32_t>& target)
+{
+    CreateQuadOutline(target, { i, j, k }, // D
+        { 0, 0, 1, 1 }, glm::uvec4(0), { 1, 0, 0, 1 });
+    CreateQuadOutline(target, { i, j, k }, // U
+        { 1, 1, 0, 0 }, glm::uvec4(1), { 1, 0, 0, 1 });
+    CreateQuadOutline(target, { i, j, k }, // F
+        { 0, 0, 1, 1 }, { 1, 0, 0, 1 }, glm::uvec4(1));
+    CreateQuadOutline(target, { i, j, k }, // B
+        { 1, 1, 0, 0 }, { 1, 0, 0, 1 }, glm::uvec4(0));
+    CreateQuadOutline(target, { i, j, k }, // L
+        glm::uvec4(0), { 1, 0, 0, 1 }, { 0, 0, 1, 1 });
+    CreateQuadOutline(target, { i, j, k }, // R
+        glm::uvec4(1), { 1, 0, 0, 1 }, { 1, 1, 0, 0 });
+}
+
 template <typename... Args>
 void Chunk::GenCube(int i, int j, int k, std::vector<Vertex>& target,
     const TextureAtlas::Coords& textureCoords, bool lightBlock, Args... voidBlocks)
@@ -457,8 +485,9 @@ bool Chunk::GenerateMesh()
                         case Block::LIGHT_RED:
                         case Block::LIGHT_BLUE:
                         case Block::LIGHT_GREEN:
-                            GenCube(i, j, k, m_TransparentMesh, textureCoords, true, Block::EMPTY,
-                                Block::FLOWER_BLUE, Block::FLOWER_YELLOW, Block::BUSH);
+                            GenCube(i, j, k, m_Mesh, textureCoords, true, Block::EMPTY,
+                                Block::LEAVES, Block::WATER, Block::FLOWER_BLUE,
+                                Block::FLOWER_YELLOW, Block::BUSH);
                         default:
                             GenCube(i, j, k, m_Mesh, textureCoords, false, Block::EMPTY,
                                 Block::LEAVES, Block::WATER, Block::FLOWER_BLUE,
@@ -521,14 +550,11 @@ void Chunk::RenderOutline(ChunkRenderer& renderer, const glm::uvec3& target)
         int j = static_cast<int>(target.y);
         int k = static_cast<int>(target.z);
         if (m_Chunk(i, j, k) != Block::EMPTY && m_Chunk(i, j, k) != Block::WATER) {
-            std::vector<Vertex> outlineMesh;
-            TextureAtlas::Coords textureCoords = TextureAtlas::At(m_Chunk(i, j, k));
-            GenCube(i, j, k, outlineMesh, textureCoords, false, Block::EMPTY, Block::LEAVES,
-                Block::WATER);
-            size_t indexCount = outlineMesh.size() / 4 * 6;
-            renderer.SendOutlineData(outlineMesh.size() * sizeof(Vertex), outlineMesh.data(), 0);
-            renderer.SetIboCount(indexCount);
-            renderer.RenderOutline(m_ChunkPosition, target);
+            std::vector<uint32_t> outlineMesh;
+            GenCubeOutline(i, j, k, outlineMesh);
+            size_t indexCount = outlineMesh.size();
+            renderer.SendOutlineData(outlineMesh.size() * sizeof(uint32_t), outlineMesh.data(), 0);
+            renderer.RenderOutline(m_ChunkPosition, target, indexCount);
         }
     }
 }

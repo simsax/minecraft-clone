@@ -95,6 +95,8 @@ private:
     void GenCube(int i, int j, int k, std::vector<Vertex>& target,
         const TextureAtlas::Coords& textureCoords, bool lightBlock, Args... voidBlocks);
 
+    void GenCubeOutline(int i, int j, int k, std::vector<uint32_t>& target);
+
     void GenSprite(int i, int j, int k, std::vector<Vertex>& target,
         const std::array<uint32_t, 4>& textureCoords);
 
@@ -102,6 +104,9 @@ private:
         const std::array<uint32_t, 4>& textureCoords, const glm::uvec4& offsetx,
         const glm::uvec4& offsety, const glm::uvec4& offsetz, uint8_t normalIndex,
         uint16_t lightVal);
+
+    void CreateQuadOutline(std::vector<uint32_t>& target, const glm::uvec3& position,
+        const glm::uvec4& offsetx, const glm::uvec4& offsety, const glm::uvec4& offsetz);
 
     void SetBlocks(const BlockVec& blocksToSet);
     void CreateTrees(int i, int j, int k, BlockVec& blockVec);
