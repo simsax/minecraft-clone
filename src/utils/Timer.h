@@ -3,7 +3,7 @@
 
 class Timer {
 public:
-    Timer(std::string  name);
+    Timer(std::string name);
     ~Timer();
     void Stop();
 

@@ -10,6 +10,8 @@
 #include <unordered_set>
 #include <optional>
 
+enum class Channel { SUN, RED, GREEN, BLUE };
+
 class ChunkManager {
 public:
     explicit ChunkManager(Camera* camera);
@@ -25,6 +27,7 @@ public:
     void DestroyBlock();
     void PlaceBlock(Block block);
     void UpdateChunks();
+    static bool IsTransparent(Block block);
 
 private:
     struct Raycast {
@@ -38,33 +41,23 @@ private:
         glm::vec3 prevGlobalVoxel;
         bool selected;
     };
-    enum class Channel { SUN, RED, GREEN, BLUE };
 
     void SortChunks(const glm::vec3& cameraPos);
     void LoadChunks();
+    void LightChunks();
     void MeshChunks();
     std::pair<ChunkCoord, glm::uvec3> GlobalToLocal(const glm::vec3& playerPosition) const;
     void UpdateNeighbors(const glm::uvec3& voxel, const ChunkCoord& chunkCoord);
     void AddBlocks(const ChunkCoord& chunkCoord, BlockVec& blockVec);
     void GenerateChunks();
-    void LightPlacedBFS(std::queue<LightAddNode> lightQueue, Channel channel);
-    std::queue<LightAddNode> LightRemovedBFS(
-        std::queue<LightRemNode> lightRemQueue, Channel channel);
-    void UpdateLightPlacedQueue(std::queue<LightAddNode>& queue, uint8_t lightLevel, uint8_t i,
-        uint8_t j, uint8_t k, Chunk* chunk, Channel channel);
-    void UpdateLightRemovedQueue(std::queue<LightAddNode>& placeQueue,
-        std::queue<LightRemNode>& removeQueue, int lightLevel, uint8_t i, uint8_t j, uint8_t k,
-        Chunk* chunk, Channel channel);
-    void UpdateOpaqueBlockLight(Chunk* chunk, uint8_t x, uint8_t y, uint8_t z);
-    void UpdateLightOpaque(Chunk* chunk, Chunk* other, uint8_t x, uint8_t y, uint8_t z,
-        uint8_t otherX, uint8_t otherY, uint8_t otherZ);
-    void ExpandLight(uint8_t x, uint8_t y, uint8_t z, const glm::uvec3& lightLevel);
-    void RemoveLight(uint8_t x, uint8_t y, uint8_t z, const glm::uvec3& lightLevel);
+    void ExpandLight(uint8_t x, uint8_t y, uint8_t z, const glm::uvec4& lightLevel, Chunk* chunk);
+    void RemoveLight(uint8_t x, uint8_t y, uint8_t z, const glm::uvec4& lightLevel, Chunk* chunk);
 
     glm::vec3 m_ChunkSize;
     std::unordered_map<ChunkCoord, Chunk, hash_fn> m_ChunkMap;
     std::vector<Chunk*> m_ChunksToRender;
     std::queue<Chunk*> m_ChunksToMesh;
+    std::queue<Chunk*> m_ChunksToLight;
     std::queue<Chunk*> m_ChunksInBorder;
     std::queue<ChunkCoord> m_ChunksToLoad;
     std::unordered_set<ChunkCoord, hash_fn> m_ChunksToUpload;
@@ -73,6 +66,7 @@ private:
     Camera* m_Camera;
     bool m_SortChunks;
     bool m_ChunksReadyToMesh;
+    bool m_ChunksReadyToLight;
     std::pair<ChunkCoord, glm::vec3> m_SelectedBlock;
     Raycast m_Raycast;
     ChunkCoord m_LastChunk;

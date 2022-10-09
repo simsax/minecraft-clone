@@ -4,6 +4,7 @@
 #include "../utils/Timer.h"
 #include "../utils/Logger.h"
 #include "Config.h"
+#include "Light.h"
 
 using namespace std::chrono_literals;
 
@@ -31,6 +32,7 @@ ChunkManager::ChunkManager(Camera* camera)
     , m_Camera(camera)
     , m_SortChunks(true)
     , m_ChunksReadyToMesh(false)
+    , m_ChunksReadyToLight(false)
     , m_Raycast({})
     , m_LastChunk({ 0, 0 })
     , m_CurrentChunk({ 0, 0 })
@@ -49,6 +51,8 @@ void ChunkManager::InitWorld(uint32_t stride)
     GenerateChunks();
     while (!m_ChunksToLoad.empty())
         LoadChunks();
+    while (m_ChunksReadyToLight && !m_ChunksToLight.empty())
+        LightChunks();
     while (m_ChunksReadyToMesh && !m_ChunksToMesh.empty())
         MeshChunks();
 }
@@ -57,6 +61,7 @@ void ChunkManager::Render(ChunkRenderer& renderer)
 {
     auto& cameraPos = m_Camera->GetCameraPosition();
     LoadChunks();
+    LightChunks();
     MeshChunks();
     if (m_SortChunks) {
         m_SortChunks = false;
@@ -80,7 +85,8 @@ void ChunkManager::Render(ChunkRenderer& renderer)
         // uint8_t x = vox.x;
         // uint8_t y = vox.y;
         // uint8_t z = vox.z;
-        // LOG_INFO("({}, {}, {}, {})", chunk->GetSunLight(x, y, z), chunk->GetRedLight(x, y, z),
+        // LOG_INFO("({}, {}, {}, {})", chunk->GetSunLight(x, y + 1, z), chunk->GetRedLight(x, y,
+        // z),
         //     m_Raycast.chunk->GetGreenLight(x, y, z), m_Raycast.chunk->GetBlueLight(x, y, z));
     }
 }
@@ -115,10 +121,30 @@ void ChunkManager::LoadChunks()
         Chunk* chunk = &m_ChunkMap.find(coords)->second;
         BlockVec blocksToSet = chunk->CreateSurfaceLayer(blockList);
         AddBlocks(coords, blocksToSet);
-        m_ChunksToMesh.push(chunk);
+        m_ChunksToLight.push(chunk);
+    }
+    if (m_ChunksToLoad.empty()) {
+        m_ChunksReadyToLight = true;
+    }
+}
 
-        if (m_ChunksToLoad.empty())
-            m_ChunksReadyToMesh = true;
+void ChunkManager::LightChunks()
+{
+    for (int n = 0; m_ChunksReadyToLight && !m_ChunksToLight.empty() && n < MAX_CHUNK_TO_LOAD;
+         n++) {
+        Chunk* chunk = m_ChunksToLight.front();
+        m_ChunksToLight.pop();
+        if (chunk->FindNeighbors()) {
+            Light::AddSunLightSimplified(chunk, m_ChunksToUpload);
+            m_ChunksToMesh.push(chunk);
+        } else {
+            m_ChunksInBorder.push(chunk);
+        }
+    }
+    if (m_ChunksToLight.empty()) {
+        m_ChunksReadyToMesh = true;
+        m_ChunksReadyToLight = false;
+        m_ChunksToLight = std::move(m_ChunksInBorder);
     }
 }
 
@@ -130,9 +156,11 @@ void ChunkManager::MeshChunks()
         auto node = m_ChunksToUpload.extract(iterator);
         ChunkCoord coords = node.value();
         auto chunk = &m_ChunkMap.at(coords);
-        chunk->ClearMesh();
-        chunk->GenerateMesh();
-        uploaded = true;
+        if (chunk->FindNeighbors()) {
+            chunk->ClearMesh();
+            chunk->GenerateMesh();
+            uploaded = true;
+        }
     }
 
     for (int n = 0;
@@ -140,19 +168,11 @@ void ChunkManager::MeshChunks()
          n++) {
         Chunk* chunk = m_ChunksToMesh.front();
         m_ChunksToMesh.pop();
-        if (!chunk->GenerateMesh())
-            m_ChunksInBorder.push(chunk);
-        else {
-            m_ChunksToRender.emplace_back(chunk);
-            // LightPlacedBFS(std::move(chunk->GetSunQueueRef()), Channel::SUN);
-            //            // mesh needs to be regenerated after the bfs
-            //            chunk->ClearMesh();
-            //            chunk->GenerateMesh();
-        }
+        chunk->GenerateMesh();
+        m_ChunksToRender.emplace_back(chunk);
     }
     if (m_ChunksToMesh.empty()) {
         m_ChunksReadyToMesh = false;
-        m_ChunksToMesh = std::move(m_ChunksInBorder);
     }
 }
 
@@ -218,65 +238,87 @@ bool ChunkManager::IsBlockCastable(const glm::vec3& voxel)
     return false;
 }
 
-static bool IsTransparent(Block block)
+bool ChunkManager::IsTransparent(Block block)
 {
     return block == Block::EMPTY || block == Block::BUSH || block == Block::LEAVES
         || block == Block::FLOWER_YELLOW || block == Block::FLOWER_BLUE || block == Block::WATER;
 }
 
-void ChunkManager::ExpandLight(uint8_t x, uint8_t y, uint8_t z, const glm::uvec3& lightLevel)
+void ChunkManager::ExpandLight(
+    uint8_t x, uint8_t y, uint8_t z, const glm::uvec4& lightLevel, Chunk* chunk)
 {
-    // red
+    // sun
     if (lightLevel[0] != 0) {
+        std::queue<LightAddNode> sunQueue;
+        uint16_t startIndex = chunk->GetIndex(x, y, z);
+        sunQueue.emplace(chunk, startIndex);
+        Light::SunBFS(std::move(sunQueue), m_ChunksToUpload);
+    }
+    // red
+    if (lightLevel[1] != 0) {
         std::queue<LightAddNode> redQueue;
-        uint16_t startIndex = m_Raycast.chunk->GetIndex(x, y, z);
-        redQueue.emplace(m_Raycast.chunk, startIndex);
-        LightPlacedBFS(std::move(redQueue), Channel::RED);
+        uint16_t startIndex = chunk->GetIndex(x, y, z);
+        redQueue.emplace(chunk, startIndex);
+        Light::LightPlacedBFS(std::move(redQueue), Channel::RED, m_ChunksToUpload);
     }
     // green
-    if (lightLevel[1] != 0) {
+    if (lightLevel[2] != 0) {
         std::queue<LightAddNode> greenQueue;
-        uint16_t startIndex = m_Raycast.chunk->GetIndex(x, y, z);
-        greenQueue.emplace(m_Raycast.chunk, startIndex);
-        LightPlacedBFS(std::move(greenQueue), Channel::GREEN);
+        uint16_t startIndex = chunk->GetIndex(x, y, z);
+        greenQueue.emplace(chunk, startIndex);
+        Light::LightPlacedBFS(std::move(greenQueue), Channel::GREEN, m_ChunksToUpload);
     }
     // blue
-    if (lightLevel[2] != 0) {
+    if (lightLevel[3] != 0) {
         std::queue<LightAddNode> blueQueue;
-        uint16_t startIndex = m_Raycast.chunk->GetIndex(x, y, z);
-        blueQueue.emplace(m_Raycast.chunk, startIndex);
-        LightPlacedBFS(std::move(blueQueue), Channel::BLUE);
+        uint16_t startIndex = chunk->GetIndex(x, y, z);
+        blueQueue.emplace(chunk, startIndex);
+        Light::LightPlacedBFS(std::move(blueQueue), Channel::BLUE, m_ChunksToUpload);
     }
 }
 
-void ChunkManager::RemoveLight(uint8_t x, uint8_t y, uint8_t z, const glm::uvec3& lightLevel)
+void ChunkManager::RemoveLight(
+    uint8_t x, uint8_t y, uint8_t z, const glm::uvec4& lightLevel, Chunk* chunk)
 {
-    // red
+    // sun
     if (lightLevel[0] != 0) {
-        m_Raycast.chunk->SetRedLight(x, y, z, 0);
+        chunk->SetSunLight(x, y, z, 0);
+        std::queue<LightRemNode> sunRemQueue;
+        uint16_t startIndex = chunk->GetIndex(x, y, z);
+        sunRemQueue.emplace(chunk, startIndex, lightLevel[0]);
+        std::queue<LightAddNode> sunQ
+            = Light::LightRemovedBFS(std::move(sunRemQueue), Channel::SUN, m_ChunksToUpload);
+        Light::SunBFS(std::move(sunQ), m_ChunksToUpload);
+    }
+    // red
+    if (lightLevel[1] != 0) {
+        chunk->SetRedLight(x, y, z, 0);
         std::queue<LightRemNode> redRemQueue;
-        uint16_t startIndex = m_Raycast.chunk->GetIndex(x, y, z);
-        redRemQueue.emplace(m_Raycast.chunk, startIndex, lightLevel[0]);
-        std::queue<LightAddNode> redQ = LightRemovedBFS(std::move(redRemQueue), Channel::RED);
-        LightPlacedBFS(std::move(redQ), Channel::RED);
+        uint16_t startIndex = chunk->GetIndex(x, y, z);
+        redRemQueue.emplace(chunk, startIndex, lightLevel[1]);
+        std::queue<LightAddNode> redQ
+            = Light::LightRemovedBFS(std::move(redRemQueue), Channel::RED, m_ChunksToUpload);
+        Light::LightPlacedBFS(std::move(redQ), Channel::RED, m_ChunksToUpload);
     }
     // green
-    if (lightLevel[1] != 0) {
-        m_Raycast.chunk->SetGreenLight(x, y, z, 0);
+    if (lightLevel[2] != 0) {
+        chunk->SetGreenLight(x, y, z, 0);
         std::queue<LightRemNode> greenRemQueue;
-        uint16_t startIndex = m_Raycast.chunk->GetIndex(x, y, z);
-        greenRemQueue.emplace(m_Raycast.chunk, startIndex, lightLevel[1]);
-        std::queue<LightAddNode> greenQ = LightRemovedBFS(std::move(greenRemQueue), Channel::GREEN);
-        LightPlacedBFS(std::move(greenQ), Channel::GREEN);
+        uint16_t startIndex = chunk->GetIndex(x, y, z);
+        greenRemQueue.emplace(chunk, startIndex, lightLevel[2]);
+        std::queue<LightAddNode> greenQ
+            = Light::LightRemovedBFS(std::move(greenRemQueue), Channel::GREEN, m_ChunksToUpload);
+        Light::LightPlacedBFS(std::move(greenQ), Channel::GREEN, m_ChunksToUpload);
     }
     // blue
-    if (lightLevel[2] != 0) {
-        m_Raycast.chunk->SetBlueLight(x, y, z, 0);
+    if (lightLevel[3] != 0) {
+        chunk->SetBlueLight(x, y, z, 0);
         std::queue<LightRemNode> blueRemQueue;
-        uint16_t startIndex = m_Raycast.chunk->GetIndex(x, y, z);
-        blueRemQueue.emplace(m_Raycast.chunk, startIndex, lightLevel[2]);
-        std::queue<LightAddNode> blueQ = LightRemovedBFS(std::move(blueRemQueue), Channel::BLUE);
-        LightPlacedBFS(std::move(blueQ), Channel::BLUE);
+        uint16_t startIndex = chunk->GetIndex(x, y, z);
+        blueRemQueue.emplace(chunk, startIndex, lightLevel[3]);
+        std::queue<LightAddNode> blueQ
+            = Light::LightRemovedBFS(std::move(blueRemQueue), Channel::BLUE, m_ChunksToUpload);
+        Light::LightPlacedBFS(std::move(blueQ), Channel::BLUE, m_ChunksToUpload);
     }
 }
 
@@ -290,13 +332,15 @@ void ChunkManager::DestroyBlock()
         m_Raycast.chunk->SetBlock(x, y, z, Block::EMPTY);
         if (m_LightBlocks.contains(block)) {
             glm::uvec3 lightLevel = m_LightBlocks[block];
-            RemoveLight(x, y, z, lightLevel);
+            RemoveLight(
+                x, y, z, { 0, lightLevel[0], lightLevel[1], lightLevel[2] }, m_Raycast.chunk);
         }
         if (!IsTransparent(block)) { // opaque block
-            UpdateOpaqueBlockLight(m_Raycast.chunk, x, y, z);
-            glm::uvec3 lightLevel = { m_Raycast.chunk->GetRedLight(x, y, z),
-                m_Raycast.chunk->GetGreenLight(x, y, z), m_Raycast.chunk->GetBlueLight(x, y, z) };
-            ExpandLight(x, y, z, lightLevel);
+            Light::UpdateOpaqueBlockLight(m_Raycast.chunk, x, y, z);
+            glm::uvec4 lightLevel = { m_Raycast.chunk->GetSunLight(x, y, z),
+                m_Raycast.chunk->GetRedLight(x, y, z), m_Raycast.chunk->GetGreenLight(x, y, z),
+                m_Raycast.chunk->GetBlueLight(x, y, z) };
+            ExpandLight(x, y, z, lightLevel, m_Raycast.chunk);
         }
         m_ChunksToUpload.insert(m_Raycast.chunkCoord);
         // check if the target is in the chunk border
@@ -327,245 +371,21 @@ void ChunkManager::PlaceBlock(Block block)
         if (m_LightBlocks.contains(block)) {
             glm::uvec3 lightLevel = m_LightBlocks[block];
             if (lightLevel[0] != 0)
-                m_Raycast.chunk->SetRedLight(x, y, z, lightLevel[0]);
+                chunk->SetRedLight(x, y, z, lightLevel[0]);
             if (lightLevel[1] != 0)
-                m_Raycast.chunk->SetGreenLight(x, y, z, lightLevel[1]);
+                chunk->SetGreenLight(x, y, z, lightLevel[1]);
             if (lightLevel[2] != 0)
-                m_Raycast.chunk->SetBlueLight(x, y, z, lightLevel[2]);
-            ExpandLight(x, y, z, lightLevel);
+                chunk->SetBlueLight(x, y, z, lightLevel[2]);
+            ExpandLight(x, y, z, { 0, lightLevel[0], lightLevel[1], lightLevel[2] }, chunk);
         } else if (!IsTransparent(block)) { // opaque block
-            // red
-            glm::uvec3 lightLevel = { m_Raycast.chunk->GetRedLight(x, y, z),
-                m_Raycast.chunk->GetGreenLight(x, y, z), m_Raycast.chunk->GetBlueLight(x, y, z) };
-            RemoveLight(x, y, z, lightLevel);
+            glm::uvec4 lightLevel = { chunk->GetSunLight(x, y, z), chunk->GetRedLight(x, y, z),
+                chunk->GetGreenLight(x, y, z), chunk->GetBlueLight(x, y, z) };
+            RemoveLight(x, y, z, lightLevel, chunk);
         }
         m_ChunksToUpload.insert(chunkCoord);
         // check if the target is in the chunk border
         UpdateNeighbors(localVoxel, chunkCoord);
     }
-}
-
-void ChunkManager::UpdateLightPlacedQueue(std::queue<LightAddNode>& queue, uint8_t lightLevel,
-    uint8_t i, uint8_t j, uint8_t k, Chunk* chunk, Channel channel)
-{
-    if (chunk->FindNeighbors()) {
-        switch (channel) {
-        case Channel::SUN:
-            if (IsTransparent(chunk->GetBlock(i, j, k))
-                && chunk->GetSunLight(i, j, k) < lightLevel - 1) {
-                chunk->SetSunLight(i, j, k, lightLevel - 1);
-                queue.emplace(chunk, chunk->GetIndex(i, j, k));
-            }
-            break;
-        case Channel::RED:
-            if (IsTransparent(chunk->GetBlock(i, j, k))
-                && chunk->GetRedLight(i, j, k) < lightLevel - 1) {
-                chunk->SetRedLight(i, j, k, lightLevel - 1);
-                queue.emplace(chunk, chunk->GetIndex(i, j, k));
-            }
-            break;
-        case Channel::GREEN:
-            if (IsTransparent(chunk->GetBlock(i, j, k))
-                && chunk->GetGreenLight(i, j, k) < lightLevel - 1) {
-                chunk->SetGreenLight(i, j, k, lightLevel - 1);
-                queue.emplace(chunk, chunk->GetIndex(i, j, k));
-            }
-            break;
-        case Channel::BLUE:
-            if (IsTransparent(chunk->GetBlock(i, j, k))
-                && chunk->GetBlueLight(i, j, k) < lightLevel - 1) {
-                chunk->SetBlueLight(i, j, k, lightLevel - 1);
-                queue.emplace(chunk, chunk->GetIndex(i, j, k));
-            }
-            break;
-        }
-        m_ChunksToUpload.insert(chunk->GetCoord());
-    }
-}
-
-void ChunkManager::LightPlacedBFS(std::queue<LightAddNode> lightQueue, Channel channel)
-{
-    while (!lightQueue.empty()) {
-        LightAddNode& node = lightQueue.front();
-        Chunk* chunk = node.chunk;
-        uint16_t index = node.index;
-        lightQueue.pop();
-        glm::uvec3 coords = chunk->GetCoordsFromIndex(index);
-        uint8_t x = coords[0];
-        uint8_t y = coords[1];
-        uint8_t z = coords[2];
-        uint8_t lightLevel;
-        switch (channel) {
-        case Channel::SUN:
-            lightLevel = chunk->GetSunLight(x, y, z);
-            break;
-        case Channel::RED:
-            lightLevel = chunk->GetRedLight(x, y, z);
-            break;
-        case Channel::GREEN:
-            lightLevel = chunk->GetGreenLight(x, y, z);
-            break;
-        case Channel::BLUE:
-            lightLevel = chunk->GetBlueLight(x, y, z);
-            break;
-        }
-        Chunk* other = chunk;
-
-        int westX = x - 1;
-        if (westX < 0) {
-            other = other->GetNeighbors()[WEST];
-            westX = mod(westX, XSIZE);
-        }
-        UpdateLightPlacedQueue(lightQueue, lightLevel, westX, y, z, other, channel);
-
-        int eastX = x + 1;
-        other = chunk;
-        if (eastX >= XSIZE) {
-            other = other->GetNeighbors()[EAST];
-            eastX = mod(eastX, XSIZE);
-        }
-        UpdateLightPlacedQueue(lightQueue, lightLevel, eastX, y, z, other, channel);
-
-        int northZ = z - 1;
-        other = chunk;
-        if (northZ < 0) {
-            other = other->GetNeighbors()[NORTH];
-            northZ = mod(northZ, ZSIZE);
-        }
-        UpdateLightPlacedQueue(lightQueue, lightLevel, x, y, northZ, other, channel);
-
-        int southZ = z + 1;
-        other = chunk;
-        if (southZ >= ZSIZE) {
-            other = other->GetNeighbors()[SOUTH];
-            southZ = mod(southZ, ZSIZE);
-        }
-        UpdateLightPlacedQueue(lightQueue, lightLevel, x, y, southZ, other, channel);
-
-        other = chunk;
-        int downY = y - 1;
-        if (downY >= 0) {
-            if (channel == Channel::SUN) {
-                if (IsTransparent(other->GetBlock(x, downY, z))
-                    && other->GetSunLight(x, downY, z) < lightLevel) {
-                    other->SetSunLight(x, downY, z, lightLevel);
-                    lightQueue.emplace(other, other->GetIndex(x, downY, z));
-                    m_ChunksToUpload.insert(other->GetCoord());
-                }
-
-            } else {
-                UpdateLightPlacedQueue(lightQueue, lightLevel, x, downY, z, other, channel);
-            }
-        }
-
-        int upY = y + 1;
-        if (upY < YSIZE)
-            UpdateLightPlacedQueue(lightQueue, lightLevel, x, upY, z, other, channel);
-    }
-}
-
-void ChunkManager::UpdateLightRemovedQueue(std::queue<LightAddNode>& placeQueue,
-    std::queue<LightRemNode>& removeQueue, int lightLevel, uint8_t i, uint8_t j, uint8_t k,
-    Chunk* chunk, Channel channel)
-{
-    switch (channel) {
-    case Channel::RED: {
-        uint8_t neighborLevel = chunk->GetRedLight(i, j, k);
-        if (neighborLevel != 0 && neighborLevel < lightLevel) {
-            chunk->SetRedLight(i, j, k, 0);
-            removeQueue.emplace(chunk, chunk->GetIndex(i, j, k), neighborLevel);
-        } else if (neighborLevel >= lightLevel) {
-            placeQueue.emplace(chunk, chunk->GetIndex(i, j, k));
-        }
-        break;
-    }
-    case Channel::GREEN: {
-        uint8_t neighborLevel = chunk->GetGreenLight(i, j, k);
-        if (neighborLevel != 0 && neighborLevel < lightLevel) {
-            chunk->SetGreenLight(i, j, k, 0);
-            removeQueue.emplace(chunk, chunk->GetIndex(i, j, k), neighborLevel);
-        } else if (neighborLevel >= lightLevel) {
-            placeQueue.emplace(chunk, chunk->GetIndex(i, j, k));
-        }
-        break;
-    }
-    case Channel::BLUE: {
-        uint8_t neighborLevel = chunk->GetBlueLight(i, j, k);
-        if (neighborLevel != 0 && neighborLevel < lightLevel) {
-            chunk->SetBlueLight(i, j, k, 0);
-            removeQueue.emplace(chunk, chunk->GetIndex(i, j, k), neighborLevel);
-        } else if (neighborLevel >= lightLevel) {
-            placeQueue.emplace(chunk, chunk->GetIndex(i, j, k));
-        }
-        break;
-    }
-    }
-    m_ChunksToUpload.insert(chunk->GetCoord());
-}
-
-std::queue<LightAddNode> ChunkManager::LightRemovedBFS(
-    std::queue<LightRemNode> lightRemQueue, ChunkManager::Channel channel)
-{
-    std::queue<LightAddNode> lightAddQueue;
-    while (!lightRemQueue.empty()) {
-        LightRemNode& node = lightRemQueue.front();
-        Chunk* chunk = node.chunk;
-        uint16_t index = node.index;
-        uint8_t lightLevel = node.val;
-        lightRemQueue.pop();
-        glm::uvec3 coords = chunk->GetCoordsFromIndex(index);
-        uint8_t x = coords[0];
-        uint8_t y = coords[1];
-        uint8_t z = coords[2];
-        Chunk* other = chunk;
-
-        int westX = x - 1;
-        if (westX < 0) {
-            other = other->GetNeighbors()[WEST];
-            westX = mod(westX, XSIZE);
-        }
-        UpdateLightRemovedQueue(
-            lightAddQueue, lightRemQueue, lightLevel, westX, y, z, other, channel);
-
-        int eastX = x + 1;
-        other = chunk;
-        if (eastX >= XSIZE) {
-            other = other->GetNeighbors()[EAST];
-            eastX = mod(eastX, XSIZE);
-        }
-        UpdateLightRemovedQueue(
-            lightAddQueue, lightRemQueue, lightLevel, eastX, y, z, other, channel);
-
-        int northZ = z - 1;
-        other = chunk;
-        if (northZ < 0) {
-            other = other->GetNeighbors()[NORTH];
-            northZ = mod(northZ, ZSIZE);
-        }
-        UpdateLightRemovedQueue(
-            lightAddQueue, lightRemQueue, lightLevel, x, y, northZ, other, channel);
-
-        int southZ = z + 1;
-        other = chunk;
-        if (southZ >= ZSIZE) {
-            other = other->GetNeighbors()[SOUTH];
-            southZ = mod(southZ, ZSIZE);
-        }
-        UpdateLightRemovedQueue(
-            lightAddQueue, lightRemQueue, lightLevel, x, y, southZ, other, channel);
-
-        other = chunk;
-        int downY = y - 1;
-        if (downY >= 0)
-            UpdateLightRemovedQueue(
-                lightAddQueue, lightRemQueue, lightLevel, x, downY, z, other, channel);
-
-        int upY = y + 1;
-        if (upY < YSIZE)
-            UpdateLightRemovedQueue(
-                lightAddQueue, lightRemQueue, lightLevel, x, upY, z, other, channel);
-    }
-    return lightAddQueue;
 }
 
 std::pair<ChunkCoord, glm::uvec3> ChunkManager::GlobalToLocal(const glm::vec3& playerPosition) const
@@ -642,63 +462,4 @@ void ChunkManager::UpdateChunks()
         GenerateChunks();
         m_LastChunk = currentChunk;
     }
-}
-
-void ChunkManager::UpdateLightOpaque(Chunk* chunk, Chunk* other, uint8_t x, uint8_t y, uint8_t z,
-    uint8_t otherX, uint8_t otherY, uint8_t otherZ)
-{
-    uint8_t lightVal = other->GetRedLight(otherX, otherY, otherZ);
-    if (lightVal > chunk->GetRedLight(x, y, z) + 1)
-        chunk->SetRedLight(x, y, z, lightVal - 1);
-    lightVal = other->GetGreenLight(otherX, otherY, otherZ);
-    if (lightVal > chunk->GetGreenLight(x, y, z) + 1)
-        chunk->SetGreenLight(x, y, z, lightVal - 1);
-    lightVal = other->GetBlueLight(otherX, otherY, otherZ);
-    if (lightVal > chunk->GetBlueLight(x, y, z) + 1)
-        chunk->SetBlueLight(x, y, z, lightVal - 1);
-}
-
-void ChunkManager::UpdateOpaqueBlockLight(Chunk* chunk, uint8_t x, uint8_t y, uint8_t z)
-{
-    Chunk* other = chunk;
-
-    int westX = x - 1;
-    if (westX < 0) {
-        other = other->GetNeighbors()[WEST];
-        westX = mod(westX, XSIZE);
-    }
-    UpdateLightOpaque(chunk, other, x, y, z, westX, y, z);
-
-    int eastX = x + 1;
-    other = chunk;
-    if (eastX >= XSIZE) {
-        other = other->GetNeighbors()[EAST];
-        eastX = mod(eastX, XSIZE);
-    }
-    UpdateLightOpaque(chunk, other, x, y, z, eastX, y, z);
-
-    int northZ = z - 1;
-    other = chunk;
-    if (northZ < 0) {
-        other = other->GetNeighbors()[NORTH];
-        northZ = mod(northZ, ZSIZE);
-    }
-    UpdateLightOpaque(chunk, other, x, y, z, x, y, northZ);
-
-    int southZ = z + 1;
-    other = chunk;
-    if (southZ >= ZSIZE) {
-        other = other->GetNeighbors()[SOUTH];
-        southZ = mod(southZ, ZSIZE);
-    }
-    UpdateLightOpaque(chunk, other, x, y, z, x, y, southZ);
-
-    other = chunk;
-    int downY = y - 1;
-    if (downY >= 0)
-        UpdateLightOpaque(chunk, other, x, y, z, x, downY, z);
-
-    int upY = y + 1;
-    if (upY < YSIZE)
-        UpdateLightOpaque(chunk, other, x, y, z, x, upY, z);
 }

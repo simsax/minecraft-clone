@@ -52,7 +52,7 @@ public:
     Chunk(Chunk&& other) = default;
     Chunk& operator=(Chunk&& other) = default;
 
-    bool GenerateMesh();
+    void GenerateMesh();
     Block GetBlock(uint32_t x, uint32_t y, uint32_t z) const;
     void SetBlock(uint32_t x, uint32_t y, uint32_t z, Block block);
     void Render(ChunkRenderer& renderer, const ChunkCoord& playerChunk, int radius);
@@ -74,8 +74,9 @@ public:
     std::array<Chunk*, 4> GetNeighbors() const;
     uint32_t GetIndex(uint8_t i, uint8_t j, uint8_t k) const;
     glm::uvec3 GetCoordsFromIndex(uint32_t index) const;
-    // std::queue<LightAddNode>& GetSunQueueRef();
     bool FindNeighbors();
+    int GetMaxHeight() const;
+    void FillSunLight();
 
 private:
     struct Vertex {
@@ -133,7 +134,6 @@ private:
     size_t m_SIBOCount;
     ChunkMap* m_ChunkMap;
     glm::vec3 m_CenterPosition;
-    std::queue<LightAddNode> m_SunQueue;
 };
 
 struct LightAddNode {

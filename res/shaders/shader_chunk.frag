@@ -15,9 +15,7 @@ uniform sampler2D u_Texture;
 uniform vec3 u_SkyColor;
 uniform vec3 u_SunColor;
 uniform vec3 u_ViewPos;
-uniform vec3 u_LightDir;
-uniform bool u_IsDay;
-uniform float u_AmbientStrength;
+// uniform vec3 u_LightDir;
 
 float specularStrength = 0.1f;
 int shininess = 16;

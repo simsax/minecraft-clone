@@ -16,10 +16,12 @@ out float blueLight;
 uniform mat4 u_MVP;
 uniform mat4 u_MV;
 uniform vec3 u_ChunkPos;
+uniform vec3 u_LightDir;
 
 const float offset = 0.0625f;
 const float density = 0.003f;
 const float gradient = 10.0f;
+const float ambient = 0.3f;
 
 const vec2 texCoords[4] = vec2[4](
 	vec2(0.0f, 0.0f),
@@ -28,15 +30,13 @@ const vec2 texCoords[4] = vec2[4](
 	vec2(0.0f, 1.0f)
 );
 
-const vec3 normals[8] = vec3[8](
+const vec3 normals[6] = vec3[6](
 	vec3(1.0f, 0.0f, 0.0f),
 	vec3(-1.0f, 0.0f, 0.0f),
 	vec3(0.0f, 1.0f, 0.0f),
 	vec3(0.0f, -1.0f, 0.0f),
 	vec3(0.0f, 0.0f, 1.0f),
-	vec3(0.0f, 0.0f, -1.0f),
-	vec3(0.5f, 0.0f, 0.5f),
-	vec3(-0.5f, 0.0f, -0.5f)
+	vec3(0.0f, 0.0f, -1.0f)
 );
 
 void main() {
@@ -44,6 +44,7 @@ void main() {
 	float y = float(in_VertexCoord >> 15 & 0x1FFu) + u_ChunkPos.y;
 	float z = float(in_VertexCoord >> 10 & 0x1Fu) + u_ChunkPos.z;
 	uint normalIndex = in_VertexCoord >> 29 & 0x7u;
+	vec3 upVec = normals[2];
 	normal = normals[normalIndex];
 	fragPos = vec3(x, y, z);
 
@@ -59,12 +60,14 @@ void main() {
 	visibility = exp(-pow((distance*density), gradient));
 	visibility = clamp(visibility, 0.0, 1.0);
 
-	// sunLight = float(in_Light >> 12 & 0xFu) / 15.0;
+	// sun has same dir for all fragments, so I can do diffuse calculation on vertex shader
+  vec3 lightDir = normalize(-u_LightDir);
+	float diffStrength = min(max(dot(lightDir, upVec), 0.0f), 0.9f);
+  float sunStrength = diffStrength * max(dot(lightDir, normal), 0.0f);
 
-	// redLight =   clamp(float(in_Light >> 8 & 0xFu) / 15.0 + sunLight, 0.0, 1.0);
-	// greenLight = clamp(float(in_Light >> 4 & 0xFu) / 15.0 + sunLight, 0.0, 1.0);
-	// blueLight =  clamp(float(in_Light & 0xFu) / 15.0 + sunLight, 0.0, 1.0);
-	redLight =   float(in_Light >> 8 & 0xFu) / 15.0;
-	greenLight = float(in_Light >> 4 & 0xFu) / 15.0;
-	blueLight =  float(in_Light & 0xFu) / 15.0;
+	sunLight = sunStrength * float(in_Light >> 12 & 0xFu) / 15.0 + ambient;
+
+	redLight =   clamp(float(in_Light >> 8 & 0xFu) / 15.0 + sunLight, 0.0, 1.0);
+	greenLight = clamp(float(in_Light >> 4 & 0xFu) / 15.0 + sunLight, 0.0, 1.0);
+	blueLight =  clamp(float(in_Light & 0xFu) / 15.0 + sunLight, 0.0, 1.0);
 }

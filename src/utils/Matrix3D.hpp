@@ -131,12 +131,7 @@ template <typename T, size_t X, size_t Y, size_t Z>
 inline glm::uvec3 Matrix3D<T, X, Y, Z>::GetCoordsFromIndex(uint32_t index) const
 {
     uint32_t z = index & 0xF;
-    //    uint32_t x = index >> m_Log2Z & 0xF;
-    uint32_t x = index >> MyLog2(Z) & 0xF;
-    //    LOG_INFO("{} >> {})", index, m_Log2Z);
-    //    uint32_t y = index >> m_Log2XZ;
-    uint32_t y = index >> MyLog2(X * Z);
-    //    LOG_INFO("{} >> {})", index, m_Log2XZ);
-    //    LOG_INFO("index: {}, coords: ({},{},{})", index, x, y, z);
+    uint32_t x = index >> m_Log2Z & 0xF;
+    uint32_t y = index >> m_Log2XZ;
     return { x, y, z };
 }
