@@ -24,6 +24,9 @@ void Renderer::Init(int width, int height)
     guiRenderer.Init(&m_OrthoProj);
     skyRenderer.Init(&m_OrthoProj);
     skyRenderer.Resize(width, height);
+
+    // hack
+    // skyRenderer.InitBox(&m_PersProj);
 }
 
 void Renderer::Resize(int width, int height)

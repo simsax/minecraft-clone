@@ -8,7 +8,7 @@ uniform vec4 u_Color;
 uniform vec4 u_FogColor;
 //vec4 u_FogColor = vec4(1);
 uniform float u_LowerLimit;
-const float upperLimit = 300.0f + u_LowerLimit;
+const float upperLimit = 600.0f + u_LowerLimit;
 //const float lowerLimit = 540.0f;
 //const float upperLimit = 740.0f;
 

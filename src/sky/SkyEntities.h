@@ -2,6 +2,7 @@
 
 #include "Sun.h"
 #include "Moon.h"
+#include "Star.h"
 #include "../graphics/SkyRenderer.h"
 
 class SkyEntities {
@@ -21,6 +22,7 @@ private:
     int& m_ScreenHeight;
     Sun m_Sun;
     Moon m_Moon;
+    std::vector<Star> m_Star;
     glm::vec3 m_SunDir;
     glm::vec4 m_SkyColor;
 };

@@ -293,6 +293,7 @@ void Chunk::CreateTrees(int i, int j, int k, BlockVec& blockVec)
                     m_MaxHeight = leaves_height;
             }
         }
+        VertexBuffer m_VBO;
     }
 }
 

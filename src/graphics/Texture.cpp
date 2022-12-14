@@ -17,7 +17,7 @@ Texture::Texture(std::string path)
     m_TextureCount++;
 }
 
-void Texture::Init()
+void Texture::Init(uint32_t magFilter)
 {
     // flip texture upside down because for opengl bottom left is the starting position
     stbi_set_flip_vertically_on_load(1);
@@ -25,7 +25,7 @@ void Texture::Init()
     glCreateTextures(GL_TEXTURE_2D, 1, &m_TextureId);
 
     glTextureParameteri(m_TextureId, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
-    glTextureParameteri(m_TextureId, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTextureParameteri(m_TextureId, GL_TEXTURE_MAG_FILTER, magFilter);
     glTextureParameteri(m_TextureId, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTextureParameteri(m_TextureId, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTextureParameteri(m_TextureId, GL_TEXTURE_MAX_LEVEL, 4);

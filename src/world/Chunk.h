@@ -135,27 +135,3 @@ private:
     ChunkMap* m_ChunkMap;
     glm::vec3 m_CenterPosition;
 };
-
-struct LightAddNode {
-    LightAddNode(Chunk* c, uint16_t i)
-        : chunk(c)
-        , index(i)
-    {
-    }
-
-    Chunk* chunk;
-    uint16_t index;
-};
-
-struct LightRemNode {
-    LightRemNode(Chunk* c, uint16_t i, uint8_t v)
-        : chunk(c)
-        , index(i)
-        , val(v)
-    {
-    }
-
-    Chunk* chunk;
-    uint16_t index;
-    uint8_t val;
-};

@@ -60,6 +60,7 @@ void Game::OnRender()
 {
     Renderer::Clear(m_SkyEntities.GetSkyColor());
     m_Renderer.skyRenderer.Render();
+    // m_SkyBox.Render(m_Renderer.skyRenderer);
     m_SkyEntities.Render(m_Renderer.quadRenderer);
     m_ChunkManager.Render(m_Renderer.chunkRenderer);
     if (m_ShowGui)

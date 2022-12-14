@@ -411,10 +411,7 @@ void Light::AddSunLight(Chunk* chunk, ChunkSet& chunksToUpload)
         }
     }
     SunBFS(sunQueue, chunksToUpload);
-    // LightPlacedBFS(sunQueue, Channel::SUN);
 }
-
-static void UpdateNeighbor(Chunk* chunk, uint8_t y) { }
 
 void Light::AddSunLightSimplified(Chunk* chunk, ChunkSet& chunksToUpload)
 {
@@ -423,7 +420,7 @@ void Light::AddSunLightSimplified(Chunk* chunk, ChunkSet& chunksToUpload)
     std::array<bool, 4> updated = { false };
     for (int i = 0; i < XSIZE; i++) {
         for (int k = 0; k < ZSIZE; k++) {
-            uint8_t y = chunk->GetMaxHeight() + 1; // 1 block over the highest opaque block
+            uint8_t y = chunk->GetMaxHeight() + 1;
             for (auto& neighbor : neighbors) {
                 if (neighbor->GetMaxHeight() + 1 > y)
                     y = neighbor->GetMaxHeight() + 1;

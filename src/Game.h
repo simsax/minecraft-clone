@@ -10,6 +10,8 @@
 #include "graphics/ChunkRenderer.h"
 #include "graphics/SkyRenderer.h"
 #include "sky/SkyEntities.h"
+// hack
+// #include "sky/SkyBox.h"
 
 class Game {
 public:
@@ -43,4 +45,6 @@ private:
     Player m_Player;
     RayCast<glm::vec3> m_RayCast;
     SkyEntities m_SkyEntities;
+    // hack
+    // SkyBox m_SkyBox;
 };

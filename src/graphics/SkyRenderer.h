@@ -16,6 +16,10 @@ public:
     void SetFogColor(const glm::vec4& fogColor);
     void SetLowerLimit(float lowerLimit);
 
+    // hack
+    void RenderSkyBox(VertexArray& vao);
+    void InitBox(glm::mat4* proj);
+
 private:
     Shader m_Shader;
     VertexBuffer m_VBO;
@@ -29,4 +33,10 @@ private:
     glm::vec4 m_FogColor;
     glm::vec2 m_Position;
     glm::vec2 m_Scale;
+
+    // hack
+    Shader m_BoxShader;
+    glm::mat4 m_BoxMVP;
+    glm::mat4* m_BoxProj;
+    IndexBuffer m_BoxIbo;
 };
