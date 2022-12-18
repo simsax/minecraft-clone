@@ -226,7 +226,7 @@ BlockVec Chunk::CreateSurfaceLayer(const BlockVec& blocksToSet)
                         } else if (j >= snow_level)
                             m_Chunk(i, j, k) = Block::SNOW;
                         else if (j >= snow_level - 20) {
-                            if (Random::GetRand<double>(0, 1)
+                            if (Random::Uniform<double>(0, 1)
                                 < (3.0f / static_cast<float>(snow_level - j)))
                                 m_Chunk(i, j, k) = Block::SNOWY_GRASS;
                             else
@@ -254,9 +254,9 @@ BlockVec Chunk::CreateSurfaceLayer(const BlockVec& blocksToSet)
 // move this into a terrain generator class
 void Chunk::CreateTrees(int i, int j, int k, BlockVec& blockVec)
 {
-    int treeHeight = Random::GetRand<int>(3, 9) + j;
+    int treeHeight = Random::Uniform<int>(3, 9) + j;
     if (j > 0 && m_Chunk(i, j, k) == Block::EMPTY && m_Chunk(i, j - 1, k) == Block::GRASS) {
-        if (Random::GetRand<double>(0, 1) < 0.005) {
+        if (Random::Uniform<double>(0, 1) < 0.005) {
             float noise_chance = m_Noise.OctaveNoiseSingle(
                 k + m_ChunkPosition.z, i + m_ChunkPosition.x + 1000.0f, 4, 0.008f);
             if (noise_chance < 0) {
@@ -266,11 +266,11 @@ void Chunk::CreateTrees(int i, int j, int k, BlockVec& blockVec)
                         break;
                     m_Chunk(i, height, k) = Block::WOOD;
                 }
-                const int top = height + Random::GetRand<int>(1, 3);
-                const int bottom = height - Random::GetRand<int>(2, 3);
+                const int top = height + Random::Uniform<int>(1, 3);
+                const int bottom = height - Random::Uniform<int>(2, 3);
                 int leaves_height;
                 for (leaves_height = bottom; leaves_height <= top; leaves_height++) {
-                    int size = Random::GetRand<int>(2, 4);
+                    int size = Random::Uniform<int>(2, 4);
                     if (leaves_height == top || leaves_height == bottom)
                         size = 1;
                     for (int x = -size; x <= size; x++) {
@@ -279,7 +279,7 @@ void Chunk::CreateTrees(int i, int j, int k, BlockVec& blockVec)
                             const int leafz = k + z;
                             if (leafx >= 0 && leafz >= 0 && leafx < XSIZE && leafz < ZSIZE) {
                                 if (m_Chunk(leafx, leaves_height, leafz) != Block::WOOD
-                                    && Random::GetRand<double>(0, 1) > 0.2) {
+                                    && Random::Uniform<double>(0, 1) > 0.2) {
                                     m_Chunk(leafx, leaves_height, leafz) = Block::LEAVES;
                                 }
                             } else {
@@ -300,17 +300,17 @@ void Chunk::CreateTrees(int i, int j, int k, BlockVec& blockVec)
 void Chunk::CreateSprites(int i, int j, int k, BlockVec& blockVec)
 {
     if (j > 0 && m_Chunk(i, j, k) == Block::EMPTY && m_Chunk(i, j - 1, k) == Block::GRASS) {
-        if (Random::GetRand<double>(0, 1) < 0.005) {
+        if (Random::Uniform<double>(0, 1) < 0.005) {
             const float noise_chance = m_Noise.OctaveNoiseSingle(
                 k + m_ChunkPosition.z + 1000.1f, i + m_ChunkPosition.x + 1000.1f, 4, 0.02f);
             if (noise_chance < 0) {
-                if (Random::GetRand<double>(0, 1) < 0.6)
+                if (Random::Uniform<double>(0, 1) < 0.6)
                     m_Chunk(i, j, k) = Block::FLOWER_BLUE;
                 else
                     m_Chunk(i, j, k) = Block::FLOWER_YELLOW;
             }
             return;
-        } else if (Random::GetRand<double>(0, 1) < 0.2)
+        } else if (Random::Uniform<double>(0, 1) < 0.2)
             m_Chunk(i, j, k) = Block::BUSH;
     }
 }

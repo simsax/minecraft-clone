@@ -14,7 +14,8 @@ public:
         return random;
     }
 
-    template <typename T> static T GetRand(T min, T max);
+    template <typename T> static T Uniform(T min, T max);
+    static double Normal(double mean, double std);  
 
 private:
     Random()
@@ -24,16 +25,23 @@ private:
     std::mt19937 m_Gen;
 };
 
-template <> inline double Random::GetRand<double>(double min, double max)
+template <> inline double Random::Uniform<double>(double min, double max)
 {
     std::uniform_real_distribution<> dis(min, max);
     auto& gen = Random::GetInstance().m_Gen;
     return dis(gen);
 };
 
-template <> inline int Random::GetRand<int>(int min, int max)
+template <> inline int Random::Uniform<int>(int min, int max)
 {
     std::uniform_int_distribution<> dis(min, max);
     auto& gen = Random::GetInstance().m_Gen;
     return dis(gen);
 };
+
+
+inline double Random::Normal(double mean, double std) {
+    std::normal_distribution<> dis(mean, std);
+    auto& gen = Random::GetInstance().m_Gen;
+    return dis(gen);
+}

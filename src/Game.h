@@ -10,41 +10,37 @@
 #include "graphics/ChunkRenderer.h"
 #include "graphics/SkyRenderer.h"
 #include "sky/SkyEntities.h"
-// hack
-// #include "sky/SkyBox.h"
 
 class Game {
 public:
-    Game();
-    void Run();
+	Game();
+	void Run();
 
 private:
-    void Init();
-    void OnUpdate(float deltaTime);
-    void OnRender();
-    void CheckRayCast();
-    void UpdateChunks();
-    void BindCommands();
-    void UpdateTime(float deltaTime);
-    void Resize(int width, int height);
-    void Pause();
-    void ShowGui();
-    static void UpdateFPS(uint32_t numFrames);
+	void Init();
+	void OnUpdate(float deltaTime);
+	void OnRender();
+	void CheckRayCast();
+	void UpdateChunks();
+	void BindCommands();
+	void UpdateTime(float deltaTime);
+	void Resize(int width, int height);
+	void Pause();
+	void ShowGui();
+	static void UpdateFPS(uint32_t numFrames);
 
-    int m_Width;
-    int m_Height;
-    bool m_ShowGui;
-    bool m_Pause;
+	int m_Width;
+	int m_Height;
+	bool m_ShowGui;
+	bool m_Pause;
 
-    InputHandler m_InputHandler;
-    Window m_Window;
-    Camera m_Camera;
-    Renderer m_Renderer;
-    ChunkManager m_ChunkManager;
-    GuiManager m_GuiManager;
-    Player m_Player;
-    RayCast<glm::vec3> m_RayCast;
-    SkyEntities m_SkyEntities;
-    // hack
-    // SkyBox m_SkyBox;
+	InputHandler m_InputHandler;
+	Window m_Window;
+	Camera m_Camera;
+	Renderer m_Renderer;
+	ChunkManager m_ChunkManager;
+	GuiManager m_GuiManager;
+	Player m_Player;
+	RayCast<glm::vec3> m_RayCast;
+	SkyEntities m_SkyEntities;
 };

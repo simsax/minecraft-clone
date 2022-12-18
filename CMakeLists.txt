@@ -87,7 +87,7 @@ add_executable(${PROJECT_NAME}
     src/sky/SkyEntities.h
     src/gui/Cursor.cpp
     src/world/Light.cpp
-    src/sky/SkyBox.cpp
+    
     src/sky/Star.cpp)
 
 add_subdirectory(extern/glfw)
