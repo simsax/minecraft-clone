@@ -12,11 +12,11 @@ public:
 	void Render(const Texture& texture, const glm::vec2& position,
 		const glm::vec2& scale);
 	void Render(const Texture& texture, const glm::mat4& model);
-	void RenderBillboard(const Texture& texture, const glm::vec3& billboardPos, const glm::vec2& billboardSize);
+	void RenderStars(const Texture& texture, VertexArray& vao, uint32_t count, float alpha);
 
 private:
 	Shader m_Shader;
-	Shader m_BillboardShader;
+	Shader m_StarsShader;
 	VertexBuffer m_VBO;
 	VertexBufferLayout m_VertexLayout;
 	VertexArray m_VAO;

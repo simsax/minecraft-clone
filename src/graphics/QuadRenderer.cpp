@@ -1,9 +1,9 @@
-#include <array>
 #include <cstdint>
 #include "QuadRenderer.h"
 #include "glm/gtc/matrix_transform.hpp"
 #include "Config.h"
 #include <array>
+#include "../utils/Logger.h"
 
 static constexpr std::array<float, 12> positions = {
 		0.0f, 0.0f, 1.0f, // bottom left
@@ -22,10 +22,10 @@ void QuadRenderer::Init(glm::mat4* proj, glm::mat4* view)
 	m_Shader.Bind();
 	m_Shader.SetUniform1i("u_Texture", 0);
 
-	m_BillboardShader.Init(std::string(SOURCE_DIR) + "/res/shaders/shader_billboard.vert",
-		std::string(SOURCE_DIR) + "/res/shaders/shader_quad.frag");
-	m_BillboardShader.Bind();
-	m_BillboardShader.SetUniform1i("u_Texture", 0);
+	m_StarsShader.Init(std::string(SOURCE_DIR) + "/res/shaders/shader_stars.vert",
+		std::string(SOURCE_DIR) + "/res/shaders/shader_stars.frag");
+	m_StarsShader.Bind();
+	m_StarsShader.SetUniform1i("u_Texture", 0);
 
 	m_VertexLayout.Push<float>(3); // texture coordinates are the same as the position ones
 	m_VBO.Init(m_VertexLayout.GetStride(), 0);
@@ -63,16 +63,13 @@ void QuadRenderer::Render(const Texture& texture, const glm::mat4& model) {
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
 
-void QuadRenderer::RenderBillboard(const Texture& texture, const glm::vec3& billboardPos,
-	const glm::vec2& billboardSize) {
+void QuadRenderer::RenderStars(const Texture& texture, VertexArray& vao, uint32_t count, float alpha) {
 	glm::mat4 vp = *m_Proj * *m_View;
-	m_BillboardShader.Bind();
-	m_BillboardShader.SetUniformMat4f("u_VP", vp);
-	m_BillboardShader.SetUniformMat4f("u_V", *m_View);
-	m_BillboardShader.SetUniform3fv("u_BillboardPos", billboardPos);
-	m_BillboardShader.SetUniform2fv("u_BillboardSize", billboardSize);
+	m_StarsShader.Bind();
+	m_StarsShader.SetUniformMat4f("u_VP", vp);
+	m_StarsShader.SetUniformMat4f("u_V", *m_View);
+	m_StarsShader.SetUniform1f("u_Alpha", alpha);
 	texture.Bind(0);
-	m_VAO.Bind();
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
+	vao.Bind();
+	glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, count);
 }
