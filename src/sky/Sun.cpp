@@ -21,7 +21,6 @@ void Sun::Render(QuadRenderer& renderer) {
 void Sun::Update(float deltaTime, const glm::vec3& position) {
 	m_Time += deltaTime;
 	static constexpr float sunHeight = 1000.0f;
-	//    static constexpr glm::vec3 rotAxis = glm::vec3{1, 0, 0.7};
 	static constexpr glm::vec3 rotAxis = glm::vec3{ 1, 0, 0 };
 
 	m_Model = glm::mat4(1.0f);
@@ -30,8 +29,7 @@ void Sun::Update(float deltaTime, const glm::vec3& position) {
 	float angle = m_Time * m_TimeSpeed;
 	if (angle >= 2 * glm::pi<float>())
 		m_Time = 0;
-	m_Model = glm::rotate(m_Model, angle - glm::half_pi<float>(),
-		glm::normalize(rotAxis));
+	m_Model = glm::rotate(m_Model, angle - glm::half_pi<float>(), rotAxis);
 	m_Model = glm::translate(m_Model, { -m_Scale.x / 2.0f, sunHeight, -m_Scale.z / 2.0f });
 	m_Model = glm::scale(m_Model, m_Scale);
 	m_Position = m_Model * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);

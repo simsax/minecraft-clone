@@ -30,7 +30,7 @@ Stars::Stars(std::string name, std::string texturePath, const glm::vec3& positio
 		float x = static_cast<float>(Random::Normal(0, 1));
 		float y = static_cast<float>(Random::Normal(0, 1));
 		float z = static_cast<float>(Random::Normal(0, 1));
-		float ranScale = static_cast<float>(Random::Uniform<double>(5, 30));
+		float ranScale = static_cast<float>(Random::Uniform<double>(15, 40));
 
 		if (x != 0 && y != 0 && z != 0) {
 			const float rad = glm::sqrt(x * x + y * y + z * z);
@@ -73,6 +73,8 @@ void Stars::Update(float deltaTime, const glm::vec3& position)
 		m_Time = 0;
 	if (position != m_PlayerPosition)
 		m_PlayerPosition = position;
+	// this is bad. I should create a single transformation matrix for each star and apply it inside
+	// the vertex shader
 	for (int i = 0; i < m_InstancedVertices.size(); i++) {
 		glm::vec3& billboardPos = m_InstancedVertices[i].billboardPos;
 		glm::vec3& billboardPosUpdated = m_InstancedVerticesUpdated[i].billboardPos;
