@@ -12,7 +12,8 @@ public:
 	void Render(const Texture& texture, const glm::vec2& position,
 		const glm::vec2& scale);
 	void Render(const Texture& texture, const glm::mat4& model);
-	void RenderStars(const Texture& texture, VertexArray& vao, uint32_t count, float alpha);
+	void RenderStars(const Texture& texture, VertexArray& vao, const glm::mat4& model,
+		uint32_t count, float alpha);
 
 private:
 	Shader m_Shader;

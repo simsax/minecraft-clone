@@ -23,10 +23,8 @@ private:
 	glm::mat4 m_Model;
 	float m_Time;
 	float m_TimeSpeed;
-	glm::vec3 m_PlayerPosition;
 	VertexBuffer m_VBO;
 	VertexBuffer m_InstancedVBO;
 	VertexArray m_VAO;
 	std::vector<Vertex> m_InstancedVertices;
-	std::vector<Vertex> m_InstancedVerticesUpdated;
 };

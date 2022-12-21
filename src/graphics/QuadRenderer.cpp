@@ -1,11 +1,9 @@
-#define _USE_MATH_DEFINES
 #include <cstdint>
 #include "QuadRenderer.h"
 #include "glm/gtx/transform.hpp"
 #include "Config.h"
 #include <array>
 #include "../utils/Logger.h"
-#include <cmath>
 
 static constexpr std::array<float, 12> positions = {
 		0.0f, 0.0f, 1.0f, // bottom left
@@ -65,12 +63,12 @@ void QuadRenderer::Render(const Texture& texture, const glm::mat4& model) {
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
 
-void QuadRenderer::RenderStars(const Texture& texture, VertexArray& vao, uint32_t count, float alpha) {
-	static constexpr glm::vec3 rotAxis = { M_SQRT1_2, 0, M_SQRT1_2 };
-	glm::mat4 model = glm::rotate(glm::quarter_pi<float>(), rotAxis);
-	glm::mat4 mvp = *m_Proj * *m_View * model;
+void QuadRenderer::RenderStars(const Texture& texture, VertexArray& vao, const glm::mat4& model,
+	uint32_t count, float alpha) {
+	glm::mat4 vp = *m_Proj * *m_View;
 	m_StarsShader.Bind();
-	m_StarsShader.SetUniformMat4f("u_MVP", mvp);
+	m_StarsShader.SetUniformMat4f("u_M", model);
+	m_StarsShader.SetUniformMat4f("u_VP", vp);
 	m_StarsShader.SetUniformMat4f("u_V", *m_View);
 	m_StarsShader.SetUniform1f("u_Alpha", alpha);
 	texture.Bind(0);
