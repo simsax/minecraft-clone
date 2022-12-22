@@ -88,7 +88,7 @@ add_executable(${PROJECT_NAME}
     src/gui/Cursor.cpp
     src/world/Light.cpp
     src/sky/Stars.cpp 
-    )
+    src/sky/Clouds.cpp)
 
 add_subdirectory(extern/glfw)
 add_subdirectory(extern/glew)

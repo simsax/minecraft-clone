@@ -3,6 +3,7 @@
 #include "Sun.h"
 #include "Moon.h"
 #include "Stars.h"
+#include "Clouds.h"
 #include "../graphics/SkyRenderer.h"
 
 class SkyEntities {
@@ -22,7 +23,9 @@ private:
 	Sun m_Sun;
 	Moon m_Moon;
 	Stars m_Stars;
+	Clouds m_Clouds;
 	glm::vec3 m_SunDir;
 	glm::vec4 m_SkyColor;
 	float m_StarsAlpha;
+	float m_CloudsAlpha;
 };

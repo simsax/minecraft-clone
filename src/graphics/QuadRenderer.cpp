@@ -22,6 +22,11 @@ void QuadRenderer::Init(glm::mat4* proj, glm::mat4* view)
 	m_Shader.Bind();
 	m_Shader.SetUniform1i("u_Texture", 0);
 
+	m_CloudsShader.Init(std::string(SOURCE_DIR) + "/res/shaders/shader_quad.vert",
+		std::string(SOURCE_DIR) + "/res/shaders/shader_clouds.frag");
+	m_CloudsShader.Bind();
+	m_CloudsShader.SetUniform1i("u_Texture", 0);
+
 	m_StarsShader.Init(std::string(SOURCE_DIR) + "/res/shaders/shader_stars.vert",
 		std::string(SOURCE_DIR) + "/res/shaders/shader_stars.frag");
 	m_StarsShader.Bind();
@@ -74,4 +79,15 @@ void QuadRenderer::RenderStars(const Texture& texture, VertexArray& vao, const g
 	texture.Bind(0);
 	vao.Bind();
 	glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, count);
+}
+
+void QuadRenderer::RenderClouds(const Texture& texture, const glm::mat4& model, float time, float alpha) {
+	glm::mat4 mvp = *m_Proj * *m_View * model;
+	m_CloudsShader.Bind();
+	m_CloudsShader.SetUniformMat4f("u_MVP", mvp);
+	m_CloudsShader.SetUniform1f("u_Time", time);
+	m_CloudsShader.SetUniform1f("u_Color", alpha);
+	texture.Bind(0);
+	m_VAO.Bind();
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }

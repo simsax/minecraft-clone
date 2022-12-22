@@ -15,6 +15,7 @@ SkyEntities::SkyEntities(SkyRenderer* skyRenderer, int& screenHeight)
 	, m_Sun("sun", "sun1.png", glm::vec3(0), glm::vec3(400.0f, 1.0f, 400.0f))
 	, m_Moon("moon", "moon.png", glm::vec3(0), glm::vec3(300.0f, 1.0f, 300.0f))
 	, m_Stars("star", "star2.png", glm::vec3(0), glm::vec3(30.0f, 1.0f, 30.0f))
+	, m_Clouds("clouds", "clouds.png", glm::vec3(0), glm::vec3(10000.0f, 1.0f, 10000.0f))
 	, m_SunDir(0, 0, 0)
 	, m_SkyColor(0, 0, 0, 1)
 	, m_StarsAlpha(0.0f)
@@ -28,6 +29,7 @@ void SkyEntities::Update(float deltaTime, const glm::vec3& position, const glm::
 	m_Sun.Update(deltaTime, position2);
 	m_Moon.Update(deltaTime, position2);
 	m_Stars.Update(deltaTime, position);
+	m_Clouds.Update(deltaTime, position);
 	m_SunDir = glm::normalize(m_Sun.GetPosition() - position);
 
 	// update sky color
@@ -41,6 +43,8 @@ void SkyEntities::Update(float deltaTime, const glm::vec3& position, const glm::
 		m_SkyRenderer->SetSkyColor(color);
 		m_SkyRenderer->SetFogColor(m_SkyColor);
 		m_StarsAlpha = 1 - d;
+		if (d < 0.3)
+			m_CloudsAlpha = d / 0.3 * 0.6 + 0.2;
 	}
 	else {
 		d = std::max(5 * d, -1.0f);
@@ -48,6 +52,7 @@ void SkyEntities::Update(float deltaTime, const glm::vec3& position, const glm::
 		m_SkyRenderer->SetSkyColor(SkyColors::tc2);
 		m_SkyRenderer->SetFogColor(m_SkyColor);
 		m_StarsAlpha = 1;
+		m_CloudsAlpha = 0.2;
 	}
 
 	float lowerLimit = m_ScreenHeight * (-glm::asin(x) * 0.5f / glm::radians(35.0f) + 0.5f);
@@ -66,6 +71,7 @@ void SkyEntities::Update(float deltaTime, const glm::vec3& position, const glm::
 
 void SkyEntities::Render(QuadRenderer& renderer)
 {
+	m_Clouds.Render(renderer, m_CloudsAlpha);
 	m_Sun.Render(renderer);
 	m_Moon.Render(renderer);
 	m_Stars.Render(renderer, m_StarsAlpha);

@@ -6,7 +6,7 @@
 class Stars : public Entity<glm::vec3, QuadRenderer> {
 public:
 	Stars(std::string name, std::string texturePath, const glm::vec3& position,
-		const glm::vec3& scale, uint32_t texMagFilter = GL_LINEAR, float timeSpeed = 0.1f);
+		const glm::vec3& scale, uint32_t texMagFilter = GL_LINEAR, float timeSpeed = 0.005f);
 	void Render(QuadRenderer& renderer, float alpha);
 	void Update(float deltaTime, const glm::vec3& playerPosition);
 
