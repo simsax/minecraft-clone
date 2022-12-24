@@ -19,6 +19,7 @@ SkyEntities::SkyEntities(SkyRenderer* skyRenderer, int& screenHeight)
 	, m_SunDir(0, 0, 0)
 	, m_SkyColor(0, 0, 0, 1)
 	, m_StarsAlpha(0.0f)
+	, m_CloudsAlpha(0.0f)
 {
 }
 
@@ -44,7 +45,9 @@ void SkyEntities::Update(float deltaTime, const glm::vec3& position, const glm::
 		m_SkyRenderer->SetFogColor(m_SkyColor);
 		m_StarsAlpha = 1 - d;
 		if (d < 0.3)
-			m_CloudsAlpha = d / 0.3 * 0.6 + 0.2;
+			m_CloudsAlpha = d / 0.3f * 0.6f + 0.2f;
+		else
+			m_CloudsAlpha = 0.8f;
 	}
 	else {
 		d = std::max(5 * d, -1.0f);
@@ -52,7 +55,7 @@ void SkyEntities::Update(float deltaTime, const glm::vec3& position, const glm::
 		m_SkyRenderer->SetSkyColor(SkyColors::tc2);
 		m_SkyRenderer->SetFogColor(m_SkyColor);
 		m_StarsAlpha = 1;
-		m_CloudsAlpha = 0.2;
+		m_CloudsAlpha = 0.2f;
 	}
 
 	float lowerLimit = m_ScreenHeight * (-glm::asin(x) * 0.5f / glm::radians(35.0f) + 0.5f);

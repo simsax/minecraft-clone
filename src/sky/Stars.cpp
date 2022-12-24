@@ -72,5 +72,5 @@ void Stars::Update(float deltaTime, const glm::vec3& position)
 	if (angle >= 2 * glm::pi<float>())
 		m_Time = 0;
 	m_Model = glm::translate(m_Model, position);
-	m_Model = glm::rotate(m_Model, angle - glm::half_pi<float>(), rotAxis);
+	m_Model = glm::rotate(m_Model, angle, rotAxis);
 }
