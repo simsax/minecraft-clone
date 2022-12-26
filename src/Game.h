@@ -38,9 +38,9 @@ private:
 	Window m_Window;
 	Camera m_Camera;
 	Renderer m_Renderer;
+	Player m_Player;
 	ChunkManager m_ChunkManager;
 	GuiManager m_GuiManager;
-	Player m_Player;
 	RayCast<glm::vec3> m_RayCast;
 	SkyEntities m_SkyEntities;
 };

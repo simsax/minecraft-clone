@@ -15,6 +15,8 @@ ChunkRenderer::ChunkRenderer()
 	, m_Visibility(0.5f)
 	, m_Increment(0.5f)
 	, m_DeltaTime(0)
+	, m_Proj(nullptr)
+	, m_View(nullptr)
 {
 	m_VertexLayout.Push<uint32_t>(1); // position + texture coords + normals
 	m_VertexLayout.Push<uint32_t>(1); // lighting

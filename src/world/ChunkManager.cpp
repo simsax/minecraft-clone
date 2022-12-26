@@ -26,10 +26,10 @@ static int mod(int a, int b)
 	return res >= 0 ? res : res + b;
 }
 
-ChunkManager::ChunkManager(Camera* camera)
+ChunkManager::ChunkManager(Player& player)
 	: m_ChunkSize({ XSIZE, YSIZE, ZSIZE })
 	, m_ViewDistance(VIEW_DISTANCE)
-	, m_Camera(camera)
+	, m_Player(player)
 	, m_SortChunks(true)
 	, m_ChunksReadyToMesh(false)
 	, m_ChunksReadyToLight(false)
@@ -57,24 +57,24 @@ void ChunkManager::InitWorld(uint32_t stride)
 		MeshChunks();
 }
 
-void ChunkManager::Render(ChunkRenderer& renderer)
+void ChunkManager::Render(ChunkRenderer& renderer, Camera& camera)
 {
-	auto& cameraPos = m_Camera->GetCameraPosition();
+	glm::vec3 playerPos = m_Player.GetPosition();
 	LoadChunks();
 	LightChunks();
 	MeshChunks();
 	if (m_SortChunks) {
 		m_SortChunks = false;
-		SortChunks(cameraPos);
+		SortChunks(playerPos);
 	}
 
 	// frustum culling
-	m_Camera->UpdateFrustum();
-	ChunkCoord playerChunk = CalculateChunkCoord(cameraPos);
+	camera.UpdateFrustum();
+	ChunkCoord playerChunk = CalculateChunkCoord(playerPos);
 	static constexpr int spireradius = 20;
 	for (Chunk* chunk : m_ChunksToRender) {
 		glm::vec3 center = chunk->GetCenterPosition();
-		if (m_Camera->IsInFrustum(center))
+		if (camera.IsInFrustum(center))
 			chunk->Render(renderer, playerChunk, spireradius);
 	}
 
@@ -172,7 +172,7 @@ void ChunkManager::MeshChunks()
 void ChunkManager::GenerateChunks()
 {
 	//    std::cout << "Chunks in RAM: " << m_ChunkMap.size() << "\n";
-	ChunkCoord playerChunk = CalculateChunkCoord(m_Camera->GetCameraPosition());
+	ChunkCoord playerChunk = CalculateChunkCoord(m_Player.GetPosition());
 
 	// remove chunks outside of render distance (should be further than this when I'll add
 	// serialization)
@@ -358,7 +358,7 @@ void ChunkManager::PlaceBlock(Block block)
 	uint8_t x = localVoxel[0];
 	uint8_t y = localVoxel[1];
 	uint8_t z = localVoxel[2];
-	if (!physics::Intersect(physics::CreatePlayerAabb(m_Camera->GetCameraPosition()),
+	if (!physics::Intersect(physics::CreatePlayerAabb(m_Player.GetPosition()),
 		physics::CreateBlockAabb(globalVoxel))) {
 		chunk->SetBlock(x, y, z, block);
 		// if block is a light source
@@ -471,7 +471,7 @@ void ChunkManager::UpdateNeighbors(const glm::uvec3& voxel, const ChunkCoord& ch
 
 void ChunkManager::UpdateChunks()
 {
-	ChunkCoord currentChunk = CalculateChunkCoord(m_Camera->GetCameraPosition());
+	ChunkCoord currentChunk = CalculateChunkCoord(m_Player.GetPosition());
 	if (m_CurrentChunk != currentChunk) {
 		m_CurrentChunk = currentChunk;
 		m_SortChunks = true;

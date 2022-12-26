@@ -8,10 +8,10 @@ Game::Game()
 	, m_Height(1080)
 	, m_Window(&m_InputHandler, m_Width, m_Height, "Minecraft clone")
 	, m_Camera(glm::vec3(0.0f, 0.0f, 0.0f), 1920, 1080)
-	, m_ChunkManager(&m_Camera)
+	, m_Player(&m_Camera)
+	, m_ChunkManager(m_Player)
 	, m_ShowGui(true)
 	, m_Pause(false)
-	, m_Player(&m_Camera)
 	, m_RayCast(
 		5.0f, [this](const glm::vec3& block) { return m_ChunkManager.IsBlockCastable(block); })
 	, m_SkyEntities(&m_Renderer.skyRenderer, m_Height)
@@ -41,17 +41,38 @@ void Game::UpdateTime(float deltaTime)
 	}
 }
 
+static void HeadBob(Player& player, Camera& camera, float deltaTime) {
+	static float time = 0;
+	glm::vec3 cameraPos = camera.GetPosition();
+	if (player.GetHeadBob() && player.IsMoving() && player.IsOnGroundCamera() && !player.IsFlying()) {
+		time += deltaTime;
+		float valv = glm::sin(time * 14) * 0.05f;
+		float valh = glm::sin(time * 7) * 0.07f;
+		if (player.IsRuning()) {
+			valv *= 2;
+			valh *= 2;
+		}
+		cameraPos.y += valv;
+		camera.SetPosition(cameraPos);
+		camera.OffsetHorizontalPosition(valh);
+		player.StopMoving();
+	}
+	else {
+		time = 0;
+	}
+}
+
+
 void Game::OnUpdate(float deltaTime)
 {
 	CheckRayCast();
 	physics::UpdatePlayer(m_Player, m_ChunkManager, deltaTime);
+	HeadBob(m_Player, m_Camera, deltaTime);
 	UpdateChunks();
-	auto& cameraPos = m_Camera.GetCameraPosition();
-	m_SkyEntities.Update(deltaTime, cameraPos, m_Camera.GetFrontVector());
+	m_SkyEntities.Update(deltaTime, m_Camera.GetPosition(), m_Camera.GetFrontVector());
 
 	m_Renderer.chunkRenderer.SetDeltaTime(deltaTime);
 	m_Renderer.chunkRenderer.SetSkyColor(m_SkyEntities.GetSkyColor());
-	// m_Renderer.chunkRenderer.SetViewPos(cameraPos);
 	m_Renderer.chunkRenderer.SetSunDir(m_SkyEntities.GetSunDir());
 	m_Renderer.SetViewMatrix(m_Camera.GetViewMatrix());
 }
@@ -61,7 +82,7 @@ void Game::OnRender()
 	Renderer::Clear(m_SkyEntities.GetSkyColor());
 	m_Renderer.skyRenderer.Render();
 	m_SkyEntities.Render(m_Renderer.quadRenderer);
-	m_ChunkManager.Render(m_Renderer.chunkRenderer);
+	m_ChunkManager.Render(m_Renderer.chunkRenderer, m_Camera);
 	if (m_ShowGui)
 		m_GuiManager.Render(m_Renderer.guiRenderer);
 }
