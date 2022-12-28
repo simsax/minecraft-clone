@@ -20,7 +20,7 @@ Window::Window(WindowListener* windowListener, int width, int height, const char
 	, m_Width(width)
 	, m_Height(height)
 	, m_Name(name)
-	, m_IO(nullptr)
+	, m_ImGui(MyImGui::GetInstance())
 {
 	glfwSetErrorCallback(ErrorCallback);
 	// initialize GLFW
@@ -65,34 +65,7 @@ Window::Window(WindowListener* windowListener, int width, int height, const char
 	else
 		glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
-	// Setup Dear ImGui context
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	//ImGuiIO& io = ImGui::GetIO(); (void)io;
-	m_IO = &ImGui::GetIO();
-	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
-	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-	m_IO->ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
-	m_IO->ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
-	//io.ConfigViewportsNoAutoMerge = true;
-	//io.ConfigViewportsNoTaskBarIcon = true;
-
-	// Setup Dear ImGui style
-	ImGui::StyleColorsDark();
-	//ImGui::StyleColorsLight();
-
-	// When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
-	ImGuiStyle& style = ImGui::GetStyle();
-	if (m_IO->ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-	{
-		style.WindowRounding = 0.0f;
-		style.Colors[ImGuiCol_WindowBg].w = 1.0f;
-	}
-
-	// Setup Platform/Renderer backends
-	ImGui_ImplGlfw_InitForOpenGL(m_Window, true);
-	ImGui_ImplOpenGL3_Init("#version 450");
-
+	m_ImGui.Init(m_Window);
 
 #ifndef NDEBUG
 	// debug stuff
@@ -113,11 +86,8 @@ void Window::Loop()
 	while (!glfwWindowShouldClose(m_Window)) {
 		glfwPollEvents();
 
-		// Start the Dear ImGui frame
+		m_ImGui.StartFrame();
 		ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-		ImGui_ImplOpenGL3_NewFrame();
-		ImGui_ImplGlfw_NewFrame();
-		ImGui::NewFrame();
 
 		currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
@@ -132,8 +102,10 @@ void Window::Loop()
 		}
 		//#endif
 
+		// render game
 		m_WindowListener->UpdateTime(deltaTime);
 
+		// render imgui
 		{
 			static float f = 0.0f;
 			static int counter = 0;
@@ -153,22 +125,12 @@ void Window::Loop()
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 			ImGui::End();
 		}
-		ImGui::Render();
-		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-		if (m_IO->ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-		{
-			GLFWwindow* backup_current_context = glfwGetCurrentContext();
-			ImGui::UpdatePlatformWindows();
-			ImGui::RenderPlatformWindowsDefault();
-			glfwMakeContextCurrent(backup_current_context);
-		}
+		m_ImGui.Render();
 
 		glfwSwapBuffers(m_Window);
 	}
-	ImGui_ImplOpenGL3_Shutdown();
-	ImGui_ImplGlfw_Shutdown();
-	ImGui::DestroyContext();
+	m_ImGui.ShutDown();
 
 	glfwDestroyWindow(m_Window);
 	glfwTerminate();
