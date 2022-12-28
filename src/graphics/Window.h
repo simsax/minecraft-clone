@@ -3,10 +3,8 @@
 #include <memory>
 #include "GL/glew.h"
 #include "GLFW/glfw3.h"
-#include "imgui.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
 #include "WindowListener.h"
+#include "../utils/ImGui.h"
 #include <string>
 
 class Window {
@@ -37,5 +35,5 @@ private:
 	const char* m_Name;
 	GLFWwindow* m_Window;
 	WindowListener* m_WindowListener;
-	ImGuiIO* m_IO;
+	MyImGui& m_ImGui;
 };
