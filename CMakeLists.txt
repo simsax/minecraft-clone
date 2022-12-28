@@ -84,17 +84,20 @@ add_executable(${PROJECT_NAME}
     src/graphics/QuadRenderer.cpp
     src/graphics/SkyRenderer.cpp
     src/sky/SkyEntities.cpp
-    src/sky/SkyEntities.h
     src/gui/Cursor.cpp
     src/world/Light.cpp
     src/sky/Stars.cpp 
-    src/sky/Clouds.cpp)
+    src/sky/Clouds.cpp
+    src/utils/ImGui.cpp)
 
-add_subdirectory(extern/glfw)
+if (NOT TARGET glfw)
+	add_subdirectory(extern/glfw)
+endif()
 add_subdirectory(extern/glew)
 add_subdirectory(extern/glm)
 add_subdirectory(extern/fastnoise2)
 add_subdirectory(extern/spdlog)
+add_subdirectory(extern/imgui)
 
 target_include_directories(${PROJECT_NAME}
     PUBLIC ${CMAKE_BINARY_DIR}
@@ -104,6 +107,7 @@ target_include_directories(${PROJECT_NAME}
     PUBLIC extern/stb_image
     PUBLIC extern/fastnoise2/include
     PUBLIC extern/spdlog/include
+    PUBLIC extern/imgui
 )
 
-target_link_libraries(${PROJECT_NAME} glfw libglew_static glm FastNoise spdlog)
+target_link_libraries(${PROJECT_NAME} glfw libglew_static glm FastNoise spdlog imgui)
