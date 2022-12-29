@@ -9,9 +9,6 @@
 #define MAX_VERTEX_COUNT 24000 // each cube has 6 faces, each face has 4 vertices
 #define assertm(exp, msg) assert(((void)msg, exp))
 
-// TODO: imgui menu
-static constexpr bool AO = true;
-
 enum class Neighbors {
 	W = 0, N = 1, E = 2, S = 3, NW = 4, SW = 5, NE = 6, SE = 7
 };
@@ -146,7 +143,7 @@ void Chunk::CreateQuad(std::vector<Vertex>& target, const glm::uvec3& position,
 {
 	static constexpr int vertices = 4;
 	std::array<uint32_t, 4> ambientOcclusionVals = { 0 };
-	if (AO && !IsLight(m_Chunk(position.x, position.y, position.z))) {
+	if (!IsLight(m_Chunk(position.x, position.y, position.z))) {
 		switch (face)
 		{
 		case Face::Up:

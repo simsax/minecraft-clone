@@ -33,6 +33,7 @@ private:
 	int m_Height;
 	bool m_ShowGui;
 	bool m_Pause;
+	bool m_ImGui;
 
 	InputHandler m_InputHandler;
 	Window m_Window;

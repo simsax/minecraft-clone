@@ -2,6 +2,7 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "../camera/Constants.h"
 #include "../utils/Logger.h"
+#include "imgui.h"
 
 void Renderer::Init(int width, int height)
 {
@@ -42,3 +43,11 @@ void Renderer::Clear(const glm::vec4& skyColor)
 }
 
 void Renderer::SetViewMatrix(const glm::mat4& view) { m_View = view; }
+
+void Renderer::ImGuiRender() {
+	ImGui::Begin("Renderer debug");
+	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate,
+		ImGui::GetIO().Framerate);
+	chunkRenderer.ImGuiRender();
+	ImGui::End();
+}

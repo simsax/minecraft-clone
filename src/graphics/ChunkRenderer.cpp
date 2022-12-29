@@ -2,8 +2,11 @@
 #include "TextureAtlas.h"
 #include "glm/gtc/matrix_transform.hpp"
 #include "../utils/Logger.h"
+#include "imgui.h"
 
 #define MAX_INDEX_COUNT 18432 // each cube has 6 faces, each face has 6 indexes
+
+static bool AO = true;
 
 struct Vertex {
 	uint32_t base;
@@ -17,6 +20,7 @@ ChunkRenderer::ChunkRenderer()
 	, m_DeltaTime(0)
 	, m_Proj(nullptr)
 	, m_View(nullptr)
+	, m_AmbientOcclusion({ 1, 0.8, 0.6, 0.3 })
 {
 	m_VertexLayout.Push<uint32_t>(1); // position + texture coords + normals
 	m_VertexLayout.Push<uint32_t>(1); // lighting
@@ -67,6 +71,15 @@ void ChunkRenderer::Init(glm::mat4* proj, glm::mat4* view)
 	glEnable(GL_LINE_SMOOTH);
 }
 
+void ChunkRenderer::ImGuiRender() {
+	ImGui::Separator();
+	ImGui::Checkbox("Ambient occlusion", &AO);
+	ImGui::DragFloat("AO 1", &m_AmbientOcclusion[0], 0.0f, 0.0f, 1.0f, "%.1f");
+	ImGui::DragFloat("AO 2", &m_AmbientOcclusion[1], 0.0f, 0.0f, 1.0f, "%.1f");
+	ImGui::DragFloat("AO 3", &m_AmbientOcclusion[2], 0.0f, 0.0f, 1.0f, "%.1f");
+	ImGui::DragFloat("AO 4", &m_AmbientOcclusion[3], 0.0f, 0.0f, 1.0f, "%.1f");
+}
+
 void ChunkRenderer::Render(const glm::vec3& chunkPosition, uint32_t offset)
 {
 	glm::mat4 mvp = *m_Proj * *m_View;
@@ -77,6 +90,8 @@ void ChunkRenderer::Render(const glm::vec3& chunkPosition, uint32_t offset)
 	m_ChunkShader.SetUniform3fv("u_SkyColor", m_SkyColor);
 	// m_ChunkShader.SetUniform3fv("u_ViewPos", m_ViewPos);
 	m_ChunkShader.SetUniform3fv("u_LightDir", m_SunDir);
+	AO ? m_ChunkShader.SetUniform4fv("u_AmbientOcclusion", m_AmbientOcclusion) :
+		m_ChunkShader.SetUniform4fv("u_AmbientOcclusion", glm::vec4(1));
 	TextureAtlas::GetTexture().Bind(0);
 	m_VAO.Bind();
 	m_IBO.Bind(m_VAO.GetId());

@@ -15,6 +15,7 @@ Game::Game()
 	, m_RayCast(
 		5.0f, [this](const glm::vec3& block) { return m_ChunkManager.IsBlockCastable(block); })
 	, m_SkyEntities(&m_Renderer.skyRenderer, m_Height)
+	, m_ImGui(true)
 {
 	Logger::Init();
 	Logger::GetGLLogger()->set_level(spdlog::level::off); // opengl logger level
@@ -46,8 +47,8 @@ static void HeadBob(Player& player, Camera& camera, float deltaTime) {
 	glm::vec3 cameraPos = camera.GetPosition();
 	if (player.GetHeadBob() && player.IsMoving() && player.IsOnGroundCamera() && !player.IsFlying()) {
 		time += deltaTime;
-		float valv = glm::sin(time * 14) * 0.05f;
-		float valh = glm::sin(time * 7) * 0.07f;
+		float valv = glm::sin(time * 14) * 0.03f;
+		float valh = glm::sin(time * 7) * 0.04f;
 		if (player.IsRuning()) {
 			valv *= 2;
 			valh *= 2;
@@ -85,6 +86,8 @@ void Game::OnRender()
 	m_ChunkManager.Render(m_Renderer.chunkRenderer, m_Camera);
 	if (m_ShowGui)
 		m_GuiManager.Render(m_Renderer.guiRenderer);
+	if (m_ImGui)
+		m_Renderer.ImGuiRender();
 }
 
 void Game::CheckRayCast()

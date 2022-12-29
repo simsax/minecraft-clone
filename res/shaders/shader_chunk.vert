@@ -17,6 +17,7 @@ uniform mat4 u_MVP;
 uniform mat4 u_MV;
 uniform vec3 u_ChunkPos;
 uniform vec3 u_LightDir;
+uniform vec4 u_AmbientOcclusion;
 
 const float offset = 0.0625f;
 const float density = 0.003f;
@@ -39,7 +40,7 @@ const vec3 normals[6] = vec3[6](
 	vec3(0.0f, 0.0f, -1.0f)
 );
 
-const vec4 ambientOcclusion = vec4(1, 0.8, 0.6, 0.3);
+//const vec4 ambientOcclusion = vec4(1, 0.8, 0.6, 0.3);
 
 void main() {
 	float x = float(in_VertexCoord >> 24 & 0x1Fu) + u_ChunkPos.x;
@@ -70,7 +71,7 @@ void main() {
 	sunLight = sunStrength * float(in_Light >> 12 & 0xFu) / 15.0 + ambient;
 
 	uint aoIndex = in_Light >> 16 & 0xFu;
-	float ao = ambientOcclusion[aoIndex];
+	float ao = u_AmbientOcclusion[aoIndex];
 
 	redLight =   clamp(float(in_Light >> 8 & 0xFu) / 15.0 + sunLight, 0.0, 1.0) * ao;
 	greenLight = clamp(float(in_Light >> 4 & 0xFu) / 15.0 + sunLight, 0.0, 1.0) * ao;

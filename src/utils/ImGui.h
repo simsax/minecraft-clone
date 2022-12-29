@@ -17,6 +17,4 @@ public:
 
 private:
 	MyImGui();
-
-	ImGuiIO* m_IO;
 };

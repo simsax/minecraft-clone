@@ -13,18 +13,19 @@
 
 class Renderer {
 public:
-    void Init(int width, int height);
-    void Resize(int width, int height);
-    static void Clear(const glm::vec4 &skyColor);
-    void SetViewMatrix(const glm::mat4& view);
+	void Init(int width, int height);
+	void Resize(int width, int height);
+	static void Clear(const glm::vec4& skyColor);
+	void SetViewMatrix(const glm::mat4& view);
+	void ImGuiRender();
 
-    ChunkRenderer chunkRenderer;
-    GuiRenderer guiRenderer;
-    QuadRenderer quadRenderer;
-    SkyRenderer skyRenderer;
+	ChunkRenderer chunkRenderer;
+	GuiRenderer guiRenderer;
+	QuadRenderer quadRenderer;
+	SkyRenderer skyRenderer;
 
 private:
-    glm::mat4 m_View;
-    glm::mat4 m_PersProj;
-    glm::mat4 m_OrthoProj;
+	glm::mat4 m_View;
+	glm::mat4 m_PersProj;
+	glm::mat4 m_OrthoProj;
 };
