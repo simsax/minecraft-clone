@@ -20,7 +20,7 @@ ChunkRenderer::ChunkRenderer()
 	, m_DeltaTime(0)
 	, m_Proj(nullptr)
 	, m_View(nullptr)
-	, m_AmbientOcclusion({ 1, 0.8, 0.6, 0.3 })
+	, m_AmbientOcclusion({ 1, 0.7, 0.5, 0.3 })
 {
 	m_VertexLayout.Push<uint32_t>(1); // position + texture coords + normals
 	m_VertexLayout.Push<uint32_t>(1); // lighting
