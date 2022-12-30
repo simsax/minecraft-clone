@@ -38,6 +38,7 @@ cd build
 cmake -S .. -B . -DCMAKE_BUILD_TYPE=Release
 make
 ```
+If you are on Windows, just use Visual Studio and import as a cmake project.
 
 ## Commands
 * `WASD` to move
