@@ -15,7 +15,7 @@ I will work on this in my spare time and update this repo as I progress.
 - [x] Infinite terrain generation
 - [x] Place/destroy blocks
 - [x] Frustum culling
-- [x] "Phyisics"
+- [x] "Physics"
 - [x] Trees (is this a feature?)
 - [x] Day/night cycle
 - [x] Ambient occlusion
